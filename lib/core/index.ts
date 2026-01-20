@@ -9,13 +9,11 @@ export { useApiErrorStore } from './api';
 // Export Auth module
 export { default as auth } from './auth';
 export {
-  useAuthStore,
-  mapApiRole,
-  extractUserRole,
-  authenticateUser,
-  refreshAuthToken,
-  logoutUser
+  extractUserRoles
 } from './auth';
+
+// Export useAuthStore from the auth feature
+export { default as useAuthStore } from '../../features/auth/store';
 
 // Export types with proper syntax for isolatedModules
 import type { ApiResponse, ApiError } from './api';

@@ -122,6 +122,11 @@ export const useApiErrorStore = create<{
 // Create the API client
 const createApiClient = () => {
   const baseURL = process.env.NEXT_PUBLIC_API_URL || '';
+  
+  // Debug: Log the base URL to verify it's being read
+  if (typeof window !== 'undefined') {
+    console.log('API Base URL:', baseURL);
+  }
 
   // Main API client with interceptors
   const apiClient = axios.create({
