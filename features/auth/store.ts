@@ -7,14 +7,14 @@ import { extractUserRoles } from '@/lib/core/auth';
 const permissionsCache = new Map<string, { permissions: Permission[], timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   permissions: [],
   isLoading: false,
   error: null,
   permissionsLoaded: false,
   setUser: (user) => set({ user, error: null }),
-  
+
   clearPermissions: () => set({ permissions: [], permissionsLoaded: false }),
 
   fetchPermissions: async (userId: string, headers?: Record<string, string>) => {
@@ -24,17 +24,17 @@ const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     const { permissionsLoaded } = get();
-    
+
     // Check cache first
     const cacheKey = `${userId}-${JSON.stringify(headers || {})}`;
     const cached = permissionsCache.get(cacheKey);
     const now = Date.now();
-    
+
     if (cached && (now - cached.timestamp) < CACHE_DURATION) {
       set({ permissions: cached.permissions, isLoading: false, permissionsLoaded: true });
       return;
     }
-    
+
     // Don't fetch if already loaded and no cache miss
     if (permissionsLoaded && !cached) {
       return;
@@ -57,7 +57,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
       // Cache the result
       permissionsCache.set(cacheKey, { permissions: permissionsData, timestamp: now });
-      
+
       set({ permissions: permissionsData, isLoading: false, permissionsLoaded: true });
     } catch (error) {
       console.error("Failed to fetch permissions:", error);
@@ -84,22 +84,22 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
   canAccess: (requiredPermission?: Permission, requiredRole?: Role) => {
     const { hasPermission, hasRole } = get();
-    
+
     // If both permission and role are required, user must have both
     if (requiredPermission && requiredRole) {
       return hasPermission(requiredPermission) && hasRole(requiredRole);
     }
-    
+
     // If only permission is required
     if (requiredPermission) {
       return hasPermission(requiredPermission);
     }
-    
+
     // If only role is required
     if (requiredRole) {
       return hasRole(requiredRole);
     }
-    
+
     // If neither is specified, allow access
     return true;
   },
