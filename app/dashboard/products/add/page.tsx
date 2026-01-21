@@ -19,16 +19,16 @@ function AddProductPage() {
   const handleSubmit = async (data: ProductFormValues) => {
     try {
       setIsSubmitting(true);
-      
+
       // Ensure tenant ID is included
       const tenantId = (session?.user as any)?.tenant_id;
       if (!tenantId) {
         throw new Error("Missing tenant ID");
       }
-      
+
       // Add headers for the API request
       const headers = { "X-Tenant-ID": tenantId };
-      
+
       // Create the product
       await createProduct(data, headers);
       toast.success("Product created successfully");
@@ -58,4 +58,4 @@ function AddProductPage() {
   );
 }
 
-export default withAuthorization(AddProductPage, { permission: "products:create" });
+export default withAuthorization(AddProductPage, { permission: "product:create" });

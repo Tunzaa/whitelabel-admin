@@ -117,9 +117,9 @@ function EditAffiliatePage({ params }: EditAffiliatePageProps) {
             </p>
           </div>
         </div>
-        <Button 
-          type="submit" 
-          form="marketplace-affiliate-form" 
+        <Button
+          type="submit"
+          form="marketplace-affiliate-form"
           disabled={isSubmitting || loading}
         >
           {isSubmitting ? (
@@ -140,4 +140,4 @@ function EditAffiliatePage({ params }: EditAffiliatePageProps) {
   );
 }
 
-export default withAuthorization(EditAffiliatePage, { permission: "affiliates:update" });
+export default withAuthorization(EditAffiliatePage, { permission: "affiliate:update" });

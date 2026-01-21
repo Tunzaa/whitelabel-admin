@@ -35,9 +35,9 @@ import { Can } from "@/components/auth/can";
 function ProductsPage() {
   const router = useRouter();
   const { data: session } = useSession();
-    const tenantId = (session?.user as any)?.tenant_id;
+  const tenantId = (session?.user as any)?.tenant_id;
 
-    const {
+  const {
     products: productData,
     loading,
     storeError: error,
@@ -224,8 +224,8 @@ function ProductsPage() {
           </p>
         </div>
         <div className="flex">
-          <Can permission="products:create">
-            <Button 
+          <Can permission="product:create">
+            <Button
               variant="outline"
               onClick={() => router.push("/dashboard/products/add")}
             >
@@ -233,7 +233,7 @@ function ProductsPage() {
               Add Product
             </Button>
           </Can>
-          <Can permission="products:create">
+          <Can permission="product:create">
             <Button onClick={() => router.push("/dashboard/products/bulk-upload")}
               className="ml-2"
             >
@@ -330,4 +330,4 @@ function ProductsPage() {
   );
 }
 
-export default withAuthorization(ProductsPage, { permission: "products:read" });
+export default withAuthorization(ProductsPage, { permission: "product:read" });

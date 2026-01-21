@@ -58,14 +58,14 @@ function VendorAddPage() {
           ...data.stores?.[0],
           store_slug: randomSlug,
           branding: {
-              ...data.stores?.[0].branding,
-              "colors": {
-                  "primary": "#4285F4",
-                  "secondary": "#34A853",
-                  "accent": "#FBBC05",
-                  "text": "#333333",
-                  "background": "#FFFFFF"
-              }
+            ...data.stores?.[0].branding,
+            "colors": {
+              "primary": "#4285F4",
+              "secondary": "#34A853",
+              "accent": "#FBBC05",
+              "text": "#333333",
+              "background": "#FFFFFF"
+            }
           },
         }
       };
@@ -139,4 +139,4 @@ function VendorAddPage() {
   );
 }
 
-export default withAuthorization(VendorAddPage, { permission: "vendors:create" });
+export default withAuthorization(VendorAddPage, { permission: "vendor:create" });

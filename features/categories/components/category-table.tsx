@@ -50,92 +50,92 @@ export function CategoryTable({
             </tr>
           ) : (
             categories.map((category) => (
-            <tr key={category.category_id} className="border-b hover:bg-muted/20">
-              <td className="p-4 font-medium">{category.name}</td>
-              <td className="p-4 max-w-xs truncate">{category.description || "-"}</td>
-              <td className="p-4">
-                <Badge
-                  variant={category.is_active ? "default" : "destructive"}
-                  className={category.is_active ? "bg-green-500 hover:bg-green-600" : ""}
-                >
-                  {category.is_active ? t('status.active') : t('status.inactive')}
-                </Badge>
-              </td>
-              <td className="p-4">
-                {category.parent_id && category.parent_id !== "none"
-                  ? categories.find((c) => c.category_id === category.parent_id)?.name ||
+              <tr key={category.category_id} className="border-b hover:bg-muted/20">
+                <td className="p-4 font-medium">{category.name}</td>
+                <td className="p-4 max-w-xs truncate">{category.description || "-"}</td>
+                <td className="p-4">
+                  <Badge
+                    variant={category.is_active ? "default" : "destructive"}
+                    className={category.is_active ? "bg-green-500 hover:bg-green-600" : ""}
+                  >
+                    {category.is_active ? t('status.active') : t('status.inactive')}
+                  </Badge>
+                </td>
+                <td className="p-4">
+                  {category.parent_id && category.parent_id !== "none"
+                    ? categories.find((c) => c.category_id === category.parent_id)?.name ||
                     "-"
-                  : "-"}
-              </td>
-              <td className="p-4">
-                {category.image_url ? (
-                  <div className="relative h-8 w-8 rounded overflow-hidden">
-                    <img 
-                      src={category.image_url} 
-                      alt={category.name} 
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        // Replace broken image with placeholder
-                        e.currentTarget.src = "https://placehold.co/32?text=NA";
-                      }}
-                    />
-                  </div>
-                ) : (
-                  "-"
-                )}
-              </td>
-              <td className="p-4 text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {onViewDetails && (
-                      <DropdownMenuItem onClick={() => onViewDetails(category)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        <span>{t('actions.view')}</span>
-                      </DropdownMenuItem>
-                    )}
-                    <Can permission="categories:update">
-                      <DropdownMenuItem onClick={() => onEdit(category)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>{t('actions.edit')}</span>
-                      </DropdownMenuItem>
-                    </Can>
-                    {onToggleStatus && (
-                      <Can permission="categories:update">
-                        <DropdownMenuItem onClick={() => onToggleStatus(category, !category.is_active)}>
-                          {category.is_active ? (
-                            <>
-                              <PowerOff className="mr-2 h-4 w-4" />
-                              <span>{t('actions.deactivate')}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Power className="mr-2 h-4 w-4" />
-                              <span>{t('actions.activate')}</span>
-                            </>
-                          )}
+                    : "-"}
+                </td>
+                <td className="p-4">
+                  {category.image_url ? (
+                    <div className="relative h-8 w-8 rounded overflow-hidden">
+                      <img
+                        src={category.image_url}
+                        alt={category.name}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          // Replace broken image with placeholder
+                          e.currentTarget.src = "https://placehold.co/32?text=NA";
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+                <td className="p-4 text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {onViewDetails && (
+                        <DropdownMenuItem onClick={() => onViewDetails(category)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          <span>{t('actions.view')}</span>
+                        </DropdownMenuItem>
+                      )}
+                      <Can permission="category:update">
+                        <DropdownMenuItem onClick={() => onEdit(category)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>{t('actions.edit')}</span>
                         </DropdownMenuItem>
                       </Can>
-                    )}
-                    <Can permission="categories:delete">
-                      <Separator />
-                      <DropdownMenuItem onClick={() => onDelete(category)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>{t('actions.delete')}</span>
-                      </DropdownMenuItem>
-                    </Can>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </td>
-            </tr>
-          ))
-        )}
+                      {onToggleStatus && (
+                        <Can permission="category:update">
+                          <DropdownMenuItem onClick={() => onToggleStatus(category, !category.is_active)}>
+                            {category.is_active ? (
+                              <>
+                                <PowerOff className="mr-2 h-4 w-4" />
+                                <span>{t('actions.deactivate')}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Power className="mr-2 h-4 w-4" />
+                                <span>{t('actions.activate')}</span>
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        </Can>
+                      )}
+                      <Can permission="category:delete">
+                        <Separator />
+                        <DropdownMenuItem onClick={() => onDelete(category)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>{t('actions.delete')}</span>
+                        </DropdownMenuItem>
+                      </Can>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>
   );
-} 
+}

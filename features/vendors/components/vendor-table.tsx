@@ -99,12 +99,12 @@ export function VendorTable({
 
     try {
       setProcessingId(vendorId);
-      
+
       // Map action to the right status change according to API expectations
       let status;
       let isActive;
-      
-      switch(action) {
+
+      switch (action) {
         case 'approve':
           // API expects: status: "approved", is_active: false
           status = 'approved';
@@ -120,7 +120,7 @@ export function VendorTable({
         default:
           return;
       }
-      
+
       await onStatusChange(vendorId, status);
     } catch (error) {
       console.error("Error changing vendor status:", error);
@@ -138,7 +138,7 @@ export function VendorTable({
       console.error("Rejection reason is missing.");
       return;
     }
-    
+
     onStatusChange(rejectVendorId, "rejected", reason);
     setShowRejectDialog(false);
     setRejectVendorId(null);
@@ -302,15 +302,14 @@ export function VendorTable({
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={`${
-                          vendor.verification_status === "approved"
+                        className={`${vendor.verification_status === "approved"
                             ? "bg-green-200 text-green-800"
                             : vendor.verification_status === "pending"
-                            ? "bg-amber-200 text-amber-800"
-                            : vendor.verification_status === "rejected"
-                            ? "bg-red-200 text-red-800"
-                            : "bg-slate-200 text-slate-800"
-                        }`}
+                              ? "bg-amber-200 text-amber-800"
+                              : vendor.verification_status === "rejected"
+                                ? "bg-red-200 text-red-800"
+                                : "bg-slate-200 text-slate-800"
+                          }`}
                       >
                         {vendor.verification_status.charAt(0).toUpperCase() + vendor.verification_status.slice(1)}
                       </Badge>
@@ -322,11 +321,10 @@ export function VendorTable({
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={`${
-                          vendor.is_active
+                        className={`${vendor.is_active
                             ? "bg-green-200 text-green-800"
                             : "bg-slate-200 text-slate-800"
-                        }`}
+                          }`}
                       >
                         {vendor.is_active ? "Active" : "Inactive"}
                       </Badge>
@@ -359,7 +357,7 @@ export function VendorTable({
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <Can permission="vendors:update">
+                          <Can permission="vendor:update">
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -372,9 +370,9 @@ export function VendorTable({
                               Edit
                             </DropdownMenuItem>
                           </Can>
-                          
+
                           <DropdownMenuSeparator />
-                          
+
                           {/* Status-specific actions */}
                           {onStatusChange && (
                             <>
@@ -384,7 +382,7 @@ export function VendorTable({
                                 vendor.verification_documents.every(
                                   (doc: any) => doc.verification_status === "verified"
                                 ) && (
-                                  <Can permission="vendors:approve">
+                                  <Can permission="vendor:approve">
                                     <DropdownMenuItem
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -405,7 +403,7 @@ export function VendorTable({
                                   </Can>
                                 )}
                               {vendor.verification_status !== "rejected" && (
-                                <Can permission="vendors:reject">
+                                <Can permission="vendor:reject">
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -427,8 +425,8 @@ export function VendorTable({
                               )}
                               {/* For approved vendors */}
                               {vendor.verification_status === "approved" && (
-                                <Can permission="vendors:update">
-                                  <DropdownMenuItem 
+                                <Can permission="vendor:update">
+                                  <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleStatusChange(

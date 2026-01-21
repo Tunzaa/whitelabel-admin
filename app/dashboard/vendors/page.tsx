@@ -208,7 +208,7 @@ function VendorsPage() {
             Manage vendor applications and accounts
           </p>
         </div>
-        <Can permission="vendors:create">
+        <Can permission="vendor:create">
           <Button onClick={() => router.push("/dashboard/vendors/add")}>
             <Plus className="mr-2 h-4 w-4" />
             Add Vendor
@@ -268,4 +268,4 @@ function VendorsPage() {
   );
 }
 
-export default withAuthorization(VendorsPage, { permission: "vendors:read" });
+export default withAuthorization(VendorsPage, { permission: "vendor:view" });

@@ -182,7 +182,7 @@ export function AffiliateTable({
                         <DropdownMenuItem onClick={() => onAffiliateClick(affiliate)}>
                           <Eye className="mr-2 h-4 w-4" /> View Details
                         </DropdownMenuItem>
-                        <Can permission="affiliates:update">
+                        <Can permission="affiliate:update">
                           <DropdownMenuItem onClick={() => router.push(`/dashboard/affiliates/${affiliate.id}/edit`)}>
                             <FileEdit className="mr-2 h-4 w-4" /> Edit Affiliate
                           </DropdownMenuItem>
@@ -190,7 +190,7 @@ export function AffiliateTable({
                         <DropdownMenuSeparator />
                         {affiliate.status === "pending" && (
                           <>
-                            <Can permission="affiliates:approve">
+                            <Can permission="affiliate:approve">
                               <DropdownMenuItem
                                 onClick={() => handleLocalStatusChange(affiliate.id, 'approve')}
                                 disabled={processingId === affiliate.id}
@@ -203,7 +203,7 @@ export function AffiliateTable({
                                 Approve
                               </DropdownMenuItem>
                             </Can>
-                            <Can permission="affiliates:reject">
+                            <Can permission="affiliate:reject">
                               <DropdownMenuItem
                                 onClick={() => handleLocalStatusChange(affiliate.id, 'reject')}
                                 disabled={processingId === affiliate.id}
@@ -246,7 +246,7 @@ export function AffiliateTable({
                           </DropdownMenuItem>
                         )} */}
                         {affiliate.status === "approved" && (
-                          <Can permission="affiliates:reject">
+                          <Can permission="affiliate:reject">
                             <DropdownMenuItem
                               onClick={() => handleLocalStatusChange(affiliate.id, 'reject')}
                               disabled={processingId === affiliate.id}
@@ -262,7 +262,7 @@ export function AffiliateTable({
                           </Can>
                         )}
                         {affiliate.status === "rejected" && (
-                          <Can permission="affiliates:approve">
+                          <Can permission="affiliate:approve">
                             <DropdownMenuItem
                               onClick={() => handleLocalStatusChange(affiliate.id, 'approve')}
                               disabled={processingId === affiliate.id}

@@ -28,23 +28,23 @@ function CategoriesPage() {
   const session = useSession();
   const tenantId: string | undefined = (session.data?.user as any)?.tenant_id;
 
-  const { 
-    categories, 
+  const {
+    categories,
     total,
-    loading, 
+    loading,
     storeError,
-    fetchCategories, 
-    toggleCategoryStatus, 
-    activeAction, 
-    setActiveAction, 
-    setCategory, 
-    category 
+    fetchCategories,
+    toggleCategoryStatus,
+    activeAction,
+    setActiveAction,
+    setCategory,
+    category
   } = useCategoryStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("all");
-  
+
   const [isTabLoading, setIsTabLoading] = useState(false);
   const pageSize = 10;
 
@@ -134,7 +134,7 @@ function CategoriesPage() {
             <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
             <p className="text-muted-foreground">{t('description')}</p>
           </div>
-          <Can permission="categories:create">
+          <Can permission="category:create">
             <Button onClick={handleAddCategory}>
               <Plus className="mr-2 h-4 w-4" />
               {t('add_category')}
@@ -156,7 +156,7 @@ function CategoriesPage() {
             <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
             <p className="text-muted-foreground">{t('description')}</p>
           </div>
-          <Can permission="categories:create">
+          <Can permission="category:create">
             <Button onClick={handleAddCategory}>
               <Plus className="mr-2 h-4 w-4" />
               {t('add_category')}
@@ -186,7 +186,7 @@ function CategoriesPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-muted-foreground">{t('description')}</p>
         </div>
-        <Can permission="categories:create">
+        <Can permission="category:create">
           <Button onClick={handleAddCategory}>
             <Plus className="mr-2 h-4 w-4" />
             {t('add_category')}
@@ -245,9 +245,9 @@ function CategoriesPage() {
       {activeAction === "delete" && category && (
         <DeleteCategoryDialog category={category} tenantId={tenantId} onClose={onDialogClose} />
       )}
-      
+
     </div>
   );
 }
 
-export default withAuthorization(CategoriesPage, { permission: "categories:read" });
+export default withAuthorization(CategoriesPage, { permission: "category:read" });

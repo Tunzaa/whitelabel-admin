@@ -22,15 +22,15 @@ interface VendorEditPageProps {
 function VendorEditPage({ params }: VendorEditPageProps) {
   const router = useRouter();
   const { data: session } = useSession();
-  const { 
-    vendor, 
-    loading, 
-    error, 
-    fetchVendor, 
+  const {
+    vendor,
+    loading,
+    error,
+    fetchVendor,
     updateVendor,
-    updateStore 
+    updateStore
   } = useVendorStore();
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const vendorId = params.id;
   const tenantId = (session?.user as any)?.tenant_id;
@@ -59,11 +59,11 @@ function VendorEditPage({ params }: VendorEditPageProps) {
               branding: {
                 ...data.stores?.[0].branding,
                 "colors": {
-                    "primary": "#4285F4",
-                    "secondary": "#34A853",
-                    "accent": "#FBBC05",
-                    "text": "#333333",
-                    "background": "#FFFFFF"
+                  "primary": "#4285F4",
+                  "secondary": "#34A853",
+                  "accent": "#FBBC05",
+                  "text": "#333333",
+                  "background": "#FFFFFF"
                 }
               },
             };
@@ -134,9 +134,9 @@ function VendorEditPage({ params }: VendorEditPageProps) {
             </p>
           </div>
         </div>
-        <Button 
-          type="submit" 
-          form="marketplace-vendor-form" 
+        <Button
+          type="submit"
+          form="marketplace-vendor-form"
           disabled={isSubmitting || loading}
         >
           {isSubmitting ? (
@@ -162,4 +162,4 @@ function VendorEditPage({ params }: VendorEditPageProps) {
   ) : null;
 }
 
-export default withAuthorization(VendorEditPage, { permission: "vendors:update" });
+export default withAuthorization(VendorEditPage, { permission: "vendor:update" });

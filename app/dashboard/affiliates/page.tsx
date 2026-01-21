@@ -62,7 +62,7 @@ function TopAffiliatesTable({ affiliates }: TopAffiliatesTableProps) {
               </TableRow>
             ) : (
               affiliates.map((a: TopAffiliate) => (
-                <TableRow key={a.affiliate_id} onClick={() => router.push(`/dashboard/affiliates/${a.affiliate_id}`)}  className="hover:cursor-pointer hover:bg-muted/50" >
+                <TableRow key={a.affiliate_id} onClick={() => router.push(`/dashboard/affiliates/${a.affiliate_id}`)} className="hover:cursor-pointer hover:bg-muted/50" >
                   <TableCell>
                     <Avatar className="h-9 w-9">
                       <AvatarImage src={undefined} alt={a.name} />
@@ -238,7 +238,7 @@ function AffiliatesPage() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
 
   // Local search filtering, similar to VendorsPage
@@ -442,7 +442,7 @@ function AffiliatesPage() {
           <h1 className="text-2xl font-bold tracking-tight">Affiliates (Mawinga)</h1>
           <p className="text-muted-foreground">Manage marketplace affiliates</p>
         </div>
-        <Can permission="affiliates:create">
+        <Can permission="affiliate:create">
           <Button onClick={() => router.push("/dashboard/affiliates/add")}>
             <Plus className="mr-2 h-4 w-4" /> Add Affiliate
           </Button>
@@ -461,7 +461,7 @@ function AffiliatesPage() {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setCurrentPage(1); 
+                setCurrentPage(1);
               }}
             />
           </div>
@@ -579,4 +579,4 @@ function AffiliatesPage() {
   );
 }
 
-export default withAuthorization(AffiliatesPage, { permission: "affiliates:read" });
+export default withAuthorization(AffiliatesPage, { permission: "affiliate:read" });

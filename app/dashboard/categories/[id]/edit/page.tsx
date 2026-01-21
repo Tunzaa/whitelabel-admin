@@ -46,7 +46,7 @@ const EditCategoryPage = () => {
     }
   }, [tenantId, categoryId, fetchCategory, fetchCategories, tenantHeader]);
 
-    const handleUpdateCategory = async (data: CategoryFormValues) => {
+  const handleUpdateCategory = async (data: CategoryFormValues) => {
     setIsSubmitting(true);
     if (!tenantId) {
       toast.error(t('common:messages.tenant_id_missing'));
@@ -92,60 +92,60 @@ const EditCategoryPage = () => {
 
   return (
     <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center">
-                <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push(`/dashboard/categories/${currentCategory.category_id}`)}
-                className="mr-4"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    <span className="sr-only">{t('common:actions.back', 'Back')}</span>
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">
-                        {t('page.edit_title', { name: currentCategory?.name })}
-                    </h1>
-                    <p className="text-muted-foreground">
-                        {t('page.edit_description', 'Update category information and settings')}
-                    </p>
-                </div>
-            </div>
-            <Button 
-                type="submit"
-                form="edit-category-form"
-                disabled={isSubmitting || loading}
-            >
-                {isSubmitting ? (
-                <>
-                    <Spinner size="sm" color="white" />
-                    {t('common:actions.updating', 'Updating...')}
-                </>
-                ) : (
-                t('common:actions.save_changes', 'Save Changes')
-                )}
-            </Button>
+      <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push(`/dashboard/categories/${currentCategory.category_id}`)}
+            className="mr-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">{t('common:actions.back', 'Back')}</span>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t('page.edit_title', { name: currentCategory?.name })}
+            </h1>
+            <p className="text-muted-foreground">
+              {t('page.edit_description', 'Update category information and settings')}
+            </p>
+          </div>
         </div>
-        <div className="p-4">
-          <Card>
-              <CardHeader>
-                  <CardTitle>{t('form.edit_title')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                  <CategoryForm
-                      formId="edit-category-form"
-                      initialData={currentCategory}
-                      onFormSubmit={handleUpdateCategory}
-                      onCancel={handleCancel}
-                      isSubmitting={isSubmitting}
-                      parentCategories={categories}
-                  />
-              </CardContent>
-          </Card>
-        </div>
+        <Button
+          type="submit"
+          form="edit-category-form"
+          disabled={isSubmitting || loading}
+        >
+          {isSubmitting ? (
+            <>
+              <Spinner size="sm" color="white" />
+              {t('common:actions.updating', 'Updating...')}
+            </>
+          ) : (
+            t('common:actions.save_changes', 'Save Changes')
+          )}
+        </Button>
+      </div>
+      <div className="p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('form.edit_title')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CategoryForm
+              formId="edit-category-form"
+              initialData={currentCategory}
+              onFormSubmit={handleUpdateCategory}
+              onCancel={handleCancel}
+              isSubmitting={isSubmitting}
+              parentCategories={categories}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
 
-export default withAuthorization(EditCategoryPage, { permission: "categories:update" });
+export default withAuthorization(EditCategoryPage, { permission: "category:update" });

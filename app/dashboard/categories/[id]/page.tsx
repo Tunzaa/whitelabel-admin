@@ -281,8 +281,8 @@ function CategoryPage({ params }: CategoryPageProps) {
                 <ProductTable
                   products={products}
                   onEdit={(product) => router.push(`/dashboard/products/${product.product_id}`)}
-                  onDelete={() => {}} // Add delete functionality if needed
-                  onToggleStatus={() => {}} // Add toggle status functionality if needed
+                  onDelete={() => { }} // Add delete functionality if needed
+                  onToggleStatus={() => { }} // Add toggle status functionality if needed
                 />
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
@@ -306,28 +306,28 @@ function CategoryPage({ params }: CategoryPageProps) {
               <CardTitle>{t('status_card.title')}</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="space-y-2">
-                    <p className="text-sm font-medium">{t('common:status.title')}</p>
-                    <div className="flex items-center space-x-2">
-                        {getStatusBadge(category.is_active)}
-                        <Button variant="outline" size="sm" onClick={handleToggleStatus}>
-                            {category.is_active ? <PowerOff className="h-4 w-4 mr-2" /> : <Power className="h-4 w-4 mr-2" />}
-                            {t(category.is_active ? 'common:actions.deactivate' : 'common:actions.activate')}
-                        </Button>
-                    </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t('common:status.title')}</p>
+                <div className="flex items-center space-x-2">
+                  {getStatusBadge(category.is_active)}
+                  <Button variant="outline" size="sm" onClick={handleToggleStatus}>
+                    {category.is_active ? <PowerOff className="h-4 w-4 mr-2" /> : <Power className="h-4 w-4 mr-2" />}
+                    {t(category.is_active ? 'common:actions.deactivate' : 'common:actions.activate')}
+                  </Button>
                 </div>
-                <Separator className="my-4" />
-                <div>
-                    <p className="text-sm font-medium">{t('status_card.last_updated')}</p>
-                    <p className="text-sm text-muted-foreground">
-                        {category.updated_at ? format(new Date(category.updated_at), "PPP p") : t('common:na')}
-                    </p>
-                </div>
-                <Separator className="my-4" />
-                <div>
-                    <p className="text-sm font-medium">{t('status_card.products_count')}</p>
-                    <p className="text-sm text-muted-foreground">{products.length}</p>
-                </div>
+              </div>
+              <Separator className="my-4" />
+              <div>
+                <p className="text-sm font-medium">{t('status_card.last_updated')}</p>
+                <p className="text-sm text-muted-foreground">
+                  {category.updated_at ? format(new Date(category.updated_at), "PPP p") : t('common:na')}
+                </p>
+              </div>
+              <Separator className="my-4" />
+              <div>
+                <p className="text-sm font-medium">{t('status_card.products_count')}</p>
+                <p className="text-sm text-muted-foreground">{products.length}</p>
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -335,13 +335,13 @@ function CategoryPage({ params }: CategoryPageProps) {
               <CardTitle>{t('actions_card.title', 'Actions')}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col space-y-2">
-              <Can permission="categories:update">
+              <Can permission="category:update">
                 <Button variant="outline" onClick={() => router.push(`/dashboard/categories/${category.category_id}/edit`)}>
                   <Pencil className="h-4 w-4 mr-2" />
                   {t('common:actions.edit_entity', { entity: t('common:entity.category') })}
                 </Button>
               </Can>
-              <Can permission="categories:delete">
+              <Can permission="category:delete">
                 <Button variant="destructive" onClick={() => setActiveAction("delete")}>
                   <Trash className="h-4 w-4 mr-2" />
                   {t('common:actions.delete_entity', { entity: t('common:entity.category') })}
@@ -355,4 +355,4 @@ function CategoryPage({ params }: CategoryPageProps) {
   );
 }
 
-export default withAuthorization(CategoryPage, { permission: "categories:read" });
+export default withAuthorization(CategoryPage, { permission: "category:read" });

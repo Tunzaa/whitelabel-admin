@@ -55,59 +55,59 @@ const AddCategoryPage = () => {
 
   return (
     <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center">
-                <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push(`/dashboard/categories`)}
-                className="mr-4"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    <span className="sr-only">{t('common:actions.back')}</span>
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">
-                        {t('page.add_title')}
-                    </h1>
-                    <p className="text-muted-foreground">
-                        {t('page.add_description')}
-                    </p>
-                </div>
-            </div>
-            <Button 
-                type="submit"
-                form="add-category-form"
-                disabled={isSubmitting}
-            >
-                {isSubmitting ? (
-                <>
-                    <Spinner size="sm" color="white" />
-                    {t('common:actions.creating', 'Creating...')}
-                </>
-                ) : (
-                t('common:actions.create', 'Create')
-                )}
-            </Button>
+      <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push(`/dashboard/categories`)}
+            className="mr-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">{t('common:actions.back')}</span>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t('page.add_title')}
+            </h1>
+            <p className="text-muted-foreground">
+              {t('page.add_description')}
+            </p>
+          </div>
         </div>
-        <div className="p-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t('form.add_title')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <CategoryForm
-                        formId="add-category-form"
-                        onFormSubmit={handleCreateCategory}
-                        onCancel={handleCancel}
-                        isSubmitting={isSubmitting}
-                        parentCategories={categories}
-                    />
-                </CardContent>
-            </Card>
-        </div>
+        <Button
+          type="submit"
+          form="add-category-form"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Spinner size="sm" color="white" />
+              {t('common:actions.creating', 'Creating...')}
+            </>
+          ) : (
+            t('common:actions.create', 'Create')
+          )}
+        </Button>
+      </div>
+      <div className="p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('form.add_title')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CategoryForm
+              formId="add-category-form"
+              onFormSubmit={handleCreateCategory}
+              onCancel={handleCancel}
+              isSubmitting={isSubmitting}
+              parentCategories={categories}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
 
-export default withAuthorization(AddCategoryPage, { permission: "categories:create" });
+export default withAuthorization(AddCategoryPage, { permission: "category:create" });

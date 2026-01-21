@@ -222,7 +222,7 @@ function BulkUploadPage() {
     try {
       await approveBulkUploadBatch(batchId, session.user.name, { 'X-Tenant-ID': tenantId });
       toast.success('Batch approved successfully!');
-      
+
       // Refresh batches to show updated status
       if (selectedVendorId && storeId && tenantId) {
         const data = await fetchBulkUploadBatches(selectedVendorId, storeId, { 'X-Tenant-ID': tenantId });
@@ -564,9 +564,9 @@ function BulkUploadPage() {
                                       </Button>
                                     )}
                                     {(batch.status === "complete" || batch.status === "pending") && !batch.approved_at && (
-                                      <Button 
-                                        size="sm" 
-                                        variant="default" 
+                                      <Button
+                                        size="sm"
+                                        variant="default"
                                         className="gap-2"
                                         onClick={() => handleApproveBatch(batch.batch_id)}
                                         disabled={approvingBatchId === batch.batch_id}
@@ -609,4 +609,4 @@ function BulkUploadPage() {
   );
 }
 
-export default withAuthorization(BulkUploadPage, { permission: "products:create" });
+export default withAuthorization(BulkUploadPage, { permission: "product:create" });

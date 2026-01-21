@@ -69,9 +69,9 @@ function AddAffiliatePage() {
             </p>
           </div>
         </div>
-        <Button 
-          type="submit" 
-          form="marketplace-affiliate-form" 
+        <Button
+          type="submit"
+          form="marketplace-affiliate-form"
           disabled={isSubmitting || loading}
         >
           {isSubmitting ? (
@@ -92,4 +92,4 @@ function AddAffiliatePage() {
   );
 }
 
-export default withAuthorization(AddAffiliatePage, { permission: "affiliates:create" });
+export default withAuthorization(AddAffiliatePage, { permission: "affiliate:create" });

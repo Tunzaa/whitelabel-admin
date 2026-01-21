@@ -166,12 +166,12 @@ const VendorsTab = React.memo(function VendorsTab({
       cleanup.then(cleanupFn => cleanupFn?.());
     };
   }, [fetchData]);
-  
+
   const handleStatusChange = async (requestId: string, status: string, reason?: string) => {
     try {
       setLoading(true);
       const headers = tenantId ? { "X-Tenant-ID": tenantId } : {};
-      
+
       // Make API call to update the request status
       const response = await fetch(`/api/affiliates/requests/${requestId}/status`, {
         method: 'PATCH',
@@ -188,20 +188,20 @@ const VendorsTab = React.memo(function VendorsTab({
       if (!response.ok) {
         throw new Error('Failed to update request status');
       }
-      
+
       // Update the local state to reflect the change
-      setRequests(prev => 
-        prev.map(req => 
-          req.id === requestId 
-            ? { 
-                ...req, 
-                status, 
-                ...(reason && { rejection_reason: reason }) 
-              } 
+      setRequests(prev =>
+        prev.map(req =>
+          req.id === requestId
+            ? {
+              ...req,
+              status,
+              ...(reason && { rejection_reason: reason })
+            }
             : req
         )
       );
-      
+
       // Show success message
       // You can add a toast notification here if needed
     } catch (error) {
@@ -567,26 +567,26 @@ function AffiliateDetailPage() {
               affiliate?.status === "approved"
                 ? "default"
                 : affiliate?.status === "rejected"
-                ? "destructive"
-                : "outline"
+                  ? "destructive"
+                  : "outline"
             }
             className={
               affiliate?.status === "approved"
                 ? "bg-green-500 hover:bg-green-600 px-2 py-1"
                 : affiliate?.status === "rejected"
-                ? "px-2 py-1"
-                : "text-amber-500 border-amber-200 bg-amber-50 px-2 py-1"
+                  ? "px-2 py-1"
+                  : "text-amber-500 border-amber-200 bg-amber-50 px-2 py-1"
             }
           >
             {affiliate?.status === "approved"
               ? "Approved"
               : affiliate?.status === "rejected"
-              ? "Rejected"
-              : "Pending"}
+                ? "Rejected"
+                : "Pending"}
           </Badge>
 
           <div className="flex items-center gap-2 ml-2">
-            <Can permission="affiliates:update">
+            <Can permission="affiliate:update">
               <Button variant="outline" size="sm" onClick={handleEdit}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
@@ -698,13 +698,12 @@ function AffiliateDetailPage() {
                 {affiliate?.status && (
                   <Badge
                     variant="outline"
-                    className={`mt-2 ${
-                      affiliate?.status === "approved"
-                        ? "text-green-600 border-green-200 bg-green-50"
-                        : affiliate?.status === "rejected"
+                    className={`mt-2 ${affiliate?.status === "approved"
+                      ? "text-green-600 border-green-200 bg-green-50"
+                      : affiliate?.status === "rejected"
                         ? "text-red-600 border-red-200 bg-red-50"
                         : "text-amber-600 border-amber-200 bg-amber-50"
-                    }`}
+                      }`}
                   >
                     {affiliate?.status.charAt(0).toUpperCase() +
                       affiliate?.status.slice(1)}
@@ -949,7 +948,7 @@ function AffiliateDetailPage() {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Verification</h4>
                 <div className="flex flex-col gap-2">
-                  <Can permission="affiliates:approve">
+                  <Can permission="affiliate:approve">
                     <Button
                       variant="outline"
                       size="sm"
@@ -960,7 +959,7 @@ function AffiliateDetailPage() {
                       <Check className="h-4 w-4 mr-2" /> Approve Affiliate
                     </Button>
                   </Can>
-                  <Can permission="affiliates:reject">
+                  <Can permission="affiliate:reject">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1010,7 +1009,7 @@ function AffiliateDetailPage() {
             {affiliate?.status === "approved" && (
               <div className="space-y-2">
                 <div className="flex flex-col gap-2">
-                  <Can permission="affiliates:update">
+                  <Can permission="affiliate:update">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1028,7 +1027,7 @@ function AffiliateDetailPage() {
             {affiliate?.status === "rejected" && (
               <div className="space-y-2">
                 <div className="flex flex-col gap-2">
-                  <Can permission="affiliates:update">
+                  <Can permission="affiliate:update">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1045,7 +1044,7 @@ function AffiliateDetailPage() {
 
             <div className="space-y-2">
               <div className="flex flex-col gap-2">
-                <Can permission="affiliates:update">
+                <Can permission="affiliate:update">
                   <Button
                     variant="outline"
                     size="sm"
@@ -1064,4 +1063,4 @@ function AffiliateDetailPage() {
   }
 }
 
-export default withAuthorization(AffiliateDetailPage, { permission: "affiliates:read" });
+export default withAuthorization(AffiliateDetailPage, { permission: "affiliate:read" });
