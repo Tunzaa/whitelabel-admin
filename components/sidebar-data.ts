@@ -1,27 +1,18 @@
 import {
-  IconBusinessplan,
   IconCategory,
   IconChartBar,
   IconCreditCard,
-  IconFileDescription,
   IconHelp,
   IconListDetails,
   IconPackage,
   IconTruck,
   IconUsers,
-  IconFileAi,
-  IconDatabase,
-  IconReport,
-  IconFileWord,
-  IconCamera,
-  IconSearch,
-  IconUserShield,
-  IconSettings,
   IconSettings2,
-  IconPackages,
   IconCoins,
   IconUserCode,
   IconGift,
+  IconSearch,
+  IconUserShield,
 } from "@tabler/icons-react";
 
 // Create a separate file for navigation data to ensure consistency
@@ -61,19 +52,19 @@ export const navigationData: NavigationData = {
       title: "Categories",
       url: "/dashboard/categories",
       icon: IconCategory,
-      requiredPermission: "categories:read",
+      requiredPermission: "category:read",
     },
     {
       title: "Products & Services",
       url: "/dashboard/products",
       icon: IconPackage,
-      requiredPermission: "products:read",
+      requiredPermission: "product:read",
     },
     {
       title: "Vendors",
       url: "/dashboard/vendors",
       icon: IconUsers,
-      requiredPermission: "vendors:read",
+      requiredPermission: "vendor:view",
     },
     ...(isAffiliatesEnabled() ? [{
       title: "Affiliates (Mawinga)",
@@ -91,7 +82,7 @@ export const navigationData: NavigationData = {
       title: "Orders",
       url: "/dashboard/orders",
       icon: IconListDetails,
-      requiredPermission: "orders:read",
+      requiredPermission: "order:read",
       items: [
         {
           title: "Deliveries",
@@ -153,7 +144,7 @@ export const navigationData: NavigationData = {
       title: "Marketplace Settings",
       url: "/dashboard/tenants/marketplace",
       icon: IconSettings2,
-      requiredPermission: "marketplace-settings",
+      requiredPermission: "branding:update",
     },
     {
       title: "Users",

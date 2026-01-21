@@ -41,7 +41,7 @@ interface DashboardState {
     loadingAverageOrderValue: boolean;
     loadingNewVsReturningBuyers: boolean;
     loadingCartAbandonmentRate: boolean;
-    
+
     error: string | null;
 
     // Fetch Functions
@@ -108,7 +108,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     averageOrderValue: [],
     newVsReturningBuyers: [],
     cartAbandonmentRate: [],
-    
+
     // Initial Loading State
     loadingGmvData: false,
     loadingActiveUsersData: false,
@@ -121,7 +121,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     loadingAverageOrderValue: false,
     loadingNewVsReturningBuyers: false,
     loadingCartAbandonmentRate: false,
-    
+
     error: null,
 
     // Fetcher Implementations
@@ -138,18 +138,28 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     fetchCartAbandonmentRate: createReportFetcher(set, 'cart-abandonment-rate', 'cartAbandonmentRate', 'loadingCartAbandonmentRate'),
 
     // Function to fetch all reports
-    fetchAllReports: (tenantId: string) => {
+    fetchAllReports: async (tenantId: string) => {
         const state = get();
-        state.fetchGmvReport(tenantId);
-        state.fetchActiveUsersReport(tenantId);
-        state.fetchOrderStatusDistributionReport(tenantId);
-        state.fetchPaymentSuccessRate(tenantId);
-        state.fetchTopPerformingProducts(tenantId);
-        state.fetchDailyGmvPerformance(tenantId);
-        state.fetchWeeklyGmvPerformance(tenantId);
-        state.fetchMonthlyGmvPerformance(tenantId);
-        state.fetchAverageOrderValue(tenantId);
-        state.fetchNewVsReturningBuyers(tenantId);
-        state.fetchCartAbandonmentRate(tenantId);
+
+        const fetchers = [
+            state.fetchGmvReport,
+            state.fetchActiveUsersReport,
+            state.fetchOrderStatusDistributionReport,
+            state.fetchPaymentSuccessRate,
+            state.fetchTopPerformingProducts,
+            state.fetchDailyGmvPerformance,
+            state.fetchWeeklyGmvPerformance,
+            state.fetchMonthlyGmvPerformance,
+            state.fetchAverageOrderValue,
+            state.fetchNewVsReturningBuyers,
+            state.fetchCartAbandonmentRate,
+        ];
+
+        // Execute in batches of 3 to avoid hitting rate limits or overwhelming the server
+        const BATCH_SIZE = 3;
+        for (let i = 0; i < fetchers.length; i += BATCH_SIZE) {
+            const batch = fetchers.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(fetcher => fetcher(tenantId)));
+        }
     },
 }));
