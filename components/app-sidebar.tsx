@@ -31,11 +31,8 @@ import useAuthStore from "@/features/auth/store";
 
 // Use the imported navigation data instead of redefining it inline
 const data = {
-
   navMain: navigationData.navMain,
   navSecondary: navigationData.navSecondary,
-  navClouds: navigationData.navClouds,
-  documents: navigationData.documents,
 };
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -44,28 +41,28 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
   const { data: session } = useSession();
-  const { can, hasRole, isLoading, permissionsLoaded } = usePermissions();
+  const { can, hasRole, isLoading, permissionsLoaded, permissions } = usePermissions();
   const userFromStore = useAuthStore((state) => state.user);
 
   const user = userFromStore
     ? {
-        name: userFromStore.name,
-        email: userFromStore.email,
-        avatar: session?.user?.image || "/avatars/default.jpg", // Still get avatar from session for now
-      }
+      name: userFromStore.name,
+      email: userFromStore.email,
+      avatar: session?.user?.image || "/avatars/default.jpg", // Still get avatar from session for now
+    }
     : {
-        name: "Guest",
-        email: "",
-        avatar: "/avatars/default.jpg",
-      };
+      name: "Guest",
+      email: "",
+      avatar: "/avatars/default.jpg",
+    };
 
   const filterByPermissionAndRole = (item: NavItem) => {
     // Check permission requirement
     const hasRequiredPermission = !item.requiredPermission || can(item.requiredPermission);
-    
+
     // Check role requirement
     const hasRequiredRole = !item.requiredRole || hasRole(item.requiredRole);
-    
+
     // Both conditions must be met
     return hasRequiredPermission && hasRequiredRole;
   };
@@ -73,8 +70,9 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
   const filteredNavMain = React.useMemo(() => {
     // Don't show any navigation items until permissions are loaded
     if (!permissionsLoaded) return [];
+
     return data.navMain.filter(filterByPermissionAndRole);
-  }, [can, hasRole, permissionsLoaded]);
+  }, [filterByPermissionAndRole, permissionsLoaded]);
 
   const filteredNavSecondary = React.useMemo(() => {
     // Don't show any navigation items until permissions are loaded

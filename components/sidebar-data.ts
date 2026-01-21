@@ -76,7 +76,7 @@ export const navigationData: NavigationData = {
       title: "Delivery Partners",
       url: "/dashboard/delivery-partners",
       icon: IconTruck,
-      requiredPermission: "partner:read",
+      requiredPermission: "kyc:view",
     },
     {
       title: "Orders",
@@ -87,17 +87,14 @@ export const navigationData: NavigationData = {
         {
           title: "Deliveries",
           url: "/dashboard/orders/deliveries",
-          icon: IconTruck,
         },
         {
           title: "Refunds",
           url: "/dashboard/orders/refunds",
-          icon: IconCreditCard,
         },
         {
           title: "Transactions",
           url: "/dashboard/orders/transactions",
-          icon: IconCoins,
         }
       ],
     },
@@ -105,7 +102,7 @@ export const navigationData: NavigationData = {
       title: "Rewards & Referrals",
       url: "/dashboard/rewards",
       icon: IconGift,
-      requiredPermission: "reward:read",
+      requiredPermission: "earnings:view",
     },
     // {
     //   title: "Vendor Loans",
@@ -135,7 +132,6 @@ export const navigationData: NavigationData = {
       url: "https://support.afrizon.africa/app/accounts/1/dashboard",
       target: "_blank",
       icon: IconHelp,
-      requiredPermission: "ticket:read",
     },
   ],
 
@@ -150,13 +146,13 @@ export const navigationData: NavigationData = {
       title: "Users",
       url: "/dashboard/auth/users",
       icon: IconUsers,
-      requiredPermission: "user:read",
+      requiredPermission: "account:read",
     },
     {
       title: "User Roles",
       url: "/dashboard/auth/roles",
       icon: IconUserShield,
-      requiredPermission: "role:read",
+      requiredPermission: "account:read",
     },
     // {
     //   title: "Get Help",
@@ -169,6 +165,8 @@ export const navigationData: NavigationData = {
       icon: IconSearch,
     },
   ],
+
+  navClouds: [],
 
   // navClouds: [
   //   {

@@ -822,4 +822,4 @@ function ProductPage({ params }: ProductPageProps) {
   ) : null;
 }
 
-export default withAuthorization(ProductPage, { permission: "products:read" });
+export default withAuthorization(ProductPage, { permission: "product:read" });

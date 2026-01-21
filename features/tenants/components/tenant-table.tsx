@@ -129,10 +129,10 @@ export function TenantTable({
                         className="w-8 h-8 rounded-md flex items-center justify-center overflow-hidden bg-muted"
                         style={{
                           backgroundColor:
-                            tenant.branding.theme.colors.background.primary,
+                            tenant.branding?.theme?.colors?.background?.primary || "#000",
                         }}
                       >
-                        {tenant.branding.logoUrl ? (
+                        {tenant.branding?.logoUrl ? (
                           <img
                             src={tenant.branding.logoUrl}
                             alt={tenant.name}
@@ -142,7 +142,7 @@ export function TenantTable({
                           <span
                             className="text-sm font-medium"
                             style={{
-                              color: tenant.branding.theme.colors.text.primary,
+                              color: tenant.branding?.theme?.colors?.text?.primary || "#fff",
                             }}
                           >
                             {tenant.name.charAt(0)}
