@@ -6,6 +6,8 @@ import {
   IconInnerShadowTop,
   IconBell,
 } from "@tabler/icons-react";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
@@ -40,6 +42,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
+  const pathname = usePathname();
   const { data: session } = useSession();
   const { can, hasRole, isLoading, permissionsLoaded, permissions } = usePermissions();
   const userFromStore = useAuthStore((state) => state.user);
@@ -131,7 +134,11 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
             <SidebarMenuButton
               asChild
               tooltip="Dashboard"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+              isActive={pathname === "/dashboard"}
+              className={cn(
+                "min-w-8 duration-200 ease-linear",
+                pathname === "/dashboard" && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+              )}
             >
               <a href="/dashboard">
                 <IconDashboard />
@@ -160,7 +167,11 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
                   <>
                     <SidebarMenuButton
                       asChild
-                      className="data-[slot=sidebar-menu-button]:!p-1.5"
+                      isActive={pathname === item.url}
+                      className={cn(
+                        "data-[slot=sidebar-menu-button]:!p-1.5",
+                        pathname === item.url && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+                      )}
                     >
                       <a href={item.url} target={item.target} rel={item.target === "_blank" ? "noopener noreferrer" : undefined}>
                         <item.icon />
@@ -170,7 +181,7 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
                     <SidebarMenuSub>
                       {item.items.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
+                          <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
                             <a href={subItem.url}>
                               <span>{subItem.title}</span>
                             </a>
@@ -182,7 +193,11 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
                 ) : (
                   <SidebarMenuButton
                     asChild
-                    className="data-[slot=sidebar-menu-button]:!p-1.5"
+                    isActive={pathname === item.url}
+                    className={cn(
+                      "data-[slot=sidebar-menu-button]:!p-1.5",
+                      pathname === item.url && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+                    )}
                   >
                     <a href={item.url} target={item.target} rel={item.target === "_blank" ? "noopener noreferrer" : undefined}>
                       <item.icon />
