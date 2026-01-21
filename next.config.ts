@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
     domains: ["placehold.co"],
   },
   eslint: { ignoreDuringBuilds: true },
+  async rewrites() {
+    return [
+      {
+        source: "/api/proxy/:path*",
+        destination: "http://164.92.162.131:8000/v1/:path*", // Proxy to Backend
+      },
+    ];
+  },
 };
 
 export default nextConfig;
