@@ -138,6 +138,7 @@ export interface VendorFilter {
 }
 
 export interface VendorListResponse {
+    length: number;
     items: Vendor[];
     total: number;
     skip: number;

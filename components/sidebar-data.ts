@@ -45,7 +45,7 @@ export const navigationData: NavigationData = {
       title: "Tenants",
       url: "/dashboard/tenants",
       icon: IconChartBar,
-      requiredPermission: "tenants:read",
+      requiredPermission: "tenant:read",
       requiredRole: "super",
     },
     {
@@ -70,13 +70,13 @@ export const navigationData: NavigationData = {
       title: "Affiliates (Mawinga)",
       url: "/dashboard/affiliates",
       icon: IconUserCode,
-      requiredPermission: "affiliates:read",
+      requiredPermission: "affiliate:read",
     }] : []),
     {
       title: "Delivery Partners",
       url: "/dashboard/delivery-partners",
       icon: IconTruck,
-      requiredPermission: "delivery-partners:read",
+      requiredPermission: "partner:read",
     },
     {
       title: "Orders",
@@ -105,7 +105,7 @@ export const navigationData: NavigationData = {
       title: "Rewards & Referrals",
       url: "/dashboard/rewards",
       icon: IconGift,
-      requiredPermission: "rewards:read",
+      requiredPermission: "reward:read",
     },
     // {
     //   title: "Vendor Loans",
@@ -135,7 +135,7 @@ export const navigationData: NavigationData = {
       url: "https://support.afrizon.africa/app/accounts/1/dashboard",
       target: "_blank",
       icon: IconHelp,
-      requiredPermission: "support",
+      requiredPermission: "ticket:read",
     },
   ],
 
@@ -150,13 +150,13 @@ export const navigationData: NavigationData = {
       title: "Users",
       url: "/dashboard/auth/users",
       icon: IconUsers,
-      requiredPermission: "users:read",
+      requiredPermission: "user:read",
     },
     {
       title: "User Roles",
       url: "/dashboard/auth/roles",
       icon: IconUserShield,
-      requiredPermission: "roles:read",
+      requiredPermission: "role:read",
     },
     // {
     //   title: "Get Help",

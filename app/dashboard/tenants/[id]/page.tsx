@@ -85,25 +85,25 @@ function TenantPage({ params }: TenantPageProps) {
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Back</span>
           </Button>
-          
+
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage 
-                src={tenant.branding?.theme?.logo?.primary || tenant.branding?.logoUrl} 
-                alt={tenant.name} 
+              <AvatarImage
+                src={tenant.branding?.theme?.logo?.primary || tenant.branding?.logoUrl}
+                alt={tenant.name}
               />
               <AvatarFallback style={{ backgroundColor: tenant.branding?.theme?.colors?.primary }}>
                 {tenant.name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            
+
             <div>
               <h1 className="text-2xl font-bold tracking-tight">{tenant.name}</h1>
               <p className="text-muted-foreground text-sm flex items-center gap-1">
                 <Globe className="h-3 w-3" />
-                <a 
-                  href={tenant.domain.startsWith('http') ? tenant.domain : `https://${tenant.domain}`} 
-                  target="_blank" 
+                <a
+                  href={tenant.domain.startsWith('http') ? tenant.domain : `https://${tenant.domain}`}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline flex items-center"
                 >
@@ -114,15 +114,15 @@ function TenantPage({ params }: TenantPageProps) {
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <Badge 
-            variant={tenant.is_active ? "default" : "destructive"} 
+          <Badge
+            variant={tenant.is_active ? "default" : "destructive"}
             className={tenant.is_active ? "bg-green-500 hover:bg-green-600 px-2 py-1" : "px-2 py-1"}
           >
             {tenant.is_active ? "Active" : "Inactive"}
           </Badge>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -155,7 +155,7 @@ function TenantPage({ params }: TenantPageProps) {
                         </Badge>
                       </div>
                     </CardHeader>
-                    
+
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-1">
@@ -167,7 +167,7 @@ function TenantPage({ params }: TenantPageProps) {
                             <Badge variant="outline">{tenant.currency || "Not specified"}</Badge>
                           </p>
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                             <Languages className="h-4 w-4" /> Supported Languages
@@ -184,7 +184,7 @@ function TenantPage({ params }: TenantPageProps) {
                             )}
                           </div>
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                             <Calendar className="h-4 w-4" /> Created On
@@ -203,7 +203,7 @@ function TenantPage({ params }: TenantPageProps) {
                         Modules currently enabled for this tenant
                       </CardDescription>
                     </CardHeader>
-                    
+
                     <CardContent>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {platformModules.map((moduleConfig) => {
@@ -248,7 +248,7 @@ function TenantPage({ params }: TenantPageProps) {
                         This Month
                       </Button>
                     </CardHeader>
-                    
+
                     <CardContent>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <Card>
@@ -263,7 +263,7 @@ function TenantPage({ params }: TenantPageProps) {
                             </div>
                           </CardContent>
                         </Card>
-                        
+
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col gap-1">
@@ -273,7 +273,7 @@ function TenantPage({ params }: TenantPageProps) {
                             </div>
                           </CardContent>
                         </Card>
-                        
+
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col gap-1">
@@ -300,13 +300,13 @@ function TenantPage({ params }: TenantPageProps) {
               <CardHeader>
                 <CardTitle>Contact Information</CardTitle>
               </CardHeader>
-              
+
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Admin Email</p>
                   <p className="text-sm break-all">
-                    <a 
-                      href={`mailto:${tenant.admin_email}`} 
+                    <a
+                      href={`mailto:${tenant.admin_email}`}
                       className="hover:underline flex items-center"
                     >
                       {tenant.admin_email || "Not provided"}
@@ -314,12 +314,12 @@ function TenantPage({ params }: TenantPageProps) {
                     </a>
                   </p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Admin Phone</p>
                   <p className="text-sm">
-                    <a 
-                      href={`tel:${tenant.admin_phone}`} 
+                    <a
+                      href={`tel:${tenant.admin_phone}`}
                       className="hover:underline flex items-center"
                     >
                       {tenant.admin_phone || "Not provided"}
@@ -335,7 +335,7 @@ function TenantPage({ params }: TenantPageProps) {
               <CardHeader>
                 <CardTitle>Brand Colors</CardTitle>
               </CardHeader>
-              
+
               <CardContent>
                 <div className="grid grid-cols-2 gap-2">
                   {tenant.branding?.theme?.colors && Object.entries(tenant.branding.theme.colors).map(([colorName, value]) => {
@@ -343,8 +343,8 @@ function TenantPage({ params }: TenantPageProps) {
                     if (typeof value === 'string') {
                       return (
                         <div key={colorName} className="flex items-center gap-2">
-                          <div 
-                            className="w-6 h-6 rounded-full border" 
+                          <div
+                            className="w-6 h-6 rounded-full border"
                             style={{ backgroundColor: value }}
                           />
                           <span className="text-xs capitalize">{colorName}</span>
@@ -356,26 +356,26 @@ function TenantPage({ params }: TenantPageProps) {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Tenant Actions */}
             <Card>
               <CardHeader>
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
-              
+
               <CardContent className="space-y-3">
-                <Button 
+                <Button
                   variant={tenant.is_active ? "destructive" : "default"}
                   className="w-full"
                   disabled={isSubmitting}
                   onClick={async () => {
                     try {
                       setIsSubmitting(true);
-                      await tenantStore.updateTenant(tenantId, { 
-                        is_active: !tenant.is_active 
+                      await tenantStore.updateTenant(tenantId, {
+                        is_active: !tenant.is_active
                       });
-                      toast.success(tenant.is_active 
-                        ? "Tenant deactivated successfully" 
+                      toast.success(tenant.is_active
+                        ? "Tenant deactivated successfully"
                         : "Tenant activated successfully"
                       );
                     } catch (error) {
@@ -391,9 +391,9 @@ function TenantPage({ params }: TenantPageProps) {
                     tenant.is_active ? "Deactivate Tenant" : "Activate Tenant"
                   )}
                 </Button>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   className="w-full"
                   onClick={() => router.push(`/dashboard/tenants/${tenantId}/edit`)}
                 >
@@ -409,4 +409,4 @@ function TenantPage({ params }: TenantPageProps) {
   ) : null;
 }
 
-export default withAuthorization(TenantPage, { permission: "tenants:read", role: "super" });
+export default withAuthorization(TenantPage, { permission: "tenant:read", role: "super" });

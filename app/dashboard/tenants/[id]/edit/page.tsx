@@ -97,7 +97,7 @@ function TenantEditPage({ params }: TenantEditPageProps) {
             </p>
           </div>
         </div>
-        <Button 
+        <Button
           type="submit"
           form="marketplace-tenant-form"
           disabled={isSubmitting}
@@ -118,7 +118,7 @@ function TenantEditPage({ params }: TenantEditPageProps) {
 
       <div className="flex-1 p-4 overflow-auto">
         {tenant && (
-          <TenantForm 
+          <TenantForm
             id="marketplace-tenant-form"
             initialData={{
               ...tenant,
@@ -138,7 +138,7 @@ function TenantEditPage({ params }: TenantEditPageProps) {
                 },
               },
             }}
-            onSubmit={handleSubmit} 
+            onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
           />
         )}
@@ -147,4 +147,4 @@ function TenantEditPage({ params }: TenantEditPageProps) {
   ) : null;
 }
 
-export default withAuthorization(TenantEditPage, "tenants:update");
+export default withAuthorization(TenantEditPage, "tenant:update");

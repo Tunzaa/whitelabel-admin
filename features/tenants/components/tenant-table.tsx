@@ -73,7 +73,7 @@ export function TenantTable({
         return <Badge variant="destructive">Inactive</Badge>;
     }
   };
-  
+
   // Handler for table row clicks
   const handleRowClick = (tenantId: string) => {
     router.push(`/dashboard/tenants/${tenantId}`);
@@ -118,8 +118,8 @@ export function TenantTable({
               </TableRow>
             ) : (
               tenants.map((tenant) => (
-                <TableRow 
-                  key={tenant.tenant_id} 
+                <TableRow
+                  key={tenant.tenant_id}
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleRowClick(tenant.tenant_id)}
                 >
@@ -185,7 +185,7 @@ export function TenantTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <Can permission="tenants:read" role="super">
+                        <Can permission="tenant:read" role="super">
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
@@ -195,7 +195,7 @@ export function TenantTable({
                             View Details
                           </DropdownMenuItem>
                         </Can>
-                        <Can permission="tenants:update">
+                        <Can permission="tenant:update">
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
@@ -205,7 +205,7 @@ export function TenantTable({
                             Marketplace Settings
                           </DropdownMenuItem>
                         </Can>
-                        <Can permission="tenants:update">
+                        <Can permission="tenant:update">
                           <DropdownMenuSeparator />
                           {tenant.is_active ? (
                             <DropdownMenuItem

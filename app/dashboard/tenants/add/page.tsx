@@ -16,20 +16,20 @@ function TenantAddPage() {
   const { data: session } = useSession();
   const tenantStore = useTenantStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const handleSubmit = async (data: Record<string, any>) => {
     setIsSubmitting(true);
     try {
       // Ensure we have user_id from session or fallback to default
       const tenantData = {
         ...data,
-        // user_id: session?.user?.id || "13c94ad0-1071-431a-9d59-93eeee25ca0a", 
+        // user_id: session?.user?.id || "13c94ad0-1071-431a-9d59-93eeee25ca0a",
       };
 
       const newTenant = await tenantStore.createTenant(tenantData);
 
       toast.success("Tenant created successfully");
-      
+
       // Navigate to the tenant details page for the newly created tenant
       if (newTenant && newTenant.tenant_id) {
         return { id: newTenant.tenant_id }; // <-- Return the backend response
@@ -63,7 +63,7 @@ function TenantAddPage() {
             </p>
           </div>
         </div>
-        <Button 
+        <Button
           type="submit"
           form="marketplace-tenant-form"
           disabled={isSubmitting}
@@ -89,4 +89,4 @@ function TenantAddPage() {
   );
 }
 
-export default withAuthorization(TenantAddPage, "tenants:create");
+export default withAuthorization(TenantAddPage, "tenant:create");
