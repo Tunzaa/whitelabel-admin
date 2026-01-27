@@ -33,7 +33,16 @@ export function generateMockLoanRequests(): LoanRequest[] {
       approved_by: 'user_admin',
       approved_at: '2025-01-28T14:20:00Z',
       created_at: '2025-01-25T10:30:00Z',
-      updated_at: '2025-01-28T14:20:00Z'
+      updated_at: '2025-01-28T14:20:00Z',
+      penalties: [
+        {
+          penalty_id: 'pen_1',
+          amount: 50000,
+          reason: 'Late payment for March',
+          applied_at: '2025-03-15T10:00:00Z',
+          status: 'pending'
+        }
+      ]
     },
     {
       request_id: 'request_2',
@@ -98,6 +107,7 @@ export function generateMockLoanRequests(): LoanRequest[] {
       status: 'active',
       approved_by: 'user_admin',
       approved_at: '2025-04-05T15:10:00Z',
+      disbursed_at: '2025-04-06T10:00:00Z',
       created_at: '2025-04-02T10:20:00Z',
       updated_at: '2025-04-05T15:10:00Z'
     },
@@ -121,6 +131,8 @@ export function generateMockLoanRequests(): LoanRequest[] {
       status: 'completed',
       approved_by: 'user_admin',
       approved_at: '2024-05-25T09:30:00Z',
+      disbursed_at: '2024-05-26T14:00:00Z',
+      paid_at: '2025-04-10T11:20:00Z',
       created_at: '2024-05-20T14:15:00Z',
       updated_at: '2025-04-10T11:20:00Z'
     }
@@ -129,14 +141,14 @@ export function generateMockLoanRequests(): LoanRequest[] {
 
 // Generate mock payment schedule based on loan parameters
 export function generateMockPaymentSchedule(
-  amount: number, 
-  interestRate: number, 
-  termLength: number, 
+  amount: number,
+  interestRate: number,
+  termLength: number,
   paymentFrequency: string
 ): PaymentSchedule[] {
   const schedule: PaymentSchedule[] = [];
   const interestRateDecimal = interestRate / 100;
-  
+
   // Calculate number of payments based on frequency
   let numberOfPayments = termLength;
   if (paymentFrequency === 'weekly') {
@@ -144,20 +156,20 @@ export function generateMockPaymentSchedule(
   } else if (paymentFrequency === 'bi-weekly') {
     numberOfPayments = termLength * 2; // Bi-weekly payments per month
   }
-  
+
   // Calculate payment amount (principal + interest)
   const totalInterest = amount * interestRateDecimal * (termLength / 12); // Annual interest pro-rated
   const totalAmount = amount + totalInterest;
   const paymentAmount = totalAmount / numberOfPayments;
   const principalPerPayment = amount / numberOfPayments;
   const interestPerPayment = totalInterest / numberOfPayments;
-  
+
   // Generate payment dates and details
   const startDate = new Date();
-  
+
   for (let i = 0; i < numberOfPayments; i++) {
     const paymentDate = new Date(startDate);
-    
+
     // Set due date based on payment frequency
     if (paymentFrequency === 'weekly') {
       paymentDate.setDate(paymentDate.getDate() + (i * 7));
@@ -166,21 +178,21 @@ export function generateMockPaymentSchedule(
     } else {
       paymentDate.setMonth(paymentDate.getMonth() + i);
     }
-    
+
     // Determine payment status based on the current date
     let status: 'pending' | 'paid' | 'overdue' | 'partial' = 'pending';
     let amountPaid: number | undefined = undefined;
     let paymentDateStr: string | undefined = undefined;
-    
+
     const currentDate = new Date();
-    
+
     if (paymentDate < currentDate && i < 3) {
       // Past payments are typically paid
       status = 'paid';
       amountPaid = paymentAmount;
       paymentDateStr = new Date(paymentDate.getTime() - 86400000 * 2).toISOString(); // 2 days before due date
     }
-    
+
     schedule.push({
       payment_id: `payment_${i + 1}`,
       due_date: paymentDate.toISOString(),
@@ -192,7 +204,7 @@ export function generateMockPaymentSchedule(
       amount_paid: amountPaid
     });
   }
-  
+
   return schedule;
 }
 
@@ -204,36 +216,36 @@ export function generateMockVendorRevenue(vendorId: string, period: string): Ven
   let transactionCount: number;
   let startDate: string;
   let endDate: string;
-  
+
   const currentDate = new Date();
-  
+
   if (period === 'weekly') {
     amount = Math.round(randomMultiplier * 150000 + Math.random() * 50000);
     transactionCount = Math.floor(randomMultiplier * 15 + Math.random() * 10);
-    
+
     const endDateObj = new Date(currentDate);
     const startDateObj = new Date(currentDate);
     startDateObj.setDate(startDateObj.getDate() - 7);
-    
+
     startDate = startDateObj.toISOString();
     endDate = endDateObj.toISOString();
   } else {
     // Monthly
     amount = Math.round(randomMultiplier * 600000 + Math.random() * 200000);
     transactionCount = Math.floor(randomMultiplier * 60 + Math.random() * 40);
-    
+
     const endDateObj = new Date(currentDate);
     const startDateObj = new Date(currentDate);
     startDateObj.setMonth(startDateObj.getMonth() - 1);
-    
+
     startDate = startDateObj.toISOString();
     endDate = endDateObj.toISOString();
   }
-  
+
   // Previous period for comparison
   const prevAmount = Math.round(amount * (0.8 + Math.random() * 0.4));
   const growthPercentage = Math.round(((amount - prevAmount) / prevAmount) * 100 * 10) / 10;
-  
+
   return {
     vendor_id: vendorId,
     period,

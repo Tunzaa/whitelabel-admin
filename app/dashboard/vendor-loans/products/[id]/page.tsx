@@ -28,23 +28,8 @@ import { generateMockLoanProducts } from "@/features/loans/products/data/mock-da
 import { generateMockLoanProviders } from "@/features/loans/providers/data/mock-data";
 import { LoanProduct } from "@/features/loans/products/types";
 import { LoanProvider } from "@/features/loans/providers/types";
+import { compactCurrency } from "@/lib/utils";
 
-// Format currency directly to avoid import issues
-const formatCurrency = (value: number | string | undefined): string => {
-  if (value === undefined) return '$0.00';
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
-
-  if (isNaN(numValue)) {
-    return '$0.00';
-  }
-
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(numValue);
-};
 
 interface LoanProductDetailPageProps {
   params: {
@@ -189,7 +174,7 @@ export default function LoanProductDetailPage({ params }: LoanProductDetailPageP
           status: productError?.status ? String(productError.status) : "error"
         }}
         buttonText="Back to Products"
-        buttonAction={() => router.push("/dashboard/loans/products")}
+        buttonAction={() => router.push("/dashboard/vendor-loans/products")}
         buttonIcon={ArrowLeft}
       />
     );
@@ -208,7 +193,7 @@ export default function LoanProductDetailPage({ params }: LoanProductDetailPageP
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/dashboard/loans/products")}
+            onClick={() => router.push("/dashboard/vendor-loans/products")}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -244,7 +229,7 @@ export default function LoanProductDetailPage({ params }: LoanProductDetailPageP
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push(`/dashboard/loans/products/${id}/edit`)}
+            onClick={() => router.push(`/dashboard/vendor-loans/products/${id}/edit`)}
           >
             <Edit className="h-4 w-4 mr-2" />
             Edit
@@ -314,7 +299,7 @@ export default function LoanProductDetailPage({ params }: LoanProductDetailPageP
                               <div className="mt-2 pt-2 border-t border-dashed border-muted">
                                 <p className="text-xs text-muted-foreground">
                                   {calculateTotalInterest(10000, product.interest_rate, product.term_options[0]) > 0 ?
-                                    `~${formatCurrency(calculateTotalInterest(10000, product.interest_rate, product.term_options[0]))} interest on $10k/${product.term_options[0]}mo` :
+                                    `~${compactCurrency(calculateTotalInterest(10000, product.interest_rate, product.term_options[0]))} interest on $10k/${product.term_options[0]}mo` :
                                     'Interest calculation not available'}
                                 </p>
                               </div>
@@ -337,14 +322,14 @@ export default function LoanProductDetailPage({ params }: LoanProductDetailPageP
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="text-xs text-muted-foreground">Min</p>
-                                <p className="text-lg font-semibold">{formatCurrency(product?.min_amount)}</p>
+                                <p className="text-lg font-semibold">{compactCurrency(product?.min_amount)}</p>
                               </div>
                               <div className="text-center">
                                 <span className="text-muted-foreground">—</span>
                               </div>
                               <div className="text-right">
                                 <p className="text-xs text-muted-foreground">Max</p>
-                                <p className="text-lg font-semibold">{formatCurrency(product?.max_amount)}</p>
+                                <p className="text-lg font-semibold">{compactCurrency(product?.max_amount)}</p>
                               </div>
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">Loan amount boundaries</p>
@@ -429,7 +414,7 @@ export default function LoanProductDetailPage({ params }: LoanProductDetailPageP
                         <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                           <Banknote className="h-4 w-4" /> Late Payment Fee
                         </p>
-                        <p className="text-sm">{formatCurrency(product?.late_fee)}</p>
+                        <p className="text-sm">{compactCurrency(product?.late_fee)}</p>
                       </div>
                     )}*/}
                   </div>
@@ -440,7 +425,7 @@ export default function LoanProductDetailPage({ params }: LoanProductDetailPageP
                         <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                           <CreditCard className="h-4 w-4" /> Processing Fee
                         </p>
-                        <p className="text-sm">{formatCurrency(product?.processing_fee)}</p>
+                        <p className="text-sm">{compactCurrency(product?.processing_fee)}</p>
                       </div>
                     )}
 
@@ -450,7 +435,7 @@ export default function LoanProductDetailPage({ params }: LoanProductDetailPageP
                         <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                           <Banknote className="h-4 w-4" /> Early Repayment Fee
                         </p>
-                        <p className="text-sm">{formatCurrency(product?.early_repayment_fee)}</p>
+                        <p className="text-sm">{compactCurrency(product?.early_repayment_fee)}</p>
                       </div>
                     )}*/}
                   </div>
@@ -549,7 +534,7 @@ export default function LoanProductDetailPage({ params }: LoanProductDetailPageP
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => router.push(`/dashboard/loans/providers/${provider.provider_id}`)}
+                    onClick={() => router.push(`/dashboard/vendor-loans/providers/${provider.provider_id}`)}
                   >
                     <Building className="h-4 w-4 mr-2" />
                     View Provider
@@ -616,7 +601,7 @@ export default function LoanProductDetailPage({ params }: LoanProductDetailPageP
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => router.push(`/dashboard/loans/products/${id}/edit`)}
+                  onClick={() => router.push(`/dashboard/vendor-loans/products/${id}/edit`)}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Product

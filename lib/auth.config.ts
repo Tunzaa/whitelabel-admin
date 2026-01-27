@@ -2,9 +2,9 @@ import { NextAuthConfig } from "next-auth";
 import CredentialProvider from "next-auth/providers/credentials";
 import { JWT } from "next-auth/jwt";
 import { Session } from "next-auth";
-import { api } from "./core";
+import api from "./core/api";
 import { extractUserRoles } from "./core/auth";
-import type { CustomUser } from "./core";
+import type { CustomUser } from "./core/auth";
 
 // CustomUser type is imported from the centralized core module
 

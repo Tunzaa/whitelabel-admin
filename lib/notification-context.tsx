@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 export type NotificationType = 'order' | 'support' | 'system';
@@ -106,4 +108,4 @@ export function useNotifications() {
     throw new Error('useNotifications must be used within a NotificationProvider');
   }
   return context;
-} 
+}

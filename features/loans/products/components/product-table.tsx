@@ -1,11 +1,11 @@
 import React from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,32 +17,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Dialog, 
-  DialogClose, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
 import { MoreHorizontal, Edit, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { LoanProduct } from '../types';
-// Format currency directly to avoid import issues
-const formatCurrency = (value: number | string): string => {
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  
-  if (isNaN(numValue)) {
-    return '$0.00';
-  }
-  
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(numValue);
-};
+import { compactCurrency } from '@/lib/utils';
 
 interface ProductTableProps {
   products: LoanProduct[];
@@ -115,7 +101,7 @@ export function ProductTable({ products, onView, onEdit, onStatusChange }: Produ
               </TableRow>
             ) : (
               products.map((product) => (
-                <TableRow 
+                <TableRow
                   key={product.product_id}
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleRowClick(product)}
@@ -124,11 +110,11 @@ export function ProductTable({ products, onView, onEdit, onStatusChange }: Produ
                   <TableCell>{product.provider_name || 'Unknown Provider'}</TableCell>
                   <TableCell>{product.interest_rate}%</TableCell>
                   <TableCell>
-                    {formatCurrency(product.min_amount)} - {formatCurrency(product.max_amount)}
+                    {compactCurrency(product.min_amount)} - {compactCurrency(product.max_amount)}
                   </TableCell>
                   <TableCell>{renderPaymentFrequency(product.payment_frequency)}</TableCell>
                   <TableCell>
-                    <Badge 
+                    <Badge
                       variant={product.is_active ? "success" : "secondary"}
                       className={product.is_active ? "bg-green-500 hover:bg-green-600 text-white" : ""}
                     >

@@ -26,16 +26,16 @@ export default function AddLoanProviderPage() {
       const headers = {
         'X-Tenant-ID': tenantId || ''
       };
-      
+
       await createProvider(values, headers);
-      
+
       toast({
         title: "Success",
         description: "Loan provider created successfully",
         variant: "success",
       });
-      
-      router.push("/dashboard/loans/providers");
+
+      router.push("/dashboard/vendor-loans/providers");
     } catch (error: any) {
       console.error("Failed to create provider:", error);
       toast({
@@ -67,7 +67,7 @@ export default function AddLoanProviderPage() {
         <Button
           variant="ghost"
           className="mr-2"
-          onClick={() => router.push("/dashboard/loans/providers")}
+          onClick={() => router.push("/dashboard/vendor-loans/providers")}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>

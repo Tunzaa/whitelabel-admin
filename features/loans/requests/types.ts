@@ -60,6 +60,15 @@ export type VendorRevenue = {
   growth_percentage?: number;
 };
 
+export type LoanPenalty = {
+  penalty_id: string;
+  amount: number;
+  reason: string;
+  applied_at: string;
+  status: 'pending' | 'paid' | 'waived';
+  paid_at?: string;
+};
+
 // Loan Request entity type
 export type LoanRequest = {
   _id?: string;
@@ -69,6 +78,7 @@ export type LoanRequest = {
   vendor_id: string;
   vendor_name?: string;
   vendor_contact?: string;
+  vendor_email?: string;
   product_id: string;
   product_name?: string;
   provider_id?: string;
@@ -78,15 +88,20 @@ export type LoanRequest = {
   payment_frequency: 'weekly' | 'bi-weekly' | 'monthly';
   term_length: number; // in months
   total_payable: number;
+  remaining_balance?: number;
   processing_fee?: number;
   purpose: string;
-  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted';
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted' | 'disbursed' | 'paid';
   rejection_reason?: string;
   notes?: string;
   payment_schedule?: PaymentSchedule[];
   documents?: LoanDocument[];
+  penalties?: LoanPenalty[];
   approved_by?: string;
   approved_at?: string;
+  disbursed_at?: string;
+  disbursed_by?: string;
+  paid_at?: string;
   created_at?: string;
   updated_at?: string;
 };
@@ -129,7 +144,7 @@ export interface LoanRequestFilter {
 }
 
 // Action Types
-export type LoanRequestAction = 
+export type LoanRequestAction =
   | 'fetchList'
   | 'fetchOne'
   | 'create'
@@ -139,4 +154,5 @@ export type LoanRequestAction =
   | 'generatePaymentSchedule'
   | 'recordPayment'
   | 'uploadDocument'
-  | 'fetchVendorRevenue';
+  | 'fetchVendorRevenue'
+  | 'addPenalty';

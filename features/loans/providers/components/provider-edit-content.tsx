@@ -17,7 +17,7 @@ interface ProviderEditContentProps {
 export function ProviderEditContent({ providerId }: ProviderEditContentProps) {
   const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
-  
+
   const {
     provider,
     loading,
@@ -31,17 +31,17 @@ export function ProviderEditContent({ providerId }: ProviderEditContentProps) {
       await fetchProvider(providerId);
       setIsLoaded(true);
     };
-    
+
     loadProvider();
   }, [providerId, fetchProvider]);
 
   const handleUpdateProvider = async (values: any) => {
     await updateProvider(providerId, values);
-    router.push('/dashboard/loans/providers');
+    router.push('/dashboard/vendor-loans/providers');
   };
 
   const handleCancel = () => {
-    router.push('/dashboard/loans/providers');
+    router.push('/dashboard/vendor-loans/providers');
   };
 
   if (!isLoaded) {
@@ -104,7 +104,7 @@ export function ProviderEditContent({ providerId }: ProviderEditContentProps) {
           <CardTitle>Edit Provider: {provider.name}</CardTitle>
         </CardHeader>
         <CardContent>
-          <ProviderForm 
+          <ProviderForm
             initialValues={provider}
             onSubmit={handleUpdateProvider}
             isSubmitting={loading}

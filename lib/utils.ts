@@ -12,11 +12,11 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatCurrency(value: number | string): string {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  
+
   if (isNaN(numValue)) {
     return '$0.00';
   }
-  
+
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -33,19 +33,19 @@ export function formatCurrency(value: number | string): string {
  */
 export function formatDate(date: string | Date, format: 'short' | 'medium' | 'long' = 'medium'): string {
   if (!date) return 'N/A';
-  
+
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
+
   if (isNaN(dateObj.getTime())) {
     return 'Invalid Date';
   }
-  
+
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: format === 'short' ? 'short' : 'long',
     day: 'numeric',
   };
-  
+
   if (format === 'long') {
     options.hour = 'numeric';
   }
@@ -97,3 +97,29 @@ export function generatePassword(length: number = 10): string {
   // Shuffle the password to avoid predictable pattern
   return password.split('').sort(() => 0.5 - Math.random()).join('');
 }
+
+
+export const compactCurrency = (value: number | string | undefined): string => {
+  if (value === undefined) return 'TZS 0';
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+
+  if (isNaN(numValue)) {
+    return 'TZS 0';
+  }
+
+  if (numValue >= 1000) {
+    const formatted = new Intl.NumberFormat('en-US', {
+      notation: 'compact',
+      compactDisplay: 'short',
+      maximumFractionDigits: 1
+    }).format(numValue).toLowerCase();
+    return `TZS ${formatted}`;
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'TZS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(numValue).replace('TZS', 'TZS ');
+};

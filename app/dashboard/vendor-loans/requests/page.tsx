@@ -19,9 +19,9 @@ export default function LoanRequestsPage() {
   const router = useRouter();
   const session = useSession();
   const tenantId = session?.data?.user?.tenant_id || '';
-  
+
   const { requests, loading, storeError, fetchRequests, updateRequestStatus } = useLoanRequestStore();
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("all");
@@ -48,29 +48,29 @@ export default function LoanRequestsPage() {
     // Add filter based on the active tab
     switch (activeTab) {
       case "pending":
-        return { 
-          ...baseFilter, 
+        return {
+          ...baseFilter,
           status: "pending"
         };
       case "approved":
-        return { 
-          ...baseFilter, 
-          status: "approved" 
+        return {
+          ...baseFilter,
+          status: "approved"
         };
       case "rejected":
-        return { 
-          ...baseFilter, 
-          status: "rejected" 
+        return {
+          ...baseFilter,
+          status: "rejected"
         };
       case "disbursed":
-        return { 
-          ...baseFilter, 
-          status: "disbursed" 
+        return {
+          ...baseFilter,
+          status: "disbursed"
         };
       case "paid":
-        return { 
-          ...baseFilter, 
-          status: "paid" 
+        return {
+          ...baseFilter,
+          status: "paid"
         };
       default:
         return baseFilter;
@@ -95,13 +95,13 @@ export default function LoanRequestsPage() {
   }, [fetchRequests, activeTab, currentPage, searchQuery]);
 
   const handleRequestClick = (request: any) => {
-    router.push(`/dashboard/loans/requests/${request.request_id}`);
+    router.push(`/dashboard/vendor-loans/requests/${request.request_id}`);
   };
 
   const handleStatusChange = async (requestId: string, status: string) => {
     try {
       await updateRequestStatus(requestId, status, tenantHeaders);
-      
+
       // Refresh the request list after status change
       const filters = getFilters();
       fetchRequests(filters, tenantHeaders);

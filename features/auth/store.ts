@@ -1,3 +1,5 @@
+"use client";
+
 import { create } from 'zustand';
 import { AuthState, Permission, Role } from "./types";
 import apiClient from '@/lib/api/client';

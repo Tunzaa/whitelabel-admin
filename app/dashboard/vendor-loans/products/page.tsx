@@ -19,9 +19,9 @@ export default function LoanProductsPage() {
   const router = useRouter();
   const session = useSession();
   const tenantId = session?.data?.user?.tenant_id;
-  
+
   const { products, loading, storeError, fetchProducts, updateProductStatus } = useLoanProductStore();
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("all");
@@ -48,14 +48,14 @@ export default function LoanProductsPage() {
     // Add filter based on the active tab
     switch (activeTab) {
       case "active":
-        return { 
-          ...baseFilter, 
-          is_active: true 
+        return {
+          ...baseFilter,
+          is_active: true
         };
       case "inactive":
-        return { 
-          ...baseFilter, 
-          is_active: false 
+        return {
+          ...baseFilter,
+          is_active: false
         };
       default:
         return baseFilter;
@@ -80,13 +80,13 @@ export default function LoanProductsPage() {
   }, [fetchProducts, activeTab, currentPage, searchQuery]);
 
   const handleProductClick = (product) => {
-    router.push(`/dashboard/loans/products/${product.product_id}`);
+    router.push(`/dashboard/vendor-loans/products/${product.product_id}`);
   };
 
   const handleStatusChange = async (productId, isActive) => {
     try {
       await updateProductStatus(productId, isActive, tenantHeaders);
-      
+
       // Refresh the product list after status change
       const filters = getFilters();
       fetchProducts(filters, tenantHeaders);
@@ -111,7 +111,7 @@ export default function LoanProductsPage() {
               Manage loan products offered to vendors
             </p>
           </div>
-          <Button onClick={() => router.push("/dashboard/loans/products/add")}>
+          <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
             <Plus className="mr-2 h-4 w-4" />
             Add Product
           </Button>
@@ -134,7 +134,7 @@ export default function LoanProductsPage() {
               Manage loan products offered to vendors
             </p>
           </div>
-          <Button onClick={() => router.push("/dashboard/loans/products/add")}>
+          <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
             <Plus className="mr-2 h-4 w-4" />
             Add Product
           </Button>
@@ -165,7 +165,7 @@ export default function LoanProductsPage() {
             Manage loan products offered to vendors
           </p>
         </div>
-        <Button onClick={() => router.push("/dashboard/loans/products/add")}>
+        <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
           <Plus className="mr-2 h-4 w-4" />
           Add Product
         </Button>
@@ -201,7 +201,7 @@ export default function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) => router.push(`/dashboard/loans/products/${product.product_id}/edit`)}
+                onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
                 onStatusChange={handleStatusChange}
               />
             )}
@@ -215,7 +215,7 @@ export default function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) => router.push(`/dashboard/loans/products/${product.product_id}/edit`)}
+                onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
                 onStatusChange={handleStatusChange}
               />
             )}
@@ -229,7 +229,7 @@ export default function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) => router.push(`/dashboard/loans/products/${product.product_id}/edit`)}
+                onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
                 onStatusChange={handleStatusChange}
               />
             )}

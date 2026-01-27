@@ -104,29 +104,26 @@ export const navigationData: NavigationData = {
       icon: IconGift,
       requiredPermission: "earnings:view",
     },
-    // {
-    //   title: "Vendor Loans",
-    //   url: "/dashboard/vendor-loans/requests",
-    //   icon: IconCreditCard,
-    //   requiredPermission: "vendor-loans:read",
-    //   items: [
-    //     {
-    //       title: "Providers",
-    //       url: "/dashboard/vendor-loans/providers",
-    //       icon: IconBusinessplan,
-    //     },
-    //     {
-    //       title: "Products",
-    //       url: "/dashboard/vendor-loans/products",
-    //       icon: IconPackages,
-    //     },
-    //     {
-    //       title: "Loan Requests",
-    //       url: "/dashboard/vendor-loans/requests",
-    //       icon: IconListDetails,
-    //     }
-    //   ],
-    // },
+    {
+      title: "Vendor Loans",
+      url: "/dashboard/vendor-loans/requests",
+      icon: IconCreditCard,
+      // requiredPermission: "vendor-loans:read",
+      items: [
+        {
+          title: "Providers",
+          url: "/dashboard/vendor-loans/providers",
+        },
+        {
+          title: "Products",
+          url: "/dashboard/vendor-loans/products",
+        },
+        {
+          title: "Loan Requests",
+          url: "/dashboard/vendor-loans/requests",
+        }
+      ],
+    },
     {
       title: "Support Tickets",
       url: "https://support.afrizon.africa/app/accounts/1/dashboard",

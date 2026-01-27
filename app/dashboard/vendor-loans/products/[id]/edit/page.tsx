@@ -27,17 +27,17 @@ export default function EditLoanProductPage({ params }: EditLoanProductPageProps
   const router = useRouter();
   const session = useSession();
   const tenantId = session?.data?.user?.tenant_id;
-  
-  const { 
-    product, 
-    loading: productLoading, 
-    storeError: productError, 
-    fetchProduct, 
-    updateProduct 
+
+  const {
+    product,
+    loading: productLoading,
+    storeError: productError,
+    fetchProduct,
+    updateProduct
   } = useLoanProductStore();
-  
+
   const { providers, fetchProviders, loading: providersLoading } = useLoanProviderStore();
-  
+
   const [submitting, setSubmitting] = useState(false);
   const [initialValues, setInitialValues] = useState<LoanProductFormValues | null>(null);
 
@@ -84,10 +84,10 @@ export default function EditLoanProductPage({ params }: EditLoanProductPageProps
     try {
       setSubmitting(true);
       await updateProduct(id, values, tenantHeaders);
-      
+
       toast.success("Loan product updated successfully");
-      
-      router.push(`/dashboard/loans/products/${id}`);
+
+      router.push(`/dashboard/vendor-loans/products/${id}`);
     } catch (error: any) {
       console.error("Failed to update product:", error);
       toast.error(error?.message || "Failed to update loan product");
@@ -103,7 +103,7 @@ export default function EditLoanProductPage({ params }: EditLoanProductPageProps
           <Button
             variant="ghost"
             className="mr-2"
-            onClick={() => router.push(`/dashboard/loans/products/${id}`)}
+            onClick={() => router.push(`/dashboard/vendor-loans/products/${id}`)}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -129,7 +129,7 @@ export default function EditLoanProductPage({ params }: EditLoanProductPageProps
           <Button
             variant="ghost"
             className="mr-2"
-            onClick={() => router.push("/dashboard/loans/products")}
+            onClick={() => router.push("/dashboard/vendor-loans/products")}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -149,7 +149,7 @@ export default function EditLoanProductPage({ params }: EditLoanProductPageProps
               message: productError.message || "An error occurred"
             }}
             buttonText="Go Back"
-            buttonAction={() => router.push("/dashboard/loans/products")}
+            buttonAction={() => router.push("/dashboard/vendor-loans/products")}
           />
         </div>
       </div>
@@ -162,7 +162,7 @@ export default function EditLoanProductPage({ params }: EditLoanProductPageProps
         <Button
           variant="ghost"
           className="mr-2"
-          onClick={() => router.push(`/dashboard/loans/products/${id}`)}
+          onClick={() => router.push(`/dashboard/vendor-loans/products/${id}`)}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>

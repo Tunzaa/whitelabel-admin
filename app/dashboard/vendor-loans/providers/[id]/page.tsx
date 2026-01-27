@@ -188,7 +188,7 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
           status: providerError?.status ? String(providerError.status) : "error"
         }}
         buttonText="Back to Providers"
-        buttonAction={() => router.push("/dashboard/loans/providers")}
+        buttonAction={() => router.push("/dashboard/vendor-loans/providers")}
         buttonIcon={ArrowLeft}
       />
     );
@@ -203,7 +203,7 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
           status: "error"
         }}
         buttonText="Back to Providers"
-        buttonAction={() => router.push("/dashboard/loans/providers")}
+        buttonAction={() => router.push("/dashboard/vendor-loans/providers")}
         buttonIcon={ArrowLeft}
       />
     );
@@ -217,7 +217,7 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/dashboard/loans/providers")}
+            onClick={() => router.push("/dashboard/vendor-loans/providers")}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -263,7 +263,7 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push(`/dashboard/loans/providers/${providerId}/edit`)}
+            onClick={() => router.push(`/dashboard/vendor-loans/providers/${providerId}/edit`)}
           >
             <Edit className="h-4 w-4 mr-2" />
             Edit
@@ -526,7 +526,7 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push(`/dashboard/loans/products/add?provider=${providerId}`)}
+                  onClick={() => router.push(`/dashboard/vendor-loans/products/add?provider=${providerId}`)}
                 >
                   <Banknote className="h-4 w-4 mr-2" />
                   Add Product
@@ -541,8 +541,8 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
                 ) : products && products.length > 0 ? (
                   <ProductTable
                     products={products}
-                    onView={(product) => router.push(`/dashboard/loans/products/${product.product_id}`)}
-                    onEdit={(product) => router.push(`/dashboard/loans/products/${product.product_id}/edit`)}
+                    onView={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}`)}
+                    onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
                     onStatusChange={(productId, isActive) => {
                       // This would be implemented in the product store
                     }}
@@ -552,7 +552,7 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
                     <Banknote className="h-12 w-12 text-muted-foreground mb-2 opacity-20" />
                     <p className="text-muted-foreground mb-4">No loan products available</p>
                     <Button
-                      onClick={() => router.push(`/dashboard/loans/products/add?provider=${providerId}`)}
+                      onClick={() => router.push(`/dashboard/vendor-loans/products/add?provider=${providerId}`)}
                     >
                       Add First Product
                     </Button>
@@ -596,7 +596,7 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => router.push(`/dashboard/loans/providers/${providerId}/edit`)}
+                  onClick={() => router.push(`/dashboard/vendor-loans/providers/${providerId}/edit`)}
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Manage API Settings
@@ -645,7 +645,7 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => router.push(`/dashboard/loans/providers/${providerId}/edit`)}
+                  onClick={() => router.push(`/dashboard/vendor-loans/providers/${providerId}/edit`)}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Provider

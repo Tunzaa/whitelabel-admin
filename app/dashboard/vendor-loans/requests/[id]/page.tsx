@@ -23,27 +23,95 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 import { useLoanRequestStore } from "@/features/loans/requests/store";
 import { useLoanProductStore } from "@/features/loans/products/store";
 import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { useVendorStore } from "@/features/vendors/store";
-// Local implementations to avoid import issues
-const formatCurrency = (value: number | string | undefined): string => {
-  if (value === undefined) return '$0.00';
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+import { compactCurrency } from "@/lib/utils";
 
-  if (isNaN(numValue)) {
-    return '$0.00';
-  }
 
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(numValue);
+const StatusTimeline = ({ request }: { request: any }) => {
+  if (!request) return null;
+
+  const steps = [
+    {
+      id: 'pending',
+      label: 'Requested',
+      date: request.created_at,
+      state: 'completed',
+      icon: FileText
+    },
+    {
+      id: 'approved',
+      label: 'Approved',
+      date: request.approved_at,
+      state: request.status === 'rejected' ? 'error' : (request.approved_at ? 'completed' : (request.status === 'pending' ? 'current' : 'pending')),
+      icon: CheckCircle
+    },
+    {
+      id: 'disbursed',
+      label: 'Disbursed',
+      date: request.disbursed_at,
+      state: request.disbursed_at ? 'completed' : (request.status === 'approved' ? 'current' : 'pending'),
+      icon: Wallet
+    },
+    {
+      id: 'paid',
+      label: 'Repaid',
+      date: request.paid_at,
+      state: request.paid_at ? 'completed' : (request.status === 'disbursed' ? 'current' : 'pending'),
+      icon: Banknote
+    }
+  ];
+
+  return (
+    <div className="w-full py-4 px-2">
+      <div className="relative flex justify-between">
+        {/* Connecting Line */}
+        <div className="absolute top-5 left-0 w-full h-1 bg-gray-100 -z-0">
+          <div
+            className="h-full bg-primary transition-all duration-500"
+            style={{
+              width: `${(steps.filter(s => s.state === 'completed').length / (steps.length - 1)) * 100}%`
+            }}
+          />
+        </div>
+
+        {steps.map((step, index) => {
+          const isCompleted = step.state === 'completed';
+          const isCurrent = step.state === 'current';
+          const isError = step.state === 'error';
+
+          let colorClass = "bg-gray-100 text-gray-400 border-gray-200";
+          if (isCompleted) colorClass = "bg-primary text-white border-primary";
+          if (isCurrent) colorClass = "bg-white text-primary border-primary ring-4 ring-primary/20";
+          if (isError) colorClass = "bg-red-100 text-red-600 border-red-200";
+
+          return (
+            <div key={step.id} className="flex flex-col items-center relative z-10">
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${colorClass} bg-background`}
+              >
+                <step.icon className="h-5 w-5" />
+              </div>
+              <div className="mt-2 text-center">
+                <p className={`text-sm font-medium ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {step.label}
+                </p>
+                {step.date && <p className="text-xs text-muted-foreground">{format(new Date(step.date), 'MMM d')}</p>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 };
 
 const formatDate = (date: string | Date | undefined, format: 'short' | 'medium' | 'long' = 'medium'): string => {
@@ -71,13 +139,12 @@ const formatDate = (date: string | Date | undefined, format: 'short' | 'medium' 
 };
 
 interface LoanRequestDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
-  // Properly unwrap params using React.use()
   const unwrappedParams = use(params);
   const id = unwrappedParams.id;
   const router = useRouter();
@@ -89,8 +156,38 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
     loading: requestLoading,
     storeError: requestError,
     fetchRequest,
-    updateRequestStatus
+    updateRequestStatus,
+    addPenalty
   } = useLoanRequestStore();
+
+  const [penaltyOpen, setPenaltyOpen] = useState(false);
+  const [penaltyAmount, setPenaltyAmount] = useState("");
+  const [penaltyReason, setPenaltyReason] = useState("");
+  const [penaltyLoading, setPenaltyLoading] = useState(false);
+
+  const handleAddPenalty = async () => {
+    if (!penaltyAmount || !penaltyReason) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      setPenaltyLoading(true);
+      await addPenalty(id, {
+        amount: parseFloat(penaltyAmount),
+        reason: penaltyReason
+      });
+      toast.success("Penalty added successfully");
+      setPenaltyOpen(false);
+      setPenaltyAmount("");
+      setPenaltyReason("");
+    } catch (error) {
+      // Error handled by store
+      toast.error("Failed to add penalty");
+    } finally {
+      setPenaltyLoading(false);
+    }
+  };
 
   const {
     product,
@@ -472,7 +569,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/dashboard/loans/requests")}
+            onClick={() => router.push("/dashboard/vendor-loans/requests")}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -488,7 +585,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
 
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
-                {formatCurrency(request?.loan_amount || 0)} Loan Request
+                {compactCurrency(request?.loan_amount || 0)} Loan Request
               </h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 {getStatusBadge(request?.status || 'Unknown')}
@@ -551,7 +648,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                             <Banknote className="h-4 w-4" /> Loan Amount
                           </p>
-                          <p className="text-xl font-bold">{formatCurrency(request?.loan_amount || 0)}</p>
+                          <p className="text-xl font-bold">{compactCurrency(request?.loan_amount || 0)}</p>
                         </div>
 
                         <div className="space-y-1">
@@ -594,7 +691,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                           </p>
                           <p className="text-sm">
                             {product && request ?
-                              formatCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
+                              compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
                               'N/A'}
                           </p>
                         </div>
@@ -652,8 +749,11 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                 <Card className="overflow-hidden border-2 border-primary/10">
                   <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-primary/10">
                     <div className="flex items-center gap-2">
-                      <Banknote className="h-5 w-5 text-primary" />
-                      <CardTitle>Loan Summary</CardTitle>
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                        <Info className="h-3 w-3 mr-1" />
+                        Summary
+                      </Badge>
+                      <CardTitle className="text-lg">Loan Summary</CardTitle>
                     </div>
                     <CardDescription>Overview of loan terms and repayment</CardDescription>
                   </CardHeader>
@@ -679,7 +779,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                                   </div>
                                   <Badge variant="outline" className="bg-primary/5">Requested</Badge>
                                 </div>
-                                <p className="text-3xl font-bold text-primary">{formatCurrency(request?.loan_amount || 0)}</p>
+                                <p className="text-3xl font-bold text-primary">{compactCurrency(request?.loan_amount || 0)}</p>
                                 <p className="text-xs text-muted-foreground">Total loan amount requested</p>
                               </div>
                             </CardContent>
@@ -698,7 +798,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                                 </div>
                                 <p className="text-3xl font-bold text-primary">
                                   {product && request ?
-                                    formatCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length)) :
+                                    compactCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length)) :
                                     'N/A'}
                                 </p>
                                 <p className="text-xs text-muted-foreground">Total amount to be repaid</p>
@@ -719,7 +819,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                                 </div>
                                 <p className="text-3xl font-bold text-primary">
                                   {product && request ?
-                                    formatCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length) - request.loan_amount) :
+                                    compactCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length) - request.loan_amount) :
                                     'N/A'}
                                 </p>
                                 <p className="text-xs text-muted-foreground">Total interest payable</p>
@@ -743,7 +843,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                                   <p className="text-sm font-medium text-muted-foreground">Monthly Payment</p>
                                   <p className="text-2xl font-bold text-primary">
                                     {product && request ?
-                                      formatCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
+                                      compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
                                       'N/A'}
                                   </p>
                                 </div>
@@ -769,138 +869,167 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                         </Card>
                       </div>
 
-                      {/* Progress Bar */}
-                      {request?.status === 'disbursed' || request?.status === 'paid' ? (
-                        <div className="space-y-3 pt-2">
-                          <div className="flex justify-between items-center">
-                            <p className="text-sm font-medium flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-primary" />
-                              Loan Progress
-                            </p>
-                            <Badge variant="outline" className={request?.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}>
-                              {request?.status === 'paid' ? '100%' : '33%'} Complete
-                            </Badge>
-                          </div>
-                          <Progress
-                            value={request?.status === 'paid' ? 100 : 33}
-                            className="h-2.5 rounded-full"
-                            indicatorClassName={request?.status === 'paid' ? 'bg-green-500' : 'bg-blue-500'}
-                          />
-                        </div>
-                      ) : null}
+                      {/* Status Timeline */}
+                      <div className="pt-4 border-t mt-4">
+                        <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-primary" />
+                          Loan Status Timeline
+                        </h3>
+                        <StatusTimeline request={request} />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               {/* Payment Plan Tab */}
-              <TabsContent value="payment-plan" className="mt-6">
+              <TabsContent value="payment-plan" className="space-y-6 mt-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Payment Schedule</CardTitle>
-                    <CardDescription>Detailed payment plan for this loan</CardDescription>
+                    <CardDescription>Scheduled payments and their status</CardDescription>
                   </CardHeader>
-
                   <CardContent>
-                    {paymentSchedule.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Payment #</TableHead>
-                              <TableHead>Due Date</TableHead>
-                              <TableHead>Payment Amount</TableHead>
-                              <TableHead>Principal</TableHead>
-                              <TableHead>Interest</TableHead>
-                              <TableHead>Remaining Balance</TableHead>
-                              <TableHead>Status</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {paymentSchedule.map((payment) => (
-                              <TableRow key={payment.payment_number}>
-                                <TableCell>{payment.payment_number}</TableCell>
-                                <TableCell>{formatDate(payment.due_date, 'medium')}</TableCell>
-                                <TableCell>{formatCurrency(payment.payment_amount)}</TableCell>
-                                <TableCell>{formatCurrency(payment.principal_amount)}</TableCell>
-                                <TableCell>{formatCurrency(payment.interest_amount)}</TableCell>
-                                <TableCell>{formatCurrency(payment.remaining_balance)}</TableCell>
-                                <TableCell>
-                                  {payment.status === 'paid' ? (
-                                    <Badge variant="outline" className="bg-green-50 text-green-700">Paid</Badge>
-                                  ) : payment.status === 'pending' ? (
-                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700">Pending</Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="bg-blue-50 text-blue-700">Upcoming</Badge>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">No payment schedule available</p>
-                      </div>
-                    )}
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>#</TableHead>
+                          <TableHead>Due Date</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Principal</TableHead>
+                          <TableHead>Interest</TableHead>
+                          <TableHead>Balance</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paymentSchedule.map((payment) => (
+                          <TableRow key={payment.payment_number}>
+                            <TableCell>{payment.payment_number}</TableCell>
+                            <TableCell>{formatDateDisplay(payment.due_date)}</TableCell>
+                            <TableCell>{compactCurrency(payment.payment_amount)}</TableCell>
+                            <TableCell>{compactCurrency(payment.principal_amount)}</TableCell>
+                            <TableCell>{compactCurrency(payment.interest_amount)}</TableCell>
+                            <TableCell>{compactCurrency(payment.remaining_balance)}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={
+                                payment.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' :
+                                  payment.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' :
+                                    payment.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : ''
+                              }>
+                                {payment.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               {/* Transactions Tab */}
-              <TabsContent value="transactions" className="mt-6">
+              <TabsContent value="transactions" className="space-y-6 mt-6">
+                {/* Penalties Section */}
+                <Card className="border-red-100">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-red-700 flex items-center gap-2">
+                          <AlertCircle className="h-5 w-5" /> Penalties & Fees
+                        </CardTitle>
+                        <CardDescription>Active penalties and late fees</CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-700 border-red-200 hover:bg-red-50"
+                        onClick={() => setPenaltyOpen(true)}
+                      >
+                        Add Penalty
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {request?.penalties && request.penalties.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Reason</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {request.penalties.map((penalty) => (
+                            <TableRow key={penalty.penalty_id}>
+                              <TableCell>{formatDateDisplay(penalty.applied_at)}</TableCell>
+                              <TableCell>{penalty.reason}</TableCell>
+                              <TableCell>{compactCurrency(penalty.amount)}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={
+                                  penalty.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' :
+                                    'bg-red-50 text-red-700 border-red-200'
+                                }>
+                                  {penalty.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg bg-red-50/20">
+                        No active penalties
+                        <p className="text-xs mt-1">Penalties will appear here when applied.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Transaction History</CardTitle>
-                    <CardDescription>All transactions related to this loan</CardDescription>
+                    <CardDescription>All financial transactions related to this loan</CardDescription>
                   </CardHeader>
-
                   <CardContent>
-                    {transactions.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Transaction Type</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead>Description</TableHead>
-                              <TableHead>Status</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {transactions.map((transaction) => (
-                              <TableRow key={transaction.id}>
-                                <TableCell>{formatDate(transaction.date, 'medium')}</TableCell>
-                                <TableCell className="capitalize">{transaction.type}</TableCell>
-                                <TableCell>{formatCurrency(transaction.amount)}</TableCell>
-                                <TableCell>{transaction.description}</TableCell>
-                                <TableCell>
-                                  {transaction.status === 'completed' ? (
-                                    <Badge variant="outline" className="bg-green-50 text-green-700">Completed</Badge>
-                                  ) : transaction.status === 'pending' ? (
-                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700">Pending</Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="bg-red-50 text-red-700">Failed</Badge>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">No transactions available</p>
-                      </div>
-                    )}
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.map((txn) => (
+                          <TableRow key={txn.id}>
+                            <TableCell>{formatDateDisplay(txn.date)}</TableCell>
+                            <TableCell className="capitalize">{txn.type}</TableCell>
+                            <TableCell>{txn.description}</TableCell>
+                            <TableCell
+                              className={txn.type === 'payment' ? 'text-green-600' : 'text-blue-600'}
+                            >
+                              {txn.type === 'payment' ? '+' : '-'}{compactCurrency(txn.amount)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="capitalize">
+                                {txn.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               {/* Loan History Tab */}
-              <TabsContent value="history" className="mt-6">
+              <TabsContent value="history" className="space-y-6 mt-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Vendor Loan History</CardTitle>
@@ -925,16 +1054,16 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                             {vendorLoans.map((loan) => (
                               <TableRow key={loan.id} className={loan.id === id ? "bg-muted/20" : ""}>
                                 <TableCell>{formatDate(loan.date, 'short')}</TableCell>
-                                <TableCell>{formatCurrency(loan.amount)}</TableCell>
+                                <TableCell>{compactCurrency(loan.amount)}</TableCell>
                                 <TableCell>{loan.term} {loan.term === 1 ? 'month' : 'months'}</TableCell>
                                 <TableCell>{loan.product_name}</TableCell>
                                 <TableCell>
-                                  <Badge variant="outline" className={`capitalize 
-                                    ${loan.status === 'paid' ? 'bg-green-50 text-green-700' : ''}
-                                    ${loan.status === 'active' || loan.status === 'disbursed' ? 'bg-blue-50 text-blue-700' : ''}
-                                    ${loan.status === 'pending' || loan.status === 'approved' ? 'bg-yellow-50 text-yellow-700' : ''}
-                                    ${loan.status === 'rejected' ? 'bg-red-50 text-red-700' : ''}
-                                  `}>
+                                  <Badge variant="outline" className={`capitalize
+                                      ${loan.status === 'paid' ? 'bg-green-50 text-green-700' : ''}
+                                      ${loan.status === 'active' || loan.status === 'disbursed' ? 'bg-blue-50 text-blue-700' : ''}
+                                      ${loan.status === 'pending' || loan.status === 'approved' ? 'bg-yellow-50 text-yellow-700' : ''}
+                                      ${loan.status === 'rejected' ? 'bg-red-50 text-red-700' : ''}
+                                    `}>
                                     {loan.status}
                                   </Badge>
                                 </TableCell>
@@ -965,7 +1094,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
               </TabsContent>
 
               {/* Documents Tab */}
-              <TabsContent value="documents" className="mt-6">
+              <TabsContent value="documents" className="space-y-6 mt-6">
                 <Card>
                   <CardHeader>
                     <CardTitle>Loan Documents</CardTitle>
@@ -1062,46 +1191,44 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback style={{ backgroundColor: "#10b981" }}>
-                          {vendor.name ? vendor.name.substring(0, 2).toUpperCase() : 'VE'}
+                          {vendor.business_name ? vendor.business_name.substring(0, 2).toUpperCase() : 'VE'}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-medium">{vendor.name || request?.vendor_name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {vendor.is_active ? "Active Vendor" : "Inactive Vendor"}
-                        </p>
+                        <h3 className="font-medium">{vendor.business_name || vendor.display_name || request?.vendor_name}</h3>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <Badge variant="outline" className={vendor.is_active ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-100 text-gray-600"}>
+                            {vendor.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
 
                     <Separator />
 
                     <div className="space-y-3">
-                      {vendor.email && (
-                        <div className="flex items-center gap-2">
+                      {vendor.contact_email && (
+                        <div className="flex items-center gap-2 text-sm">
                           <Mail className="h-4 w-4 text-muted-foreground" />
-                          <a href={`mailto:${vendor.email}`} className="text-sm hover:underline">
-                            {vendor.email}
-                          </a>
+                          <a href={`mailto:${vendor.contact_email}`} className="hover:underline">{vendor.contact_email}</a>
                         </div>
                       )}
 
-                      {vendor.phone && (
-                        <div className="flex items-center gap-2">
+                      {vendor.contact_phone && (
+                        <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-4 w-4 text-muted-foreground" />
-                          <a href={`tel:${vendor.phone}`} className="text-sm hover:underline">
-                            {vendor.phone}
-                          </a>
+                          <a href={`tel:${vendor.contact_phone}`} className="hover:underline">{vendor.contact_phone}</a>
                         </div>
                       )}
 
                       {vendor.website && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 text-sm">
                           <Globe className="h-4 w-4 text-muted-foreground" />
                           <a
                             href={vendor.website.startsWith('http') ? vendor.website : `https://${vendor.website}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm hover:underline flex items-center gap-1"
+                            className="hover:underline flex items-center gap-1"
                           >
                             {vendor.website.replace(/^https?:\/\//, '')}
                             <ExternalLink className="h-3 w-3" />
@@ -1170,7 +1297,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">Amount Range</p>
                       <p className="text-sm font-medium">
-                        {formatCurrency(product.min_amount)} - {formatCurrency(product.max_amount)}
+                        {compactCurrency(product.min_amount)} - {compactCurrency(product.max_amount)}
                       </p>
                     </div>
                   </div>
@@ -1180,7 +1307,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => router.push(`/dashboard/loans/products/${product.product_id || product.id}`)}
+                    onClick={() => router.push(`/dashboard/vendor-loans/products/${product.product_id || product.id}`)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     View Product Details
@@ -1201,12 +1328,12 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">Monthly Average</p>
-                      <p className="text-lg font-bold">{formatCurrency(revenueData.monthly_average)}</p>
+                      <p className="text-lg font-bold">{compactCurrency(revenueData.monthly_average)}</p>
                     </div>
 
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">Annual Revenue</p>
-                      <p className="text-lg font-bold">{formatCurrency(revenueData.annual_revenue)}</p>
+                      <p className="text-lg font-bold">{compactCurrency(revenueData.annual_revenue)}</p>
                     </div>
                   </div>
 
@@ -1300,6 +1427,52 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
           </div>
         </div>
       </div>
+
+      <Dialog open={penaltyOpen} onOpenChange={setPenaltyOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Penalty / Fee</DialogTitle>
+            <DialogDescription>
+              Apply a penalty or fee to this loan request. This will increase the total payable amount.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="0.00"
+                value={penaltyAmount}
+                onChange={(e) => setPenaltyAmount(e.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="reason">Reason</Label>
+              <Textarea
+                id="reason"
+                placeholder="e.g. Late payment fee"
+                value={penaltyReason}
+                onChange={(e) => setPenaltyReason(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPenaltyOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleAddPenalty}
+              disabled={penaltyLoading || !penaltyAmount || !penaltyReason}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {penaltyLoading ? <Spinner className="mr-2 h-4 w-4" /> : null}
+              Add Penalty
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

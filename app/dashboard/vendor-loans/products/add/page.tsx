@@ -20,10 +20,10 @@ export default function AddLoanProductPage() {
   const searchParams = useSearchParams();
   const session = useSession();
   const tenantId = session?.data?.user?.tenant_id;
-  
+
   const { createProduct, loading: productLoading } = useLoanProductStore();
   const { providers, fetchProviders, loading: providersLoading } = useLoanProviderStore();
-  
+
   const [submitting, setSubmitting] = useState(false);
   const providerId = searchParams.get('provider');
 
@@ -53,18 +53,18 @@ export default function AddLoanProductPage() {
     try {
       setSubmitting(true);
       await createProduct(values, tenantHeaders);
-      
+
       toast({
         title: "Success",
         description: "Loan product created successfully",
         variant: "success",
       });
-      
+
       // If there was a providerId in the URL, redirect back to that provider's details
       if (providerId) {
-        router.push(`/dashboard/loans/providers/${providerId}`);
+        router.push(`/dashboard/vendor-loans/providers/${providerId}`);
       } else {
-        router.push("/dashboard/loans/products");
+        router.push("/dashboard/vendor-loans/products");
       }
     } catch (error: any) {
       console.error("Failed to create product:", error);
@@ -98,9 +98,9 @@ export default function AddLoanProductPage() {
         <Button
           variant="ghost"
           className="mr-2"
-          onClick={() => providerId 
-            ? router.push(`/dashboard/loans/providers/${providerId}`)
-            : router.push("/dashboard/loans/products")
+          onClick={() => providerId
+            ? router.push(`/dashboard/vendor-loans/providers/${providerId}`)
+            : router.push("/dashboard/vendor-loans/products")
           }
         >
           <ArrowLeft className="h-4 w-4" />
