@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft } from "lucide-react";
@@ -11,7 +11,7 @@ import { useDeliveryPartnerStore } from "@/features/delivery-partners/store";
 import { DeliveryPartner, VehicleInfo, KycDocument } from "@/features/delivery-partners/types"; // Added KycDocument
 import { DeliveryPartnerFormValues, formKycDocumentSchema } from "@/features/delivery-partners/schema"; // Added FormValues type and formKycDocumentSchema
 import { z } from "zod"; // For inferring FormKycDocumentValues type
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner"
 
 interface DeliveryPartnerEditPageProps {
@@ -31,8 +31,8 @@ const transformPartnerDataToFormValues = (partner: DeliveryPartner): Partial<Del
       first_name: partner.user_details.first_name || "",
       last_name: partner.user_details.last_name || "",
       email: partner.user_details.email || "",
-      phone_number: partner.user_details.phone || "",
-    } : { first_name: "", last_name: "", email: "", phone_number: "" },
+      phone_number: partner.user_details.phone_number || "",
+    } : { first_name: " ", last_name: " ", email: " ", phone_number: " " },
     profile_picture: partner.profile_picture || undefined,
     description: partner.description || undefined,
     tax_id: partner.tax_id || undefined,
@@ -76,7 +76,7 @@ const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues, 
   const vehicle_metadata = {
     make: formValues.vehicleMake || "",
     model: formValues.vehicleModel || "",
-    year: formValues.vehicleYear || "",
+    year: formValues.vehicleYear ? parseInt(formValues.vehicleYear, 10) : undefined,
     color: formValues.vehicleColor || "",
     plate: formValues.vehiclePlate || "",
   };
@@ -97,13 +97,20 @@ const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues, 
   const apiPayload: Partial<DeliveryPartner> = {
     type: formValues.type,
     name: formValues.name,
-    user: formValues.user,
+    user_details: {
+      first_name: formValues.user.first_name,
+      last_name: formValues.user.last_name,
+      email: formValues.user.email,
+      phone_number: formValues.user.phone_number,
+    },
     profile_picture: formValues.profile_picture || undefined,
     description: formValues.description || undefined,
     tax_id: formValues.tax_id,
-    vehicle_info,
+    vehicle_info: {
+      ...vehicle_info,
+      plate_number: formValues.vehiclePlate || "",
+    },
     kyc: { verified: false, documents: kyc_documents },
-    commission_percent: 10,
     drivers: [],
   };
   if (formValues.coordinates && formValues.coordinates.length === 2) {
@@ -112,7 +119,6 @@ const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues, 
         lat: formValues.coordinates[0],
         lng: formValues.coordinates[1],
       },
-      radiusKm: 10.5,
     };
   }
   if (formValues.type === "pickup_point" && formValues.flat_fee) {
@@ -124,7 +130,8 @@ const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues, 
   return apiPayload;
 };
 
-export default function DeliveryPartnerEditPage({ params }: DeliveryPartnerEditPageProps) {
+export default function DeliveryPartnerEditPage(props: DeliveryPartnerEditPageProps) {
+  const params = use(props.params) as { id: string };
   const router = useRouter();
   const { data: session } = useSession();
   const id = params.id;
@@ -178,7 +185,7 @@ export default function DeliveryPartnerEditPage({ params }: DeliveryPartnerEditP
     }
   };
 
-  if (loading && !partner){
+  if (loading && !partner) {
     return <Spinner />
   }
 
@@ -220,7 +227,7 @@ export default function DeliveryPartnerEditPage({ params }: DeliveryPartnerEditP
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              Edit Delivery Partner: {partner.name}
+              Edit Delivery Partner: {partner?.name}
             </h1>
             <p className="text-muted-foreground">
               Update delivery partner information and settings

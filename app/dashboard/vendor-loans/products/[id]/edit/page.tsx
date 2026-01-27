@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft } from "lucide-react";
@@ -17,12 +17,13 @@ import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { LoanProductFormValues } from "@/features/loans/products/types";
 
 interface EditLoanProductPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function EditLoanProductPage({ params }: EditLoanProductPageProps) {
+export default function EditLoanProductPage(props: EditLoanProductPageProps) {
+  const params = use(props.params) as { id: string };
   const { id } = params;
   const router = useRouter();
   const session = useSession();
@@ -150,6 +151,7 @@ export default function EditLoanProductPage({ params }: EditLoanProductPageProps
             }}
             buttonText="Go Back"
             buttonAction={() => router.push("/dashboard/vendor-loans/products")}
+            buttonIcon={ArrowLeft}
           />
         </div>
       </div>

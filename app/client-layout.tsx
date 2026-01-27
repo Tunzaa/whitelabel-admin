@@ -49,13 +49,7 @@ export default function ClientLayout({
     return () => clearTimeout(timer);
   }, []);
 
-  if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-          <Spinner />
-      </div>
-    );
-  }
+  const isServer = typeof window === 'undefined';
 
   return (
     <Providers session={session}>
@@ -67,7 +61,13 @@ export default function ClientLayout({
         }}
       />
       <LanguageInitializer>
-        {children}
+        {(!isLoaded && !isServer) ? (
+          <div className="flex items-center justify-center min-h-screen">
+            <Spinner />
+          </div>
+        ) : (
+          children
+        )}
       </LanguageInitializer>
     </Providers>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
@@ -32,12 +32,13 @@ import { compactCurrency } from "@/lib/utils";
 
 
 interface LoanProductDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function LoanProductDetailPage({ params }: LoanProductDetailPageProps) {
+export default function LoanProductDetailPage(props: LoanProductDetailPageProps) {
+  const params = use(props.params) as { id: string };
   const { id } = params;
   const router = useRouter();
   const session = useSession();
