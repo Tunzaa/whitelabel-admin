@@ -6,14 +6,12 @@ import { useSession } from "next-auth/react";
 import { format } from "date-fns";
 import {
   ArrowLeft, Edit, Banknote, Percent, Calendar, Clock,
-  CreditCard, Check, X, ExternalLink, Star, ChevronsUpDown,
-  BarChart4, FileText, Building, Tag, Calculator, Settings,
-  Coins, Target, Users, Wallet, Globe,
-  Mail, Phone
+  CreditCard, Check, X, ExternalLink,
+  BarChart4, FileText, Building, Mail, Phone, Globe
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { VerificationDocumentManager } from "@/components/ui/verification-document-manager";
 import { Spinner } from "@/components/ui/spinner";
@@ -23,12 +21,18 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 import { useLoanProductStore } from "@/features/loans/products/store";
-import { useLoanProviderStore } from "@/features/loans/providers/store";
+// import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { generateMockLoanProducts } from "@/features/loans/products/data/mock-data";
 import { generateMockLoanProviders } from "@/features/loans/providers/data/mock-data";
 import { LoanProduct } from "@/features/loans/products/types";
 import { LoanProvider } from "@/features/loans/providers/types";
 import { compactCurrency } from "@/lib/utils";
+import { CustomUser } from "@/lib/core/auth";
+
+interface ProductError {
+  message: string;
+  status: number | string;
+}
 
 
 interface LoanProductDetailPageProps {
@@ -43,14 +47,14 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
   const router = useRouter();
   const session = useSession();
   // Get tenant ID safely
-  const tenantId = session?.data?.user ? (session.data.user as any).tenant_id : undefined;
+  const tenantId = session?.data?.user ? (session.data.user as unknown as CustomUser).tenant_id : undefined;
 
   // Skip the store for now and use local state directly
   const [product, setProduct] = useState<LoanProduct | null>(null);
   const [provider, setProvider] = useState<LoanProvider | null>(null);
   const [loading, setLoading] = useState(true);
-  const [productError, setProductError] = useState<any>(null);
-  const [providerLoading, setProviderLoading] = useState(false);
+  const [productError, setProductError] = useState<ProductError | null>(null);
+  const [providerLoading] = useState(false);
 
   // Get the store functions we still need
   const { updateProductStatus } = useLoanProductStore();
@@ -129,7 +133,7 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
       }
 
       toast.success(`Product ${isActive ? 'activated' : 'deactivated'} successfully`);
-    } catch (error) {
+    } catch {
       toast.error(`Failed to ${isActive ? 'activate' : 'deactivate'} product`);
     }
   };
@@ -616,9 +620,8 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
         {product?.verification_documents && (
           <VerificationDocumentManager
             documents={product.verification_documents}
-            onApprove={handleDocumentApprove}
-            onReject={handleDocumentReject}
-            showActions={true}
+            onDocumentVerification={async () => { toast.info("Verification actions not available in view mode"); }}
+            showActions={false}
           />
         )}
       </div>

@@ -217,9 +217,9 @@ export const useFileStore = create<FileState>()(
                     }));
 
                     return updatedFile;
-                } catch (error: any) {
+                } catch (error) {
                     // Update file with error status
-                    const errorMessage = error?.message || 'Upload failed';
+                    const errorMessage = error instanceof Error ? error.message : 'Upload failed';
                     set((state) => ({
                         files: {
                             ...state.files,
@@ -269,4 +269,4 @@ export const useFileStore = create<FileState>()(
             })
         }
     )
-); 
+);

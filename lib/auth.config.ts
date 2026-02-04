@@ -2,12 +2,14 @@ import { NextAuthConfig } from "next-auth";
 import CredentialProvider from "next-auth/providers/credentials";
 import { JWT } from "next-auth/jwt";
 import { Session } from "next-auth";
-import api from "./core/api";
+// import api from "./core/api";
 import { extractUserRoles } from "./core/auth";
-import type { CustomUser } from "./core/auth";
+import type { CustomUser, AppRole } from "./core/auth";
 
 // CustomUser type is imported from the centralized core module
 
+// Bypass strict NextAuth type check for role
+// Bypass strict NextAuth type check for role
 interface CustomSession extends Session {
   user: CustomUser;
   accessToken: string;
@@ -28,15 +30,37 @@ const authConfig = {
           type: "password",
         },
       },
-      async authorize(credentials: any, req: any): Promise<CustomUser | null> {
+      async authorize(credentials: Record<string, unknown> | undefined, req: unknown): Promise<CustomUser | null> {
         try {
-          if (!credentials?.email || !credentials?.password) {
+          // Narrow down the type for usage
+          const creds = credentials as { email?: string; password?: string } | undefined;
+
+          if (!creds?.email || !creds?.password) {
             console.error('NextAuth: No credentials provided');
             return null;
           }
 
-          // Use the API client to authenticate
-          const userData = await api.auth.login(credentials.email, credentials.password);
+          // Use fetch directly to avoid axios dependency in Edge Runtime
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+          const response = await fetch(`${baseUrl}/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              identifier: creds.email,
+              password: creds.password,
+              is_phone: false
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Authentication failed');
+          }
+
+          const apiResponse = await response.json();
+          const userData = apiResponse;
 
           // Extract roles using the updated function
           const roles = extractUserRoles(userData);
@@ -47,7 +71,7 @@ const authConfig = {
             email: userData.email,
             token: userData.access_token,
             name: `${userData.first_name} ${userData.last_name}`,
-            role: roles[0] || 'user', // Use first role for backward compatibility
+            role: (roles[0] || 'support') as AppRole,
             roles: roles, // Store all roles
             accessToken: userData.access_token,
             tenant_id: userData.tenant_id || '4c56d0c3-55d9-495b-ae26-0d922d430a42',
