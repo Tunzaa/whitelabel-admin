@@ -113,7 +113,7 @@ export default function SelfResetPasswordPage() {
 
     return (
         <div className="container max-w-2xl py-6 space-y-6">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center px-6 space-x-2">
                 <Button variant="outline" size="icon" onClick={handleGoBack}>
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -129,123 +129,125 @@ export default function SelfResetPasswordPage() {
 
             <Separator />
 
-            {step === "request" ? (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Request Password Reset</CardTitle>
-                        <CardDescription>
-                            We'll send a 6-digit reset code to your email address
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Alert>
-                            <Mail className="h-4 w-4" />
-                            <AlertDescription>
-                                A reset code will be sent to <strong>{userEmail}</strong>
-                            </AlertDescription>
-                        </Alert>
+            <div className="px-6">
+                {step === "request" ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Request Password Reset</CardTitle>
+                            <CardDescription>
+                                We'll send a 6-digit reset code to your email address
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <Alert>
+                                <Mail className="h-4 w-4" />
+                                <AlertDescription>
+                                    A reset code will be sent to <strong>{userEmail}</strong>
+                                </AlertDescription>
+                            </Alert>
 
-                        <div className="flex gap-2 pt-4">
-                            <Button variant="outline" onClick={handleGoBack} className="flex-1">
-                                Cancel
-                            </Button>
-                            <Button onClick={handleSendCode} disabled={isSubmitting} className="flex-1">
-                                <Send className="mr-2 h-4 w-4" />
-                                {isSubmitting ? "Sending..." : "Send Reset Code"}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            ) : (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Complete Password Reset</CardTitle>
-                        <CardDescription>
-                            Enter the code sent to your email and set your new password
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Alert className="mb-4">
-                            <KeyRound className="h-4 w-4" />
-                            <AlertDescription>
-                                A 6-digit code has been sent to <strong>{userEmail}</strong>
-                            </AlertDescription>
-                        </Alert>
+                            <div className="flex gap-2 pt-4">
+                                <Button variant="outline" onClick={handleGoBack} className="flex-1">
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleSendCode} disabled={isSubmitting} className="flex-1">
+                                    <Send className="mr-2 h-4 w-4" />
+                                    {isSubmitting ? "Sending..." : "Send Reset Code"}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Complete Password Reset</CardTitle>
+                            <CardDescription>
+                                Enter the code sent to your email and set your new password
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Alert className="mb-4">
+                                <KeyRound className="h-4 w-4" />
+                                <AlertDescription>
+                                    A 6-digit code has been sent to <strong>{userEmail}</strong>
+                                </AlertDescription>
+                            </Alert>
 
-                        <Form {...confirmForm}>
-                            <form onSubmit={confirmForm.handleSubmit(handleConfirmSubmit)} className="space-y-4">
-                                <FormField
-                                    control={confirmForm.control}
-                                    name="reset_token"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Reset Code (OTP)</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="123456"
-                                                    maxLength={6}
-                                                    className="font-mono text-center text-lg tracking-widest"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Enter the 6-digit code from your email
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                            <Form {...confirmForm}>
+                                <form onSubmit={confirmForm.handleSubmit(handleConfirmSubmit)} className="space-y-4">
+                                    <FormField
+                                        control={confirmForm.control}
+                                        name="reset_token"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Reset Code (OTP)</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="123456"
+                                                        maxLength={6}
+                                                        className="font-mono text-center text-lg tracking-widest"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormDescription>
+                                                    Enter the 6-digit code from your email
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
 
-                                <FormField
-                                    control={confirmForm.control}
-                                    name="new_password"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>New Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" placeholder="••••••••" {...field} />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Must be at least 8 characters with uppercase, lowercase, and number
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                    <FormField
+                                        control={confirmForm.control}
+                                        name="new_password"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>New Password</FormLabel>
+                                                <FormControl>
+                                                    <Input type="password" placeholder="••••••••" {...field} />
+                                                </FormControl>
+                                                <FormDescription>
+                                                    Must be at least 8 characters with uppercase, lowercase, and number
+                                                </FormDescription>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
 
-                                <FormField
-                                    control={confirmForm.control}
-                                    name="confirm_password"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Confirm Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" placeholder="••••••••" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                    <FormField
+                                        control={confirmForm.control}
+                                        name="confirm_password"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Confirm Password</FormLabel>
+                                                <FormControl>
+                                                    <Input type="password" placeholder="••••••••" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
 
-                                <div className="flex gap-2 pt-4">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setStep("request")}
-                                        className="flex-1"
-                                    >
-                                        Back
-                                    </Button>
-                                    <Button type="submit" disabled={isSubmitting} className="flex-1">
-                                        <Lock className="mr-2 h-4 w-4" />
-                                        {isSubmitting ? "Resetting..." : "Reset Password"}
-                                    </Button>
-                                </div>
-                            </form>
-                        </Form>
-                    </CardContent>
-                </Card>
-            )}
+                                    <div className="flex gap-2 pt-4">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setStep("request")}
+                                            className="flex-1"
+                                        >
+                                            Back
+                                        </Button>
+                                        <Button type="submit" disabled={isSubmitting} className="flex-1">
+                                            <Lock className="mr-2 h-4 w-4" />
+                                            {isSubmitting ? "Resetting..." : "Reset Password"}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </Form>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
         </div>
     );
 }

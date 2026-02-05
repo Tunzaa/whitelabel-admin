@@ -46,7 +46,7 @@ export default function UserAuthForm() {
 
   // Using NextAuth for authentication instead of direct API calls
   const [authError, setAuthError] = useState<string | null>(null);
-  
+
   // Watch for auth error changes
   useEffect(() => {
     if (authError) {
@@ -56,27 +56,27 @@ export default function UserAuthForm() {
 
   // Get the session data to detect changes
   const { data: session } = useSession();
-  
+
   // Synchronize tokens when session changes
   useEffect(() => {
     // Check for session and attempt to extract tokens
     if (session) {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        console.log('Session detected, checking for tokens');
+        console.log("Session detected, checking for tokens");
         // @ts-ignore - NextAuth custom session type includes accessToken
         const accessToken = session.accessToken;
         // @ts-ignore - Our custom user type includes token for refresh token
         const refreshToken = session.user?.token;
-        
+
         if (accessToken) {
-          localStorage.setItem('token', accessToken);
-          console.log('Token set from session');
+          localStorage.setItem("token", accessToken);
+          console.log("Token set from session");
         }
-        
+
         if (refreshToken) {
-          localStorage.setItem('refresh_token', refreshToken);
-          console.log('Refresh token set from session');
+          localStorage.setItem("refresh_token", refreshToken);
+          console.log("Refresh token set from session");
         }
       }
     }
@@ -89,16 +89,16 @@ export default function UserAuthForm() {
         let apiAuthSuccess = false;
         try {
           const apiAuthResult = await api.auth.login(data.email, data.password);
-          
+
           // Store tokens directly in localStorage
           if (apiAuthResult.access_token) {
-            localStorage.setItem('token', apiAuthResult.access_token);
-            localStorage.setItem('refresh_token', apiAuthResult.refresh_token);
+            localStorage.setItem("token", apiAuthResult.access_token);
+            localStorage.setItem("refresh_token", apiAuthResult.refresh_token);
             apiAuthSuccess = true;
           }
         } catch (apiError) {
-          setAuthError('Invalid credentials');
-          toast.error('Invalid credentials');
+          setAuthError("Invalid credentials");
+          toast.error("Invalid credentials");
           return;
         }
 
@@ -114,9 +114,9 @@ export default function UserAuthForm() {
 
           if (result?.ok || !result?.error) {
             toast.success("Signed in successfully");
-            
+
             const redirectUrl = callbackUrl ?? "/dashboard";
-            
+
             // Use window.location.href for more reliable redirect
             window.location.href = redirectUrl;
           } else {
@@ -126,7 +126,7 @@ export default function UserAuthForm() {
           }
           return;
         }
-        
+
         // Only try NextAuth if direct API failed
         const result = await signIn("credentials", {
           email: data.email,
@@ -162,7 +162,9 @@ export default function UserAuthForm() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium">Email Address</FormLabel>
+                <FormLabel className="text-sm font-medium">
+                  Email Address
+                </FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 w-4 text-muted-foreground" />
@@ -186,11 +188,13 @@ export default function UserAuthForm() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Password</FormLabel>
+                  <FormLabel className="text-sm font-medium">
+                    Password
+                  </FormLabel>
                   <button
                     type="button"
                     className="text-xs text-primary hover:underline"
-                    onClick={() => {/* Add forgot password logic */}}
+                    onClick={() => router.push("/password-reset")}
                   >
                     Forgot password?
                   </button>
@@ -210,7 +214,11 @@ export default function UserAuthForm() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-3 w-4 text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </FormControl>
