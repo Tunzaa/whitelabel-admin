@@ -51,7 +51,17 @@ import { ErrorCard } from "@/components/ui/error-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DriversTab } from "@/features/delivery-partners/components/DriversTab";
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { Copy } from "@/components/ui/copy";
 
 import { useDeliveryPartnerStore } from "@/features/delivery-partners/store";
@@ -68,10 +78,8 @@ const MapPicker = dynamic(
   () => import("@/components/ui/map-picker").then((mod) => mod.MapPicker),
   {
     ssr: false,
-    loading: () => (
-      <Spinner />
-    ),
-  }
+    loading: () => <Spinner />,
+  },
 );
 import {
   VerificationDocumentManager,
@@ -138,8 +146,9 @@ const StatusBadge = ({
     return (
       <Badge
         variant="outline"
-        className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium ${className || ""
-          } bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200`}
+        className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium ${
+          className || ""
+        } bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200`}
       >
         <Info className="h-3.5 w-3.5 mr-1" />
         Unknown
@@ -154,28 +163,33 @@ const StatusBadge = ({
   switch (status) {
     case "active":
       icon = <ShieldCheck className="h-3.5 w-3.5" />;
-      className = `${className || ""
-        } bg-green-100 text-green-700 border-green-300 hover:bg-green-200`;
+      className = `${
+        className || ""
+      } bg-green-100 text-green-700 border-green-300 hover:bg-green-200`;
       break;
     case "inactive":
       icon = <ShieldX className="h-3.5 w-3.5" />;
-      className = `${className || ""
-        } bg-red-100 text-red-700 border-red-300 hover:bg-red-200`;
+      className = `${
+        className || ""
+      } bg-red-100 text-red-700 border-red-300 hover:bg-red-200`;
       break;
     case "approved":
       icon = <ShieldX className="h-3.5 w-3.5" />;
-      className = `${className || ""
-        } bg-green-100 text-green-700 border-green-300 hover:bg-green-200`;
+      className = `${
+        className || ""
+      } bg-green-100 text-green-700 border-green-300 hover:bg-green-200`;
       break;
     case "not_approved":
       icon = <AlertCircle className="h-3.5 w-3.5" />;
-      className = `${className || ""
-        } bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200`;
+      className = `${
+        className || ""
+      } bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200`;
       break;
     default:
       icon = <Info className="h-3.5 w-3.5" />;
-      className = `${className || ""
-        } bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200`;
+      className = `${
+        className || ""
+      } bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200`;
       break;
   }
 
@@ -190,9 +204,7 @@ const StatusBadge = ({
   );
 };
 
-function DeliveryPartnerPage({
-  params,
-}: DeliveryPartnerPageProps) {
+function DeliveryPartnerPage({ params }: DeliveryPartnerPageProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const tenantId = (session?.user as any)?.tenant_id;
@@ -212,14 +224,12 @@ function DeliveryPartnerPage({
   const [isUpdating, setIsUpdating] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
 
-  const transformKycToVerificationDoc = (
-    doc: any,
-  ): VerificationDocument => {
+  const transformKycToVerificationDoc = (doc: any): VerificationDocument => {
     return {
       document_id: doc.document_id,
       document_type_id: doc.document_type_id,
-      document_type_name: 'KYC Document',
-      verification_status: doc.verified ? 'verified' : 'pending',
+      document_type_name: "KYC Document",
+      verification_status: doc.verified ? "verified" : "pending",
       document_url: doc.link,
       rejection_reason: doc.rejection_reason,
       created_at: doc.created_at,
@@ -228,34 +238,39 @@ function DeliveryPartnerPage({
     } as any;
   };
 
-  const handleDocumentVerification = useCallback(async (payload: VerificationActionPayload) => {
-    if (!partner) {
-      toast.error("Verification failed: Partner data not available.");
-      return;
-    }
-    if (!tenantId) {
-      toast.error("Verification failed: User session is invalid.");
-      return;
-    }
+  const handleDocumentVerification = useCallback(
+    async (payload: VerificationActionPayload) => {
+      if (!partner) {
+        toast.error("Verification failed: Partner data not available.");
+        return;
+      }
+      if (!tenantId) {
+        toast.error("Verification failed: User session is invalid.");
+        return;
+      }
 
-    setIsUpdating(true);
-    const action = payload.verification_status === 'verified' ? 'Approving' : 'Rejecting';
-    const toastId = toast.loading(\`\${action} document...\`);
+      setIsUpdating(true);
+      const action =
+        payload.verification_status === "verified" ? "Approving" : "Rejecting";
+      const toastId = toast.loading(`${action} document...`);
 
-    try {
-      await updateDeliveryPartnerDocumentStatus(
-        partner.partner_id,
-        payload,
-        { "X-Tenant-ID": tenantId }
-      );
-      toast.success(\`Document \${payload.verification_status} successfully.\`, { id: toastId });
-    } catch (error) {
-      toast.error(\`Failed to \${action.toLowerCase()} document.\`, { id: toastId });
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [partner, tenantId, updateDeliveryPartnerDocumentStatus]);
-
+      try {
+        await updateDeliveryPartnerDocumentStatus(partner.partner_id, payload, {
+          "X-Tenant-ID": tenantId,
+        });
+        toast.success(`Document ${payload.verification_status} successfully.`, {
+          id: toastId,
+        });
+      } catch (error) {
+        toast.error(`Failed to ${action.toLowerCase()} document.`, {
+          id: toastId,
+        });
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [partner, tenantId, updateDeliveryPartnerDocumentStatus],
+  );
 
   useEffect(() => {
     if (id && tenantId) {
@@ -264,24 +279,24 @@ function DeliveryPartnerPage({
   }, [id, tenantId, fetchDeliveryPartner]);
 
   const handleStatusChange = async (
-    action: 'approve' | 'reject' | 'activate' | 'deactivate'
+    action: "approve" | "reject" | "activate" | "deactivate",
   ) => {
     if (!partner) return;
 
-    if (action === 'reject') {
+    if (action === "reject") {
       setShowRejectDialog(true);
       return;
     }
 
     let payload = {};
     switch (action) {
-      case 'approve':
+      case "approve":
         payload = { is_approved: true, is_active: true };
         break;
-      case 'activate':
+      case "activate":
         payload = { is_active: true };
         break;
-      case 'deactivate':
+      case "deactivate":
         payload = { is_active: false };
         break;
     }
@@ -289,17 +304,28 @@ function DeliveryPartnerPage({
     setIsUpdatingStatus(true);
     const toastId = toast.loading("Updating partner status...");
     try {
-      await updateDeliveryPartnerStatus(partner.partner_id, payload, undefined, { "X-Tenant-ID": tenantId });
+      await updateDeliveryPartnerStatus(
+        partner.partner_id,
+        payload,
+        undefined,
+        { "X-Tenant-ID": tenantId },
+      );
       toast.success("Partner status updated successfully.", { id: toastId });
     } catch (error) {
       toast.error("Failed to update partner status.", { id: toastId });
-      console.error(\`Error changing partner status to \${action}:\`, error);
+      console.error(`Error changing partner status to ${action}:`, error);
     } finally {
       setIsUpdatingStatus(false);
     }
   };
 
-  const handleRejectConfirm = async ({ type, customReason }: { type: string; customReason?: string }) => {
+  const handleRejectConfirm = async ({
+    type,
+    customReason,
+  }: {
+    type: string;
+    customReason?: string;
+  }) => {
     if (!partner) return;
 
     const reasonText = getRejectionReasonText(type, customReason);
@@ -313,7 +339,12 @@ function DeliveryPartnerPage({
     setShowRejectDialog(false);
     const toastId = toast.loading("Rejecting partner...");
     try {
-      await updateDeliveryPartnerStatus(partner.partner_id, payload, undefined, { "X-Tenant-ID": tenantId });
+      await updateDeliveryPartnerStatus(
+        partner.partner_id,
+        payload,
+        undefined,
+        { "X-Tenant-ID": tenantId },
+      );
       toast.success("Partner has been rejected.", { id: toastId });
     } catch (error) {
       toast.error("Failed to reject partner.", { id: toastId });
@@ -327,7 +358,9 @@ function DeliveryPartnerPage({
     if (!partner?.partner_id || !tenantId) return;
     const toastId = toast.loading("Deleting delivery partner...");
     try {
-      await deleteDeliveryPartner(partner.partner_id, { "X-Tenant-ID": tenantId });
+      await deleteDeliveryPartner(partner.partner_id, {
+        "X-Tenant-ID": tenantId,
+      });
       toast.success("Delivery partner deleted successfully.", {
         id: toastId,
       });
@@ -360,8 +393,9 @@ function DeliveryPartnerPage({
 
   const partnerName =
     partner?.name ||
-    \`\${partner?.user_details?.first_name || ""} \${partner?.user_details?.last_name || ""
-      }\`.trim() ||
+    `${partner?.user_details?.first_name || ""} ${
+      partner?.user_details?.last_name || ""
+    }`.trim() ||
     "Unnamed Partner";
   const partnerAvatarFallback = (
     partnerName.substring(0, 2) || "DP"
@@ -411,7 +445,11 @@ function DeliveryPartnerPage({
                   ID: {partner?.partner_id}
                   {partner?.partner_id && (
                     <span className="ml-2 align-middle inline-flex">
-                      <Copy text={partner.partner_id} size={14} className="ml-1" />
+                      <Copy
+                        text={partner.partner_id}
+                        size={14}
+                        className="ml-1"
+                      />
                     </span>
                   )}
                 </span>
@@ -421,7 +459,9 @@ function DeliveryPartnerPage({
         </div>
 
         <div className="flex items-center gap-2.5">
-          <StatusBadge status={partner?.is_approved ? "approved" : "not_approved"} />
+          <StatusBadge
+            status={partner?.is_approved ? "approved" : "not_approved"}
+          />
           <StatusBadge status={partner?.is_active ? "active" : "inactive"} />
           <Can permission="delivery-partners:update">
             <Button
@@ -429,7 +469,7 @@ function DeliveryPartnerPage({
               size="sm"
               onClick={() =>
                 router.push(
-                  \`/dashboard/delivery-partners/\${partner?.partner_id}/edit\`
+                  `/dashboard/delivery-partners/${partner?.partner_id}/edit`,
                 )
               }
             >
@@ -501,16 +541,34 @@ function DeliveryPartnerPage({
                         <InfoItem
                           icon={<Mail className="h-4 w-4" />}
                           label="Contact Email"
-                          value={partner?.user_details?.email ? (
-                            <a href={\`mailto:\${partner.user_details.email}\`} className="hover:underline">{partner.user_details.email}</a>
-                          ) : "N/A"}
+                          value={
+                            partner?.user_details?.email ? (
+                              <a
+                                href={`mailto:${partner.user_details.email}`}
+                                className="hover:underline"
+                              >
+                                {partner.user_details.email}
+                              </a>
+                            ) : (
+                              "N/A"
+                            )
+                          }
                         />
                         <InfoItem
                           icon={<Phone className="h-4 w-4" />}
                           label="Contact Phone"
-                          value={partner?.user_details?.phone ? (
-                            <a href={\`tel:\${partner.user_details.phone}\`} className="hover:underline">{partner.user_details.phone}</a>
-                          ) : "N/A"}
+                          value={
+                            partner?.user_details?.phone ? (
+                              <a
+                                href={`tel:${partner.user_details.phone}`}
+                                className="hover:underline"
+                              >
+                                {partner.user_details.phone}
+                              </a>
+                            ) : (
+                              "N/A"
+                            )
+                          }
                         />
                         <InfoItem
                           icon={<BuildingIcon className="h-4 w-4" />}
@@ -527,8 +585,9 @@ function DeliveryPartnerPage({
                           icon={<UserIcon className="h-4 w-4" />}
                           label="Account Name"
                           value={
-                            \`\${partner?.user_details?.first_name || ""} \${partner?.user_details?.last_name || ""
-                              }\`.trim() || "N/A"
+                            `${partner?.user_details?.first_name || ""} ${
+                              partner?.user_details?.last_name || ""
+                            }`.trim() || "N/A"
                           }
                         />
                       </div>
@@ -584,16 +643,34 @@ function DeliveryPartnerPage({
                       <InfoItem
                         icon={<Mail className="h-4 w-4" />}
                         label="Contact Email"
-                        value={partner?.user_details?.email ? (
-                          <a href={\`mailto:\${partner.user_details.email}\`} className="hover:underline">{partner.user_details.email}</a>
-                        ) : "N/A"}
+                        value={
+                          partner?.user_details?.email ? (
+                            <a
+                              href={`mailto:${partner.user_details.email}`}
+                              className="hover:underline"
+                            >
+                              {partner.user_details.email}
+                            </a>
+                          ) : (
+                            "N/A"
+                          )
+                        }
                       />
                       <InfoItem
                         icon={<Phone className="h-4 w-4" />}
                         label="Contact Phone"
-                        value={partner?.user_details?.phone ? (
-                          <a href={\`tel:\${partner.user_details.phone}\`} className="hover:underline">{partner.user_details.phone}</a>
-                        ) : "N/A"}
+                        value={
+                          partner?.user_details?.phone ? (
+                            <a
+                              href={`tel:${partner.user_details.phone}`}
+                              className="hover:underline"
+                            >
+                              {partner.user_details.phone}
+                            </a>
+                          ) : (
+                            "N/A"
+                          )
+                        }
                       />
                       {partner?.location?.address && (
                         <InfoItem
@@ -612,8 +689,9 @@ function DeliveryPartnerPage({
                         icon={<UserIcon className="h-4 w-4" />}
                         label="Account Name"
                         value={
-                          \`\${partner?.user_details?.first_name || ""} \${partner?.user_details?.last_name || ""
-                            }\`.trim() || "N/A"
+                          `${partner?.user_details?.first_name || ""} ${
+                            partner?.user_details?.last_name || ""
+                          }`.trim() || "N/A"
                         }
                       />
                     </div>
@@ -638,67 +716,80 @@ function DeliveryPartnerPage({
                             partner?.location.coordinates.lat,
                             partner?.location.coordinates.lng,
                           ]}
-                          onChange={() => { }}
+                          onChange={() => {}}
                           readOnly={true}
                           height="250px"
                         />
                       </div>
                     )}
-                    {partner?.type === "individual" && partner?.vehicle_info && (
-                      <div>
-                        <h4 className="font-medium text-md mb-2">
-                          Vehicle Information
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                          <InfoItem
-                            label="Vehicle Type"
-                            value={partner?.vehicle_info.vehicle_type_id || "N/A"}
-                          />
-                          <InfoItem
-                            label="Plate Number"
-                            value={partner?.vehicle_info.metadata?.plate || "N/A"}
-                          />
-                          <InfoItem
-                            label="Make"
-                            value={partner?.vehicle_info.metadata?.make || "N/A"}
-                          />
-                          <InfoItem
-                            label="Model"
-                            value={partner?.vehicle_info.metadata?.model || "N/A"}
-                          />
-                          <InfoItem
-                            label="Year"
-                            value={partner?.vehicle_info.metadata?.year || "N/A"}
-                          />
-                          <InfoItem
-                            label="Color"
-                            value={partner?.vehicle_info.metadata?.color || "N/A"}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {(partner?.type === "pickup_point" ||
-                      partner?.type === "individual") && (
+                    {partner?.type === "individual" &&
+                      partner?.vehicle_info && (
                         <div>
-                          <Separator />
-                          <h4 className="font-medium text-md mb-2">Pricing</h4>
+                          <h4 className="font-medium text-md mb-2">
+                            Vehicle Information
+                          </h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                            {partner?.type == "individual" && (
-                              <InfoItem
-                                label="Cost Per Km"
-                                value={partner?.cost_per_km || "N/A"}
-                              />
-                            )}
-                            {partner?.type == "pickup_point" && (
-                              <InfoItem
-                                label="Flat Fee"
-                                value={partner?.flat_fee || "N/A"}
-                              />
-                            )}
+                            <InfoItem
+                              label="Vehicle Type"
+                              value={
+                                partner?.vehicle_info.vehicle_type_id || "N/A"
+                              }
+                            />
+                            <InfoItem
+                              label="Plate Number"
+                              value={
+                                partner?.vehicle_info.metadata?.plate || "N/A"
+                              }
+                            />
+                            <InfoItem
+                              label="Make"
+                              value={
+                                partner?.vehicle_info.metadata?.make || "N/A"
+                              }
+                            />
+                            <InfoItem
+                              label="Model"
+                              value={
+                                partner?.vehicle_info.metadata?.model || "N/A"
+                              }
+                            />
+                            <InfoItem
+                              label="Year"
+                              value={
+                                partner?.vehicle_info.metadata?.year || "N/A"
+                              }
+                            />
+                            <InfoItem
+                              label="Color"
+                              value={
+                                partner?.vehicle_info.metadata?.color || "N/A"
+                              }
+                            />
                           </div>
                         </div>
                       )}
+
+                    {(partner?.type === "pickup_point" ||
+                      partner?.type === "individual") && (
+                      <div>
+                        <Separator />
+                        <h4 className="font-medium text-md mb-2">Pricing</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                          {partner?.type == "individual" && (
+                            <InfoItem
+                              label="Cost Per Km"
+                              value={partner?.cost_per_km || "N/A"}
+                            />
+                          )}
+                          {partner?.type == "pickup_point" && (
+                            <InfoItem
+                              label="Flat Fee"
+                              value={partner?.flat_fee || "N/A"}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </>
@@ -732,7 +823,11 @@ function DeliveryPartnerPage({
               </CardHeader>
               <CardContent className="space-y-3">
                 <VerificationDocumentManager
-                  documents={partner?.kyc?.documents?.map(transformKycToVerificationDoc) || []}
+                  documents={
+                    partner?.kyc?.documents?.map(
+                      transformKycToVerificationDoc,
+                    ) || []
+                  }
                   onDocumentVerification={handleDocumentVerification}
                   showActions={true}
                   isProcessing={isUpdating}
@@ -772,7 +867,9 @@ function DeliveryPartnerPage({
                     <Can permission="delivery-partners:update">
                       <Button
                         onClick={() =>
-                          handleStatusChange(partner.is_active ? "deactivate" : "activate")
+                          handleStatusChange(
+                            partner.is_active ? "deactivate" : "activate",
+                          )
                         }
                         disabled={isUpdatingStatus}
                         size="sm"
@@ -800,7 +897,9 @@ function DeliveryPartnerPage({
                     ) : (
                       <XCircle className="mr-2 h-4 w-4" />
                     )}
-                    {!partner.is_approved ? "Reject Partner" : "Suspend Partner"}
+                    {!partner.is_approved
+                      ? "Reject Partner"
+                      : "Suspend Partner"}
                   </Button>
                 </Can>
                 <Separator className="my-3" />
@@ -809,8 +908,9 @@ function DeliveryPartnerPage({
                     variant="outline"
                     onClick={() =>
                       router.push(
-                        \`/dashboard/delivery-partners/\${partner?.partner_id || partner?._id
-                        }/edit\`
+                        `/dashboard/delivery-partners/${
+                          partner?.partner_id || partner?._id
+                        }/edit`,
                       )
                     }
                     className="w-full"
@@ -838,7 +938,8 @@ function DeliveryPartnerPage({
                         <AlertDialogDescription>
                           This action cannot be undone. This will permanently
                           delete the delivery partner
-                          <strong>{partnerName}</strong> and all associated data.
+                          <strong>{partnerName}</strong> and all associated
+                          data.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -867,4 +968,6 @@ function DeliveryPartnerPage({
   ) : null;
 }
 
-export default withAuthorization(DeliveryPartnerPage, { permission: "delivery-partners:read" });
+export default withAuthorization(DeliveryPartnerPage, {
+  permission: "delivery-partners:read",
+});

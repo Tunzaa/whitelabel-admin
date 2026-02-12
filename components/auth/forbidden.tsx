@@ -1,7 +1,9 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { ShieldAlert } from 'lucide-react';
+"use client";
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { ShieldAlert } from "lucide-react";
 
 const Forbidden: React.FC = () => {
   const router = useRouter();
@@ -13,9 +15,7 @@ const Forbidden: React.FC = () => {
       <p className="text-lg text-muted-foreground mb-6">
         You do not have the required permissions to view this page.
       </p>
-      <Button onClick={() => router.back()}>
-        Go Back
-      </Button>
+      <Button onClick={() => router.back()}>Go Back</Button>
     </div>
   );
 };

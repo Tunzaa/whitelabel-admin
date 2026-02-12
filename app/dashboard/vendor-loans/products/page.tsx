@@ -12,7 +12,10 @@ import { ErrorCard } from "@/components/ui/error-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useLoanProductStore } from "@/features/loans/products/store";
-import { LoanProductFilter, LoanProduct } from "@/features/loans/products/types";
+import {
+  LoanProductFilter,
+  LoanProduct,
+} from "@/features/loans/products/types";
 import { ProductTable } from "@/features/loans/products/components/product-table";
 
 import { withAuthorization } from "@/components/auth/with-authorization";
@@ -23,7 +26,8 @@ function LoanProductsPage() {
   const session = useSession();
   const tenantId = (session?.data?.user as any)?.tenant_id;
 
-  const { products, loading, storeError, fetchProducts, updateProductStatus } = useLoanProductStore();
+  const { products, loading, storeError, fetchProducts, updateProductStatus } =
+    useLoanProductStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,14 +37,14 @@ function LoanProductsPage() {
 
   // Define tenant headers
   const tenantHeaders = {
-    'X-Tenant-ID': tenantId
+    "X-Tenant-ID": tenantId,
   };
 
   // Define filter based on active tab
   const getFilters = (): LoanProductFilter => {
     const baseFilter: LoanProductFilter = {
       skip: (currentPage - 1) * pageSize,
-      limit: pageSize
+      limit: pageSize,
     };
 
     // Add search filter if available
@@ -53,12 +57,12 @@ function LoanProductsPage() {
       case "active":
         return {
           ...baseFilter,
-          is_active: true
+          is_active: true,
         };
       case "inactive":
         return {
           ...baseFilter,
-          is_active: false
+          is_active: false,
         };
       default:
         return baseFilter;
@@ -85,7 +89,7 @@ function LoanProductsPage() {
   }, [fetchProducts, activeTab, currentPage, searchQuery, tenantId]);
 
   const handleProductClick = (product: LoanProduct) => {
-    router.push(\`/dashboard/vendor-loans/products/\${product.product_id}\`);
+    router.push(`/dashboard/vendor-loans/products/${product.product_id}`);
   };
 
   const handleStatusChange = async (productId: string, isActive: boolean) => {
@@ -117,7 +121,11 @@ function LoanProductsPage() {
             </p>
           </div>
           <Can permission="vendor-loans:create">
-            <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
+            <Button
+              onClick={() =>
+                router.push("/dashboard/vendor-loans/products/add")
+              }
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Product
             </Button>
@@ -142,7 +150,11 @@ function LoanProductsPage() {
             </p>
           </div>
           <Can permission="vendor-loans:create">
-            <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
+            <Button
+              onClick={() =>
+                router.push("/dashboard/vendor-loans/products/add")
+              }
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Product
             </Button>
@@ -154,7 +166,7 @@ function LoanProductsPage() {
             title="Failed to load loan products"
             error={{
               status: storeError.status?.toString() || "Error",
-              message: storeError.message || "An error occurred"
+              message: storeError.message || "An error occurred",
             }}
             buttonText="Retry"
             buttonAction={() => fetchProducts(getFilters(), tenantHeaders)}
@@ -175,7 +187,9 @@ function LoanProductsPage() {
           </p>
         </div>
         <Can permission="vendor-loans:create">
-          <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
+          <Button
+            onClick={() => router.push("/dashboard/vendor-loans/products/add")}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Add Product
           </Button>
@@ -212,7 +226,11 @@ function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) => router.push(\`/dashboard/vendor-loans/products/\${product.product_id}/edit\`)}
+                onEdit={(product) =>
+                  router.push(
+                    `/dashboard/vendor-loans/products/${product.product_id}/edit`,
+                  )
+                }
                 onStatusChange={handleStatusChange}
               />
             )}
@@ -226,7 +244,11 @@ function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) => router.push(\`/dashboard/vendor-loans/products/\${product.product_id}/edit\`)}
+                onEdit={(product) =>
+                  router.push(
+                    `/dashboard/vendor-loans/products/${product.product_id}/edit`,
+                  )
+                }
                 onStatusChange={handleStatusChange}
               />
             )}
@@ -240,7 +262,11 @@ function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) => router.push(\`/dashboard/vendor-loans/products/\${product.product_id}/edit\`)}
+                onEdit={(product) =>
+                  router.push(
+                    `/dashboard/vendor-loans/products/${product.product_id}/edit`,
+                  )
+                }
                 onStatusChange={handleStatusChange}
               />
             )}
@@ -251,4 +277,6 @@ function LoanProductsPage() {
   );
 }
 
-export default withAuthorization(LoanProductsPage, { permission: "vendor-loans:read" });
+export default withAuthorization(LoanProductsPage, {
+  permission: "vendor-loans:read",
+});

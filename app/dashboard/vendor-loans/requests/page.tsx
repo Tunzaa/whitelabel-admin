@@ -21,9 +21,10 @@ import { Can } from "@/components/auth/can";
 function LoanRequestsPage() {
   const router = useRouter();
   const session = useSession();
-  const tenantId = (session?.data?.user as any)?.tenant_id || '';
+  const tenantId = (session?.data?.user as any)?.tenant_id || "";
 
-  const { requests, loading, storeError, fetchRequests, updateRequestStatus } = useLoanRequestStore();
+  const { requests, loading, storeError, fetchRequests, updateRequestStatus } =
+    useLoanRequestStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,14 +34,14 @@ function LoanRequestsPage() {
 
   // Define tenant headers
   const tenantHeaders = {
-    'X-Tenant-ID': tenantId
+    "X-Tenant-ID": tenantId,
   };
 
   // Define filter based on active tab
   const getFilters = (): LoanRequestFilter => {
     const baseFilter: LoanRequestFilter = {
       skip: (currentPage - 1) * pageSize,
-      limit: pageSize
+      limit: pageSize,
     };
 
     // Add search filter if available
@@ -53,27 +54,27 @@ function LoanRequestsPage() {
       case "pending":
         return {
           ...baseFilter,
-          status: "pending"
+          status: "pending",
         };
       case "approved":
         return {
           ...baseFilter,
-          status: "approved"
+          status: "approved",
         };
       case "rejected":
         return {
           ...baseFilter,
-          status: "rejected"
+          status: "rejected",
         };
       case "disbursed":
         return {
           ...baseFilter,
-          status: "disbursed"
+          status: "disbursed",
         };
       case "paid":
         return {
           ...baseFilter,
-          status: "paid"
+          status: "paid",
         };
       default:
         return baseFilter;
@@ -100,7 +101,7 @@ function LoanRequestsPage() {
   }, [fetchRequests, activeTab, currentPage, searchQuery, tenantId]);
 
   const handleRequestClick = (request: any) => {
-    router.push(\`/dashboard/vendor-loans/requests/\${request.request_id}\`);
+    router.push(`/dashboard/vendor-loans/requests/${request.request_id}`);
   };
 
   const handleStatusChange = async (requestId: string, status: string) => {
@@ -157,7 +158,7 @@ function LoanRequestsPage() {
             title="Failed to load loan requests"
             error={{
               status: storeError.status?.toString() || "Error",
-              message: storeError.message || "An error occurred"
+              message: storeError.message || "An error occurred",
             }}
             buttonText="Retry"
             buttonAction={() => fetchRequests(getFilters(), tenantHeaders)}
@@ -287,4 +288,6 @@ function LoanRequestsPage() {
   );
 }
 
-export default withAuthorization(LoanRequestsPage, { permission: "vendor-loans:read" });
+export default withAuthorization(LoanRequestsPage, {
+  permission: "vendor-loans:read",
+});

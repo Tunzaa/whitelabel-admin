@@ -1,28 +1,28 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
-import { Plus, Search } from "lucide-react"
-import { useRoleStore } from "@/features/auth/stores/role-store"
-import { Role } from "@/features/auth/types/role"
-import { RoleTable } from "@/features/auth/components/role-table"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { Plus, Search } from "lucide-react";
+import { useRoleStore } from "@/features/auth/stores/role-store";
+import { Role } from "@/features/auth/types/role";
+import { RoleTable } from "@/features/auth/components/role-table";
+import { toast } from "sonner";
 
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorCard } from "@/components/ui/error-card";
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw } from "lucide-react";
 
 import { withAuthorization } from "@/components/auth/with-authorization";
 import { Can } from "@/components/auth/can";
 
 function RolesPage() {
-  const router = useRouter()
-  const { data: session } = useSession()
+  const router = useRouter();
+  const { data: session } = useSession();
   const {
     roles,
     loading,
@@ -31,91 +31,91 @@ function RolesPage() {
     setSearchQuery,
     getFilteredRoles,
     fetchRoles,
-  } = useRoleStore()
+  } = useRoleStore();
 
-  const [activeTab, setActiveTab] = useState<string>("all")
-  const tenantId = session?.user?.tenant_id
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const tenantId = session?.user?.tenant_id;
 
   // Define tenant headers
   const tenantHeaders = {
     "X-Tenant-ID": tenantId,
-  }
+  };
 
   // Fetch roles on component mount
   useEffect(() => {
     const loadRoles = async () => {
       if (tenantId) {
         try {
-          const filter: any = {}
+          const filter: any = {};
           if (activeTab === "system") {
-            filter.is_system_role = true
+            filter.is_system_role = true;
           } else if (activeTab === "custom") {
-            filter.is_system_role = false
+            filter.is_system_role = false;
           }
-          await fetchRoles(filter, tenantHeaders)
+          await fetchRoles(filter, tenantHeaders);
         } catch (error) {
-          console.error("Failed to load roles:", error)
+          console.error("Failed to load roles:", error);
         }
       }
-    }
+    };
 
-    loadRoles()
-  }, [fetchRoles, tenantId, activeTab])
+    loadRoles();
+  }, [fetchRoles, tenantId, activeTab]);
 
   // Handle search input
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value)
-  }
+    setSearchQuery(e.target.value);
+  };
 
   // Handle role selection for navigation
   const handleRoleClick = (role: Role) => {
-    const roleId = role.id || role.role_id
+    const roleId = role.id || role.role_id;
     if (roleId) {
-      router.push(\`/dashboard/auth/roles/\${roleId}\`)
+      router.push(`/dashboard/auth/roles/${roleId}`);
     } else {
-      toast.error("Cannot view details for a role without an ID.")
+      toast.error("Cannot view details for a role without an ID.");
     }
-  }
+  };
 
   // Handle role deletion
   const handleDeleteRole = async (id: string) => {
     // Don't allow deletion of the Super Owner role
     if (id === "1" || id === "super") {
-      toast.error("Cannot delete the Super Owner role")
-      return
+      toast.error("Cannot delete the Super Owner role");
+      return;
     }
 
     try {
-      await deleteRole(id, tenantHeaders)
-      toast.success("Role deleted successfully")
+      await deleteRole(id, tenantHeaders);
+      toast.success("Role deleted successfully");
     } catch (error) {
-      console.error("Failed to delete role:", error)
-      toast.error("Failed to delete role")
+      console.error("Failed to delete role:", error);
+      toast.error("Failed to delete role");
     }
-  }
+  };
 
   // Navigate to edit role page
   const handleEditRole = (id: string) => {
-    router.push(\`/dashboard/auth/roles/\${id}/edit\`)
-  }
+    router.push(`/dashboard/auth/roles/${id}/edit`);
+  };
 
   // Navigate to add role page
   const handleAddRole = () => {
-    router.push("/dashboard/auth/roles/add")
-  }
+    router.push("/dashboard/auth/roles/add");
+  };
 
   // Get filtered roles
-  const filteredRoles = getFilteredRoles()
+  const filteredRoles = getFilteredRoles();
 
   const handleRetry = () => {
-    const filter: any = {}
+    const filter: any = {};
     if (activeTab === "system") {
-      filter.is_system_role = true
+      filter.is_system_role = true;
     } else if (activeTab === "custom") {
-      filter.is_system_role = false
+      filter.is_system_role = false;
     }
-    fetchRoles(filter, tenantHeaders)
-  }
+    fetchRoles(filter, tenantHeaders);
+  };
 
   if (loading && roles.length === 0) {
     return <Spinner />;
@@ -125,7 +125,11 @@ function RolesPage() {
     return (
       <ErrorCard
         title="Failed to load roles"
-        error={storeError ? { message: storeError.message, status: String(storeError.status) } : undefined}
+        error={
+          storeError
+            ? { message: storeError.message, status: String(storeError.status) }
+            : undefined
+        }
         buttonText="Retry"
         buttonAction={handleRetry}
         buttonIcon={RotateCcw}
@@ -151,13 +155,13 @@ function RolesPage() {
       <Separator />
       <div className="px-4">
         <div className="relative w-full md:w-auto mb-6">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search roles..."
-              className="pl-8 w-full md:w-[300px]"
-              onChange={handleSearch}
-            />
-          </div>
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search roles..."
+            className="pl-8 w-full md:w-[300px]"
+            onChange={handleSearch}
+          />
+        </div>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full">
             <TabsTrigger value="all">All</TabsTrigger>
@@ -175,8 +179,8 @@ function RolesPage() {
           </div>
         </Tabs>
       </div>
-    </div>  
-  )
+    </div>
+  );
 }
 
 export default withAuthorization(RolesPage, { permission: "roles:read" });
