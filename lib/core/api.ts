@@ -8,7 +8,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
 import { create } from 'zustand';
-import { useSelectedTenantStore } from '@/features/tenants/store';
 
 // API Response type for consistent typing
 export interface ApiResponse<T> {
@@ -194,10 +193,20 @@ const createApiClient = () => {
         const token = getToken();
         if (token) config.headers.Authorization = `Bearer ${token}`;
 
-        // Add X-Tenant-ID header if a tenant is selected in the store
-        const selectedTenantId = useSelectedTenantStore.getState().selectedTenantId;
-        if (selectedTenantId) {
-          config.headers['X-Tenant-ID'] = selectedTenantId;
+        // Get tenant ID from localStorage to avoid circular dependency with zustand store
+        if (typeof window !== 'undefined') {
+          try {
+            const tenantStorage = localStorage.getItem('selected-tenant-storage');
+            if (tenantStorage) {
+              const parsed = JSON.parse(tenantStorage);
+              const tenantId = parsed?.state?.selectedTenantId;
+              if (tenantId) {
+                config.headers['X-Tenant-ID'] = tenantId;
+              }
+            }
+          } catch (e) {
+            console.error('Error reading tenant from localStorage:', e);
+          }
         }
 
         return config;
