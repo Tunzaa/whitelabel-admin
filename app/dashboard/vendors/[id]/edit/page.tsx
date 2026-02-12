@@ -162,4 +162,4 @@ function VendorEditPage({ params }: VendorEditPageProps) {
   ) : null;
 }
 
-export default withAuthorization(VendorEditPage, { permission: "vendor:update" });
+export default withAuthorization(VendorEditPage, { permission: "vendors:update" });
