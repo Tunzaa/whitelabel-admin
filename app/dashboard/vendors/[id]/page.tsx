@@ -520,7 +520,7 @@ function VendorPage({ params }: VendorPageProps) {
         </div>
 
         <div className="flex gap-2">
-          <Can permission="vendor:update">
+          <Can permission="vendors:update">
             <Button
               variant="outline"
               size="sm"
@@ -1190,7 +1190,7 @@ function VendorPage({ params }: VendorPageProps) {
               vendor.verification_documents.every(
                 (doc: any) => doc.verification_status === "verified"
               ) && (
-                <Can permission="vendor:approve">
+                <Can permission="vendors:update">
                   <Button
                     variant="outline"
                     className="w-full text-green-600"
@@ -1209,7 +1209,7 @@ function VendorPage({ params }: VendorPageProps) {
 
             {/* Reject */}
             {vendorStatus !== "rejected" && (
-              <Can permission="vendor:reject">
+              <Can permission="vendors:update">
                 <Button
                   variant="outline"
                   className="w-full text-red-600"
@@ -1228,7 +1228,7 @@ function VendorPage({ params }: VendorPageProps) {
 
             {/* Activate/Deactivate Buttons */}
             {vendorStatus === "approved" && vendor.is_active && (
-              <Can permission="vendor:update">
+              <Can permission="vendors:update">
                 <Button
                   variant="outline"
                   className="w-full text-orange-600 hover:bg-orange-50 hover:text-orange-700"
@@ -1245,7 +1245,7 @@ function VendorPage({ params }: VendorPageProps) {
               </Can>
             )}
             {vendorStatus === "approved" && !vendor.is_active && (
-              <Can permission="vendor:update">
+              <Can permission="vendors:update">
                 <Button
                   variant="outline"
                   className="w-full text-green-600 hover:bg-green-50 hover:text-green-700"
@@ -1263,7 +1263,7 @@ function VendorPage({ params }: VendorPageProps) {
             )}
 
             <Separator />
-            <Can permission="vendor:update">
+            <Can permission="vendors:update">
               <Button
                 variant="outline"
                 className="w-full"
@@ -1273,7 +1273,7 @@ function VendorPage({ params }: VendorPageProps) {
                 Edit Vendor
               </Button>
             </Can>
-            <Can permission="vendor:delete">
+            <Can permission="vendors:delete">
               <Button
                 variant="outline"
                 className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
