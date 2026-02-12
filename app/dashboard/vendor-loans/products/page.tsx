@@ -12,13 +12,16 @@ import { ErrorCard } from "@/components/ui/error-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useLoanProductStore } from "@/features/loans/products/store";
-import { LoanProductFilter } from "@/features/loans/products/types";
+import { LoanProductFilter, LoanProduct } from "@/features/loans/products/types";
 import { ProductTable } from "@/features/loans/products/components/product-table";
 
-export default function LoanProductsPage() {
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { Can } from "@/components/auth/can";
+
+function LoanProductsPage() {
   const router = useRouter();
   const session = useSession();
-  const tenantId = session?.data?.user?.tenant_id;
+  const tenantId = (session?.data?.user as any)?.tenant_id;
 
   const { products, loading, storeError, fetchProducts, updateProductStatus } = useLoanProductStore();
 
@@ -76,14 +79,16 @@ export default function LoanProductsPage() {
       }
     };
 
-    fetchProductData();
-  }, [fetchProducts, activeTab, currentPage, searchQuery]);
+    if (tenantId) {
+      fetchProductData();
+    }
+  }, [fetchProducts, activeTab, currentPage, searchQuery, tenantId]);
 
-  const handleProductClick = (product) => {
-    router.push(`/dashboard/vendor-loans/products/${product.product_id}`);
+  const handleProductClick = (product: LoanProduct) => {
+    router.push(\`/dashboard/vendor-loans/products/\${product.product_id}\`);
   };
 
-  const handleStatusChange = async (productId, isActive) => {
+  const handleStatusChange = async (productId: string, isActive: boolean) => {
     try {
       await updateProductStatus(productId, isActive, tenantHeaders);
 
@@ -96,7 +101,7 @@ export default function LoanProductsPage() {
   };
 
   // Handle tab change
-  const handleTabChange = (value) => {
+  const handleTabChange = (value: string) => {
     setActiveTab(value);
     setCurrentPage(1); // Reset to first page when changing tabs
   };
@@ -111,10 +116,12 @@ export default function LoanProductsPage() {
               Manage loan products offered to vendors
             </p>
           </div>
-          <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Product
-          </Button>
+          <Can permission="vendor-loans:create">
+            <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
+          </Can>
         </div>
 
         <div className="flex items-center justify-center h-64">
@@ -134,10 +141,12 @@ export default function LoanProductsPage() {
               Manage loan products offered to vendors
             </p>
           </div>
-          <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Product
-          </Button>
+          <Can permission="vendor-loans:create">
+            <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
+          </Can>
         </div>
 
         <div>
@@ -165,15 +174,17 @@ export default function LoanProductsPage() {
             Manage loan products offered to vendors
           </p>
         </div>
-        <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
+        <Can permission="vendor-loans:create">
+          <Button onClick={() => router.push("/dashboard/vendor-loans/products/add")}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
+        </Can>
       </div>
 
       <div className="p-4 space-y-4">
         <div className="flex justify-between mb-4">
-          <div className="flex-1 max-w-sm">
+          <div className="flex-1 max-sm:max-w-sm">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 opacity-50" />
               <Input
@@ -201,7 +212,7 @@ export default function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
+                onEdit={(product) => router.push(\`/dashboard/vendor-loans/products/\${product.product_id}/edit\`)}
                 onStatusChange={handleStatusChange}
               />
             )}
@@ -215,7 +226,7 @@ export default function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
+                onEdit={(product) => router.push(\`/dashboard/vendor-loans/products/\${product.product_id}/edit\`)}
                 onStatusChange={handleStatusChange}
               />
             )}
@@ -229,15 +240,15 @@ export default function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
+                onEdit={(product) => router.push(\`/dashboard/vendor-loans/products/\${product.product_id}/edit\`)}
                 onStatusChange={handleStatusChange}
               />
             )}
           </TabsContent>
         </Tabs>
-
-        {/* TODO: Add pagination component here if needed */}
       </div>
     </div>
   );
 }
+
+export default withAuthorization(LoanProductsPage, { permission: "vendor-loans:read" });

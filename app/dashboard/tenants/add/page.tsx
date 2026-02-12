@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft } from "lucide-react";
 import { useTenantStore } from "@/features/tenants/store";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { TenantForm } from "@/features/tenants/components/tenant-form";
@@ -57,7 +57,9 @@ function TenantAddPage() {
             <span className="sr-only">Back</span>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Add New Tenant</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Add New Tenant
+            </h1>
             <p className="text-muted-foreground">
               Create a new tenant account and configurations
             </p>
@@ -80,13 +82,12 @@ function TenantAddPage() {
       </div>
 
       <div className="flex-1 p-4 overflow-auto">
-        <TenantForm
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-        />
+        <TenantForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
       </div>
     </div>
   );
 }
 
-export default withAuthorization(TenantAddPage, "tenant:create");
+export default withAuthorization(TenantAddPage, {
+  permission: "tenants:create",
+});

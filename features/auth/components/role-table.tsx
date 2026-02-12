@@ -2,8 +2,9 @@
 
 import { Role } from "../types/role";
 import { MoreHorizontal, Edit, Trash, Eye } from "lucide-react";
-import { useRouter } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
+import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { Can } from "@/components/auth/can";
 
 import {
   Table,
@@ -13,10 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +69,8 @@ export function RoleTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    {Array.isArray(role.permissions) && role.permissions.length > 0 ? (
+                    {Array.isArray(role.permissions) &&
+                    role.permissions.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {role.permissions.slice(0, 3).map((p) => (
                           <Badge key={p} variant="secondary">
@@ -79,11 +78,15 @@ export function RoleTable({
                           </Badge>
                         ))}
                         {role.permissions.length > 3 && (
-                          <Badge variant="outline">+{role.permissions.length - 3}</Badge>
+                          <Badge variant="outline">
+                            +{role.permissions.length - 3}
+                          </Badge>
                         )}
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">No permissions</span>
+                      <span className="text-muted-foreground">
+                        No permissions
+                      </span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -95,21 +98,33 @@ export function RoleTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.push(`/dashboard/auth/roles/${encodeURIComponent(role.role)}`)}>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/auth/roles/${encodeURIComponent(role.role)}`,
+                            )
+                          }
+                        >
                           <Eye className="mr-2 h-4 w-4" />
                           View details
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onEditRole(role.role)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        {/* <DropdownMenuItem
-                          onClick={() => onDeleteRole(role.role)}
-                          className="text-red-600"
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem> */}
+                        <Can permission="roles:update">
+                          <DropdownMenuItem
+                            onClick={() => onEditRole(role.role)}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                        </Can>
+                        <Can permission="roles:delete">
+                          {/* <DropdownMenuItem
+                            onClick={() => onDeleteRole(role.role)}
+                            className="text-red-600"
+                          >
+                            <Trash className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem> */}
+                        </Can>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

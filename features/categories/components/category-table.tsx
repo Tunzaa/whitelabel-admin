@@ -1,5 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { Edit, Eye, MoreHorizontal, Power, PowerOff, Trash2 } from "lucide-react";
+import {
+  Edit,
+  Eye,
+  MoreHorizontal,
+  Power,
+  PowerOff,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -27,44 +34,56 @@ export function CategoryTable({
   onToggleStatus,
   onViewDetails,
 }: CategoryTableProps) {
-  const { t } = useTranslation(['categories', 'common']);
+  const { t } = useTranslation(["categories", "common"]);
   return (
     <div className="rounded-md border">
       <table className="w-full">
         <thead>
           <tr className="border-b bg-muted/50">
-            <th className="p-4 text-left">{t('table.columns.name')}</th>
-            <th className="p-4 text-left">{t('table.columns.description')}</th>
-            <th className="p-4 text-left">{t('table.columns.status')}</th>
-            <th className="p-4 text-left">{t('table.columns.parent_category')}</th>
-            <th className="p-4 text-left">{t('table.columns.image')}</th>
-            <th className="p-4 text-right">{t('table.columns.actions')}</th>
+            <th className="p-4 text-left">{t("table.columns.name")}</th>
+            <th className="p-4 text-left">{t("table.columns.description")}</th>
+            <th className="p-4 text-left">{t("table.columns.status")}</th>
+            <th className="p-4 text-left">{t("table.columns.parent_category")}</th>
+            <th className="p-4 text-left">{t("table.columns.image")}</th>
+            <th className="p-4 text-right">{t("table.columns.actions")}</th>
           </tr>
         </thead>
         <tbody>
           {categories.length === 0 ? (
             <tr className="border-b">
               <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                {t('table.empty_state')}
+                {t("table.empty_state")}
               </td>
             </tr>
           ) : (
             categories.map((category) => (
-              <tr key={category.category_id} className="border-b hover:bg-muted/20">
+              <tr
+                key={category.category_id}
+                className="border-b hover:bg-muted/20"
+              >
                 <td className="p-4 font-medium">{category.name}</td>
-                <td className="p-4 max-w-xs truncate">{category.description || "-"}</td>
+                <td className="p-4 max-w-xs truncate">
+                  {category.description || "-"}
+                </td>
                 <td className="p-4">
                   <Badge
                     variant={category.is_active ? "default" : "destructive"}
-                    className={category.is_active ? "bg-green-500 hover:bg-green-600" : ""}
+                    className={
+                      category.is_active
+                        ? "bg-green-500 hover:bg-green-600"
+                        : ""
+                    }
                   >
-                    {category.is_active ? t('status.active') : t('status.inactive')}
+                    {category.is_active
+                      ? t("status.active")
+                      : t("status.inactive")}
                   </Badge>
                 </td>
                 <td className="p-4">
                   {category.parent_id && category.parent_id !== "none"
-                    ? categories.find((c) => c.category_id === category.parent_id)?.name ||
-                    "-"
+                    ? categories.find(
+                        (c) => c.category_id === category.parent_id,
+                      )?.name || "-"
                     : "-"}
                 </td>
                 <td className="p-4">
@@ -76,7 +95,8 @@ export function CategoryTable({
                         className="h-full w-full object-cover"
                         onError={(e) => {
                           // Replace broken image with placeholder
-                          e.currentTarget.src = "https://placehold.co/32?text=NA";
+                          e.currentTarget.src =
+                            "https://placehold.co/32?text=NA";
                         }}
                       />
                     </div>
@@ -93,39 +113,45 @@ export function CategoryTable({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       {onViewDetails && (
-                        <DropdownMenuItem onClick={() => onViewDetails(category)}>
+                        <DropdownMenuItem
+                          onClick={() => onViewDetails(category)}
+                        >
                           <Eye className="mr-2 h-4 w-4" />
-                          <span>{t('actions.view')}</span>
+                          <span>{t("actions.view")}</span>
                         </DropdownMenuItem>
                       )}
-                      <Can permission="category:update">
+                      <Can permission="categories:update">
                         <DropdownMenuItem onClick={() => onEdit(category)}>
                           <Edit className="mr-2 h-4 w-4" />
-                          <span>{t('actions.edit')}</span>
+                          <span>{t("actions.edit")}</span>
                         </DropdownMenuItem>
                       </Can>
                       {onToggleStatus && (
-                        <Can permission="category:update">
-                          <DropdownMenuItem onClick={() => onToggleStatus(category, !category.is_active)}>
+                        <Can permission="categories:update">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              onToggleStatus(category, !category.is_active)
+                            }
+                          >
                             {category.is_active ? (
                               <>
                                 <PowerOff className="mr-2 h-4 w-4" />
-                                <span>{t('actions.deactivate')}</span>
+                                <span>{t("actions.deactivate")}</span>
                               </>
                             ) : (
                               <>
                                 <Power className="mr-2 h-4 w-4" />
-                                <span>{t('actions.activate')}</span>
+                                <span>{t("actions.activate")}</span>
                               </>
                             )}
                           </DropdownMenuItem>
                         </Can>
                       )}
-                      <Can permission="category:delete">
+                      <Can permission="categories:delete">
                         <Separator />
                         <DropdownMenuItem onClick={() => onDelete(category)}>
                           <Trash2 className="mr-2 h-4 w-4" />
-                          <span>{t('actions.delete')}</span>
+                          <span>{t("actions.delete")}</span>
                         </DropdownMenuItem>
                       </Can>
                     </DropdownMenuContent>

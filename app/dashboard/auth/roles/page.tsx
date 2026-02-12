@@ -17,7 +17,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { ErrorCard } from "@/components/ui/error-card";
 import { RotateCcw } from 'lucide-react';
 
-export default function RolesPage() {
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { Can } from "@/components/auth/can";
+
+function RolesPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const {
@@ -68,7 +71,7 @@ export default function RolesPage() {
   const handleRoleClick = (role: Role) => {
     const roleId = role.id || role.role_id
     if (roleId) {
-      router.push(`/dashboard/auth/roles/${roleId}`)
+      router.push(\`/dashboard/auth/roles/\${roleId}\`)
     } else {
       toast.error("Cannot view details for a role without an ID.")
     }
@@ -93,7 +96,7 @@ export default function RolesPage() {
 
   // Navigate to edit role page
   const handleEditRole = (id: string) => {
-    router.push(`/dashboard/auth/roles/${id}/edit`)
+    router.push(\`/dashboard/auth/roles/\${id}/edit\`)
   }
 
   // Navigate to add role page
@@ -138,10 +141,12 @@ export default function RolesPage() {
           <p className="text-muted-foreground">Manage user roles</p>
         </div>
 
-        <Button onClick={handleAddRole}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Role
-        </Button>
+        <Can permission="roles:create">
+          <Button onClick={handleAddRole}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Role
+          </Button>
+        </Can>
       </div>
       <Separator />
       <div className="px-4">
@@ -173,3 +178,5 @@ export default function RolesPage() {
     </div>  
   )
 }
+
+export default withAuthorization(RolesPage, { permission: "roles:read" });

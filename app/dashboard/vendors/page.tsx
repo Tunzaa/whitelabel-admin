@@ -104,7 +104,7 @@ function VendorsPage() {
   const handleStatusChange = async (
     vendorId: string,
     status: string,
-    rejectionReason?: string
+    rejectionReason?: string,
   ) => {
     try {
       // Pass tenant headers and rejection reason to the updateVendorStatus function
@@ -112,7 +112,7 @@ function VendorsPage() {
         vendorId,
         status,
         tenantHeaders,
-        rejectionReason
+        rejectionReason,
       );
 
       // Refresh the vendor list after status change
@@ -208,7 +208,7 @@ function VendorsPage() {
             Manage vendor applications and accounts
           </p>
         </div>
-        <Can permission="vendor:create">
+        <Can permission="vendors:create">
           <Button onClick={() => router.push("/dashboard/vendors/add")}>
             <Plus className="mr-2 h-4 w-4" />
             Add Vendor
@@ -268,4 +268,4 @@ function VendorsPage() {
   );
 }
 
-export default withAuthorization(VendorsPage, { permission: "vendor:view" });
+export default withAuthorization(VendorsPage, { permission: "vendors:read" });

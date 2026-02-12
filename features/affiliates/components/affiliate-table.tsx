@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Affiliate } from "../types"; // Assuming Affiliate type is defined here
-import { format } from 'date-fns'; // For consistent date formatting
+import { format } from "date-fns"; // For consistent date formatting
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,10 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
@@ -55,8 +52,8 @@ interface AffiliateTableProps {
   onAffiliateClick: (affiliate: Affiliate) => void;
   onStatusChange: (
     affiliateId: string,
-    action: 'approve' | 'reject' | 'activate' | 'deactivate',
-    rejectionReason?: string
+    action: "approve" | "reject" | "activate" | "deactivate",
+    rejectionReason?: string,
   ) => Promise<void>;
   activeTab?: string; // To potentially adjust available actions
 }
@@ -69,11 +66,13 @@ export function AffiliateTable({
 }: AffiliateTableProps) {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const router = useRouter();
-  const [actionBeingProcessed, setActionBeingProcessed] = useState<string | null>(null);
+  const [actionBeingProcessed, setActionBeingProcessed] = useState<
+    string | null
+  >(null);
 
   const handleLocalStatusChange = async (
     affiliateId: string | undefined,
-    action: 'approve' | 'reject' | 'activate' | 'deactivate'
+    action: "approve" | "reject" | "activate" | "deactivate",
   ) => {
     if (!onStatusChange || !affiliateId) return;
     setProcessingId(affiliateId);
@@ -83,11 +82,16 @@ export function AffiliateTable({
 
   const getRejectionReasonText = (type: string) => {
     switch (type) {
-      case 'incomplete_information': return 'Incomplete Information: Required affiliate details are missing or unclear.';
-      case 'policy_violation': return 'Policy Violation: Affiliate practices do not align with platform policies.';
-      case 'suspected_fraud': return 'Suspected Fraudulent Activity: Concerns about the legitimacy of the affiliate.';
-      case 'other': return 'Other reason not specified.';
-      default: return type; // For custom reasons already processed
+      case "incomplete_information":
+        return "Incomplete Information: Required affiliate details are missing or unclear.";
+      case "policy_violation":
+        return "Policy Violation: Affiliate practices do not align with platform policies.";
+      case "suspected_fraud":
+        return "Suspected Fraudulent Activity: Concerns about the legitimacy of the affiliate.";
+      case "other":
+        return "Other reason not specified.";
+      default:
+        return type; // For custom reasons already processed
     }
   };
 
@@ -156,46 +160,80 @@ export function AffiliateTable({
               </TableRow>
             ) : (
               affiliates.map((affiliate) => (
-                <TableRow key={affiliate.id} onClick={() => onAffiliateClick(affiliate)} className="cursor-pointer hover:bg-muted/50">
+                <TableRow
+                  key={affiliate.id}
+                  onClick={() => onAffiliateClick(affiliate)}
+                  className="cursor-pointer hover:bg-muted/50"
+                >
                   <TableCell>
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={affiliate.user?.profile_image_url} alt={affiliate.name} />
-                      <AvatarFallback>{getInitials(affiliate.name)}</AvatarFallback>
+                      <AvatarImage
+                        src={affiliate.user?.profile_image_url}
+                        alt={affiliate.name}
+                      />
+                      <AvatarFallback>
+                        {getInitials(affiliate.name)}
+                      </AvatarFallback>
                     </Avatar>
                   </TableCell>
-                  <TableCell className="font-medium">{affiliate.name || "N/A"}</TableCell>
+                  <TableCell className="font-medium">
+                    {affiliate.name || "N/A"}
+                  </TableCell>
                   <TableCell>{affiliate.email || "N/A"}</TableCell>
                   <TableCell>{affiliate.phone || "N/A"}</TableCell>
                   <TableCell>{getApprovalStatusBadge(affiliate)}</TableCell>
                   {/* <TableCell>{getStatusBadge(affiliate)}</TableCell> */}
-                  <TableCell>{formatDateSafely(affiliate.created_at)}</TableCell>
+                  <TableCell>
+                    {formatDateSafely(affiliate.created_at)}
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuContent
+                        align="end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => onAffiliateClick(affiliate)}>
+                        <DropdownMenuItem
+                          onClick={() => onAffiliateClick(affiliate)}
+                        >
                           <Eye className="mr-2 h-4 w-4" /> View Details
                         </DropdownMenuItem>
-                        <Can permission="affiliate:update">
-                          <DropdownMenuItem onClick={() => router.push(`/dashboard/affiliates/${affiliate.id}/edit`)}>
+                        <Can permission="affiliates:update">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/affiliates/${affiliate.id}/edit`,
+                              )
+                            }
+                          >
                             <FileEdit className="mr-2 h-4 w-4" /> Edit Affiliate
                           </DropdownMenuItem>
                         </Can>
                         <DropdownMenuSeparator />
                         {affiliate.status === "pending" && (
                           <>
-                            <Can permission="affiliate:approve">
+                            <Can permission="affiliates:update">
                               <DropdownMenuItem
-                                onClick={() => handleLocalStatusChange(affiliate.id, 'approve')}
+                                onClick={() =>
+                                  handleLocalStatusChange(
+                                    affiliate.id,
+                                    "approve",
+                                  )
+                                }
                                 disabled={processingId === affiliate.id}
                               >
-                                {processingId === affiliate.id && actionBeingProcessed === 'approve' ? (
+                                {processingId === affiliate.id &&
+                                actionBeingProcessed === "approve" ? (
                                   <Spinner size="sm" className="mr-2 h-4 w-4" />
                                 ) : (
                                   <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
@@ -203,13 +241,19 @@ export function AffiliateTable({
                                 Approve
                               </DropdownMenuItem>
                             </Can>
-                            <Can permission="affiliate:reject">
+                            <Can permission="affiliates:update">
                               <DropdownMenuItem
-                                onClick={() => handleLocalStatusChange(affiliate.id, 'reject')}
+                                onClick={() =>
+                                  handleLocalStatusChange(
+                                    affiliate.id,
+                                    "reject",
+                                  )
+                                }
                                 disabled={processingId === affiliate.id}
                                 className="text-destructive focus:text-destructive focus:bg-destructive/10"
                               >
-                                {processingId === affiliate.id && actionBeingProcessed === 'reject' ? (
+                                {processingId === affiliate.id &&
+                                actionBeingProcessed === "reject" ? (
                                   <Spinner size="sm" className="mr-2 h-4 w-4" />
                                 ) : (
                                   <XCircle className="mr-2 h-4 w-4" />
@@ -246,13 +290,16 @@ export function AffiliateTable({
                           </DropdownMenuItem>
                         )} */}
                         {affiliate.status === "approved" && (
-                          <Can permission="affiliate:reject">
+                          <Can permission="affiliates:update">
                             <DropdownMenuItem
-                              onClick={() => handleLocalStatusChange(affiliate.id, 'reject')}
+                              onClick={() =>
+                                handleLocalStatusChange(affiliate.id, "reject")
+                              }
                               disabled={processingId === affiliate.id}
                               className="text-destructive focus:text-destructive focus:bg-destructive/10"
                             >
-                              {processingId === affiliate.id && actionBeingProcessed === 'reject' ? (
+                              {processingId === affiliate.id &&
+                              actionBeingProcessed === "reject" ? (
                                 <Spinner size="sm" className="mr-2 h-4 w-4" />
                               ) : (
                                 <XCircle className="mr-2 h-4 w-4" />
@@ -262,12 +309,15 @@ export function AffiliateTable({
                           </Can>
                         )}
                         {affiliate.status === "rejected" && (
-                          <Can permission="affiliate:approve">
+                          <Can permission="affiliates:update">
                             <DropdownMenuItem
-                              onClick={() => handleLocalStatusChange(affiliate.id, 'approve')}
+                              onClick={() =>
+                                handleLocalStatusChange(affiliate.id, "approve")
+                              }
                               disabled={processingId === affiliate.id}
                             >
-                              {processingId === affiliate.id && actionBeingProcessed === 'approve' ? (
+                              {processingId === affiliate.id &&
+                              actionBeingProcessed === "approve" ? (
                                 <Spinner size="sm" className="mr-2 h-4 w-4" />
                               ) : (
                                 <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />

@@ -15,10 +15,13 @@ import { useLoanRequestStore } from "@/features/loans/requests/store";
 import { LoanRequestFilter } from "@/features/loans/requests/types";
 import { RequestTable } from "@/features/loans/requests/components/request-table";
 
-export default function LoanRequestsPage() {
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { Can } from "@/components/auth/can";
+
+function LoanRequestsPage() {
   const router = useRouter();
   const session = useSession();
-  const tenantId = session?.data?.user?.tenant_id || '';
+  const tenantId = (session?.data?.user as any)?.tenant_id || '';
 
   const { requests, loading, storeError, fetchRequests, updateRequestStatus } = useLoanRequestStore();
 
@@ -91,11 +94,13 @@ export default function LoanRequestsPage() {
       }
     };
 
-    fetchRequestData();
-  }, [fetchRequests, activeTab, currentPage, searchQuery]);
+    if (tenantId) {
+      fetchRequestData();
+    }
+  }, [fetchRequests, activeTab, currentPage, searchQuery, tenantId]);
 
   const handleRequestClick = (request: any) => {
-    router.push(`/dashboard/vendor-loans/requests/${request.request_id}`);
+    router.push(\`/dashboard/vendor-loans/requests/\${request.request_id}\`);
   };
 
   const handleStatusChange = async (requestId: string, status: string) => {
@@ -277,9 +282,9 @@ export default function LoanRequestsPage() {
             )}
           </TabsContent>
         </Tabs>
-
-        {/* TODO: Add pagination component here if needed */}
       </div>
     </div>
   );
 }
+
+export default withAuthorization(LoanRequestsPage, { permission: "vendor-loans:read" });

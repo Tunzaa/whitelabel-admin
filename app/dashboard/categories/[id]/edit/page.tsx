@@ -1,27 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
-import { useCategoryStore } from '@/features/categories/store';
-import { CategoryForm } from '@/features/categories/components/category-form';
-import { CategoryFormValues } from '@/features/categories/schema';
+import { useCategoryStore } from "@/features/categories/store";
+import { CategoryForm } from "@/features/categories/components/category-form";
+import { CategoryFormValues } from "@/features/categories/schema";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { withAuthorization } from '@/components/auth/with-authorization';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { withAuthorization } from "@/components/auth/with-authorization";
 
 const EditCategoryPage = () => {
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
-  const { t } = useTranslation(['categories', 'common']);
+  const { t } = useTranslation(["categories", "common"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categoryId = params.id as string;
@@ -37,7 +37,7 @@ const EditCategoryPage = () => {
   } = useCategoryStore();
 
   const tenantId = useMemo(() => (session?.user as any)?.tenant_id, [session]);
-  const tenantHeader = useMemo(() => ({ 'X-Tenant-ID': tenantId }), [tenantId]);
+  const tenantHeader = useMemo(() => ({ "X-Tenant-ID": tenantId }), [tenantId]);
 
   useEffect(() => {
     if (tenantId && categoryId) {
@@ -49,17 +49,17 @@ const EditCategoryPage = () => {
   const handleUpdateCategory = async (data: CategoryFormValues) => {
     setIsSubmitting(true);
     if (!tenantId) {
-      toast.error(t('common:messages.tenant_id_missing'));
+      toast.error(t("common:messages.tenant_id_missing"));
       return;
     }
 
     try {
       await updateCategory(categoryId, data, tenantHeader);
-      toast.success(t('notifications.updated_successfully'));
+      toast.success(t("notifications.updated_successfully"));
       router.push(`/dashboard/categories/${categoryId}`);
     } catch (error) {
-      console.error(t('notifications.failed_to_update'), error);
-      toast.error(t('notifications.failed_to_update'));
+      console.error(t("notifications.failed_to_update"), error);
+      toast.error(t("notifications.failed_to_update"));
     } finally {
       setIsSubmitting(false);
     }
@@ -80,7 +80,9 @@ const EditCategoryPage = () => {
   if (error && !currentCategory) {
     return (
       <Alert variant="destructive">
-        <AlertTitle>{t('common:messages.error_fetching_title', 'Error')}</AlertTitle>
+        <AlertTitle>
+          {t("common:messages.error_fetching_title", "Error")}
+        </AlertTitle>
         <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
@@ -97,18 +99,25 @@ const EditCategoryPage = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push(`/dashboard/categories/${currentCategory.category_id}`)}
+            onClick={() =>
+              router.push(
+                `/dashboard/categories/${currentCategory.category_id}`,
+              )
+            }
             className="mr-4"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">{t('common:actions.back', 'Back')}</span>
+            <span className="sr-only">{t("common:actions.back", "Back")}</span>
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              {t('page.edit_title', { name: currentCategory?.name })}
+              {t("page.edit_title", { name: currentCategory?.name })}
             </h1>
             <p className="text-muted-foreground">
-              {t('page.edit_description', 'Update category information and settings')}
+              {t(
+                "page.edit_description",
+                "Update category information and settings",
+              )}
             </p>
           </div>
         </div>
@@ -120,17 +129,17 @@ const EditCategoryPage = () => {
           {isSubmitting ? (
             <>
               <Spinner size="sm" color="white" />
-              {t('common:actions.updating', 'Updating...')}
+              {t("common:actions.updating", "Updating...")}
             </>
           ) : (
-            t('common:actions.save_changes', 'Save Changes')
+            t("common:actions.save_changes", "Save Changes")
           )}
         </Button>
       </div>
       <div className="p-4">
         <Card>
           <CardHeader>
-            <CardTitle>{t('form.edit_title')}</CardTitle>
+            <CardTitle>{t("form.edit_title")}</CardTitle>
           </CardHeader>
           <CardContent>
             <CategoryForm
@@ -148,4 +157,6 @@ const EditCategoryPage = () => {
   );
 };
 
-export default withAuthorization(EditCategoryPage, { permission: "category:update" });
+export default withAuthorization(EditCategoryPage, {
+  permission: "categories:update",
+});

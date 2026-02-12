@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, RefreshCw, Users, TrendingUp, CheckCircle2, XCircle, Clock } from "lucide-react";
+import {
+  Plus,
+  Search,
+  RefreshCw,
+  Users,
+  TrendingUp,
+  CheckCircle2,
+  XCircle,
+  Clock,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
@@ -12,16 +21,41 @@ import { Spinner } from "@/components/ui/spinner";
 import Pagination from "@/components/ui/pagination";
 import { ErrorCard } from "@/components/ui/error-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardDescription, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Eye, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { useAffiliateStore } from "@/features/affiliates/store";
-import { Affiliate, AffiliateFilter, AffiliateAnalytics, TopAffiliate } from "@/features/affiliates/types";
+import {
+  Affiliate,
+  AffiliateFilter,
+  AffiliateAnalytics,
+  TopAffiliate,
+} from "@/features/affiliates/types";
 import { AffiliateTable } from "@/features/affiliates/components/affiliate-table";
 import { AffiliateRejectionDialog } from "@/features/affiliates/components";
 import { withAuthorization } from "@/components/auth/with-authorization";
@@ -58,11 +92,19 @@ function TopAffiliatesTable({ affiliates }: TopAffiliatesTableProps) {
           <TableBody>
             {affiliates.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">No top affiliates found.</TableCell>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  No top affiliates found.
+                </TableCell>
               </TableRow>
             ) : (
               affiliates.map((a: TopAffiliate) => (
-                <TableRow key={a.affiliate_id} onClick={() => router.push(`/dashboard/affiliates/${a.affiliate_id}`)} className="hover:cursor-pointer hover:bg-muted/50" >
+                <TableRow
+                  key={a.affiliate_id}
+                  onClick={() =>
+                    router.push(`/dashboard/affiliates/${a.affiliate_id}`)
+                  }
+                  className="hover:cursor-pointer hover:bg-muted/50"
+                >
                   <TableCell>
                     <Avatar className="h-9 w-9">
                       <AvatarImage src={undefined} alt={a.name} />
@@ -73,7 +115,12 @@ function TopAffiliatesTable({ affiliates }: TopAffiliatesTableProps) {
                   <TableCell>{a.email}</TableCell>
                   <TableCell>
                     <div className="flex justify-center">
-                      <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 text-sm">{a.total_commission}</Badge>
+                      <Badge
+                        variant="outline"
+                        className="bg-green-100 text-green-700 border-green-200 text-sm"
+                      >
+                        {a.total_commission}
+                      </Badge>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -84,14 +131,27 @@ function TopAffiliatesTable({ affiliates }: TopAffiliatesTableProps) {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0" onClick={e => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
+                      <DropdownMenuContent
+                        align="end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => router.push(`/dashboard/affiliates/${a.affiliate_id}`)}>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/affiliates/${a.affiliate_id}`,
+                            )
+                          }
+                        >
                           <Eye className="mr-2 h-4 w-4" /> View Details
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -132,8 +192,12 @@ function AffiliatesPage() {
   const pageSize = 10;
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectLoading, setRejectLoading] = useState(false);
-  const [selectedAffiliate, setSelectedAffiliate] = useState<Affiliate | null>(null);
-  const [pendingAction, setPendingAction] = useState<null | 'approve' | 'reject' | 'activate' | 'deactivate'>(null);
+  const [selectedAffiliate, setSelectedAffiliate] = useState<Affiliate | null>(
+    null,
+  );
+  const [pendingAction, setPendingAction] = useState<
+    null | "approve" | "reject" | "activate" | "deactivate"
+  >(null);
 
   const getFilters = () => {
     const baseFilter: any = {
@@ -162,13 +226,20 @@ function AffiliatesPage() {
 
   useEffect(() => {
     if (tenantId) {
-      fetchAffiliates(getFilters(), { 'X-Tenant-ID': tenantId });
+      fetchAffiliates(getFilters(), { "X-Tenant-ID": tenantId });
     }
-  }, [currentPage, pageSize, searchQuery, activeTab, tenantId, fetchAffiliates]);
+  }, [
+    currentPage,
+    pageSize,
+    searchQuery,
+    activeTab,
+    tenantId,
+    fetchAffiliates,
+  ]);
 
   useEffect(() => {
     if (tenantId) {
-      fetchAffiliateAnalytics({ 'X-Tenant-ID': tenantId });
+      fetchAffiliateAnalytics({ "X-Tenant-ID": tenantId });
     }
   }, [tenantId, fetchAffiliateAnalytics]);
 
@@ -178,34 +249,39 @@ function AffiliatesPage() {
 
   const handleStatusChange = async (
     affiliateId: string,
-    action: 'approve' | 'reject' | 'activate' | 'deactivate',
-    rejectionReason?: string
+    action: "approve" | "reject" | "activate" | "deactivate",
+    rejectionReason?: string,
   ): Promise<void> => {
     if (!tenantId) {
       console.error("Tenant ID is missing, cannot update status.");
       toast.error("Tenant ID is missing, cannot update status.");
       return;
     }
-    setRejectLoading(action === 'reject');
+    setRejectLoading(action === "reject");
     try {
       let statusData: any = {};
       switch (action) {
-        case 'approve':
-          statusData = { status: 'approved' };
+        case "approve":
+          statusData = { status: "approved" };
           break;
-        case 'reject':
-          statusData = { status: 'rejected', rejection_reason: rejectionReason };
+        case "reject":
+          statusData = {
+            status: "rejected",
+            rejection_reason: rejectionReason,
+          };
           break;
-        case 'activate':
+        case "activate":
           statusData = { is_active: true };
           break;
-        case 'deactivate':
-          statusData = { is_active: false, status: 'inactive' };
+        case "deactivate":
+          statusData = { is_active: false, status: "inactive" };
           break;
       }
-      const result = await updateAffiliateStatus(affiliateId, statusData, { 'X-Tenant-ID': tenantId });
+      const result = await updateAffiliateStatus(affiliateId, statusData, {
+        "X-Tenant-ID": tenantId,
+      });
       if (result && !(result as any).error) {
-        await fetchAffiliates(getFilters(), { 'X-Tenant-ID': tenantId });
+        await fetchAffiliates(getFilters(), { "X-Tenant-ID": tenantId });
         toast.success(`Affiliate status updated successfully`);
       } else {
         toast.error(`Failed to ${action} affiliate`);
@@ -224,7 +300,7 @@ function AffiliatesPage() {
   const handleReject = (affiliate: Affiliate) => {
     setSelectedAffiliate(affiliate);
     setShowRejectDialog(true);
-    setPendingAction('reject');
+    setPendingAction("reject");
   };
 
   const handleRejectConfirm = (reason: string, customReason?: string) => {
@@ -233,7 +309,11 @@ function AffiliatesPage() {
       toast.error("Please provide a rejection reason.");
       return;
     }
-    handleStatusChange(selectedAffiliate.id, 'reject', reason === 'other' ? customReason : reason);
+    handleStatusChange(
+      selectedAffiliate.id,
+      "reject",
+      reason === "other" ? customReason : reason,
+    );
   };
 
   const handleTabChange = (value: string) => {
@@ -258,17 +338,25 @@ function AffiliatesPage() {
   // --- Stat Cards using BillingStatsCards style ---
   const renderStatCards = () => {
     if (analyticsLoading) {
-      return <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-4"><Spinner /></div>;
+      return (
+        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-4">
+          <Spinner />
+        </div>
+      );
     }
     if (analyticsError) {
       return (
         <div className="p-4">
           <Card className="bg-destructive/10 border-destructive">
             <CardHeader>
-              <CardTitle className="text-destructive">Error Loading Stats</CardTitle>
+              <CardTitle className="text-destructive">
+                Error Loading Stats
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-destructive-foreground">{analyticsError.message}</p>
+              <p className="text-sm text-destructive-foreground">
+                {analyticsError.message}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -280,31 +368,47 @@ function AffiliatesPage() {
         <Card className="dark:bg-card/60 bg-gradient-to-t from-primary/5 to-card shadow-xs">
           <CardHeader>
             <CardDescription>Total Clicks</CardDescription>
-            <CardTitle className="text-3xl font-semibold tabular-nums">{analytics.total_clicks}</CardTitle>
+            <CardTitle className="text-3xl font-semibold tabular-nums">
+              {analytics.total_clicks}
+            </CardTitle>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="flex items-center gap-2 font-medium text-muted-foreground">
               <TrendingUp className="h-4 w-4" />
-              <span>Conversion Rate: <span className="font-semibold">{analytics.conversion_rate}%</span></span>
+              <span>
+                Conversion Rate:{" "}
+                <span className="font-semibold">
+                  {analytics.conversion_rate}%
+                </span>
+              </span>
             </div>
           </CardFooter>
         </Card>
         <Card className="dark:bg-card/60 bg-gradient-to-t from-primary/5 to-card shadow-xs">
           <CardHeader>
             <CardDescription>Total Orders</CardDescription>
-            <CardTitle className="text-3xl font-semibold tabular-nums">{analytics.total_orders}</CardTitle>
+            <CardTitle className="text-3xl font-semibold tabular-nums">
+              {analytics.total_orders}
+            </CardTitle>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="flex items-center gap-2 font-medium text-muted-foreground">
               <CheckCircle2 className="h-4 w-4" />
-              <span>Total Commission: <span className="font-semibold">{analytics.total_commission}</span></span>
+              <span>
+                Total Commission:{" "}
+                <span className="font-semibold">
+                  {analytics.total_commission}
+                </span>
+              </span>
             </div>
           </CardFooter>
         </Card>
         <Card className="dark:bg-card/60 bg-gradient-to-t from-primary/5 to-card shadow-xs">
           <CardHeader>
             <CardDescription>Affiliates</CardDescription>
-            <CardTitle className="text-3xl font-semibold tabular-nums">{analytics.affiliates.total}</CardTitle>
+            <CardTitle className="text-3xl font-semibold tabular-nums">
+              {analytics.affiliates.total}
+            </CardTitle>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="flex items-center gap-2 font-medium text-muted-foreground">
@@ -323,7 +427,12 @@ function AffiliatesPage() {
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="flex items-center gap-2 font-medium text-muted-foreground">
               <TrendingUp className="h-4 w-4" />
-              <span>Orders: <span className="font-semibold">{analytics.top_affiliates?.[0]?.order_count ?? '-'}</span></span>
+              <span>
+                Orders:{" "}
+                <span className="font-semibold">
+                  {analytics.top_affiliates?.[0]?.order_count ?? "-"}
+                </span>
+              </span>
             </div>
           </CardFooter>
         </Card>
@@ -363,13 +472,18 @@ function AffiliatesPage() {
     );
   };
 
-  if (loading && affiliates.length === 0 && !isTabLoading) { // Initial page load
+  if (loading && affiliates.length === 0 && !isTabLoading) {
+    // Initial page load
     return (
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-4 border-b">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Affiliates (Mawinga)</h1>
-            <p className="text-muted-foreground">Manage marketplace affiliates</p>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Affiliates (Mawinga)
+            </h1>
+            <p className="text-muted-foreground">
+              Manage marketplace affiliates
+            </p>
           </div>
           <Button onClick={() => router.push("/dashboard/affiliates/add")}>
             <Plus className="mr-2 h-4 w-4" /> Add Affiliate
@@ -387,8 +501,12 @@ function AffiliatesPage() {
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-4 border-b">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Affiliates (Mawinga)</h1>
-            <p className="text-muted-foreground">Manage marketplace affiliates</p>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Affiliates (Mawinga)
+            </h1>
+            <p className="text-muted-foreground">
+              Manage marketplace affiliates
+            </p>
           </div>
           <Button onClick={() => router.push("/dashboard/affiliates/add")}>
             <Plus className="mr-2 h-4 w-4" /> Add Affiliate
@@ -399,7 +517,7 @@ function AffiliatesPage() {
             title="Failed to load affiliates"
             error={{
               status: storeError.status?.toString() || "Error",
-              message: storeError.message || "An unexpected error occurred."
+              message: storeError.message || "An unexpected error occurred.",
             }}
             buttonText="Retry"
             buttonAction={() => {
@@ -417,7 +535,11 @@ function AffiliatesPage() {
                     filters = { ...baseFilter, status: "pending" };
                     break;
                   case "approved":
-                    filters = { ...baseFilter, status: "approved", is_active: true };
+                    filters = {
+                      ...baseFilter,
+                      status: "approved",
+                      is_active: true,
+                    };
                     break;
                   case "rejected":
                     filters = { ...baseFilter, status: "rejected" };
@@ -425,7 +547,7 @@ function AffiliatesPage() {
                   default:
                     filters = baseFilter;
                 }
-                fetchAffiliates(filters, { 'X-Tenant-ID': tenantId });
+                fetchAffiliates(filters, { "X-Tenant-ID": tenantId });
               }
             }}
             buttonIcon={RefreshCw}
@@ -439,10 +561,12 @@ function AffiliatesPage() {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 border-b">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Affiliates (Mawinga)</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Affiliates (Mawinga)
+          </h1>
           <p className="text-muted-foreground">Manage marketplace affiliates</p>
         </div>
-        <Can permission="affiliate:create">
+        <Can permission="affiliates:create">
           <Button onClick={() => router.push("/dashboard/affiliates/add")}>
             <Plus className="mr-2 h-4 w-4" /> Add Affiliate
           </Button>
@@ -472,31 +596,39 @@ function AffiliatesPage() {
             <TabsTrigger value="all">
               All Affiliates
               {analytics && (
-                <Badge variant="secondary" className="ml-2 align-middle">{analytics.affiliates.total}</Badge>
+                <Badge variant="secondary" className="ml-2 align-middle">
+                  {analytics.affiliates.total}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="pending">
               Pending
               {analytics && (
-                <Badge variant="secondary" className="ml-2 align-middle">{analytics.affiliates.pending}</Badge>
+                <Badge variant="secondary" className="ml-2 align-middle">
+                  {analytics.affiliates.pending}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="approved">
               Approved
               {analytics && (
-                <Badge variant="secondary" className="ml-2 align-middle">{analytics.affiliates.approved}</Badge>
+                <Badge variant="secondary" className="ml-2 align-middle">
+                  {analytics.affiliates.approved}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="rejected">
               Rejected
               {analytics && (
-                <Badge variant="secondary" className="ml-2 align-middle">{analytics.affiliates.rejected}</Badge>
+                <Badge variant="secondary" className="ml-2 align-middle">
+                  {analytics.affiliates.rejected}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="top">Top Affiliates</TabsTrigger>
           </TabsList>
           {/* Normal affiliate tabs */}
-          {activeTab !== 'top' ? (
+          {activeTab !== "top" ? (
             isTabLoading || (loading && affiliates.length === 0) ? (
               <Spinner />
             ) : storeError && affiliates.length === 0 ? (
@@ -504,7 +636,8 @@ function AffiliatesPage() {
                 title="Failed to load affiliates for this tab"
                 error={{
                   status: storeError.status?.toString() || "Error",
-                  message: storeError.message || "An unexpected error occurred."
+                  message:
+                    storeError.message || "An unexpected error occurred.",
                 }}
                 buttonText="Retry"
                 buttonAction={() => {
@@ -530,7 +663,7 @@ function AffiliatesPage() {
                       default:
                         filters = baseFilter;
                     }
-                    fetchAffiliates(filters, { 'X-Tenant-ID': tenantId });
+                    fetchAffiliates(filters, { "X-Tenant-ID": tenantId });
                   }
                 }}
                 buttonIcon={RefreshCw}
@@ -541,8 +674,8 @@ function AffiliatesPage() {
                   affiliates={affiliates} // Pass the affiliates from the store
                   onAffiliateClick={handleAffiliateClick}
                   onStatusChange={async (id, action, rejectionReason) => {
-                    const affiliate = affiliates.find(a => a.id === id);
-                    if (action === 'reject' && affiliate) {
+                    const affiliate = affiliates.find((a) => a.id === id);
+                    if (action === "reject" && affiliate) {
                       handleReject(affiliate);
                     } else {
                       await handleStatusChange(id, action, rejectionReason);
@@ -570,7 +703,9 @@ function AffiliatesPage() {
           ) : (
             // Top Affiliates Tab
             <div className="flex-grow flex flex-col">
-              <TopAffiliatesTable affiliates={analytics?.top_affiliates || []} />
+              <TopAffiliatesTable
+                affiliates={analytics?.top_affiliates || []}
+              />
             </div>
           )}
         </Tabs>
@@ -579,4 +714,6 @@ function AffiliatesPage() {
   );
 }
 
-export default withAuthorization(AffiliatesPage, { permission: "affiliate:read" });
+export default withAuthorization(AffiliatesPage, {
+  permission: "affiliates:read",
+});

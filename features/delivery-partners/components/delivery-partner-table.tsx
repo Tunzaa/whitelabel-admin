@@ -23,10 +23,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Check, MoreHorizontal, X, Eye, XCircle, Edit } from "lucide-react";
-import { format } from 'date-fns';
+import { format } from "date-fns";
 import { DeliveryPartner } from "../types";
 import { Spinner } from "@/components/ui/spinner";
 import { DeliveryPartnerRejectionModal } from "./delivery-partner-rejection-modal";
+import { Can } from "@/components/auth/can";
 
 interface DeliveryPartnerTableProps {
   deliveryPartners: DeliveryPartner[];
@@ -58,11 +59,11 @@ export function DeliveryPartnerTable({
 
   const handleStatusChange = async (
     partnerId: string,
-    action: 'approve' | 'reject' | 'activate' | 'deactivate'
+    action: "approve" | "reject" | "activate" | "deactivate",
   ) => {
     if (!onStatusChange) return;
 
-    if (action === 'reject') {
+    if (action === "reject") {
       setRejectPartnerId(partnerId);
       setShowRejectDialog(true);
       return;
@@ -70,13 +71,13 @@ export function DeliveryPartnerTable({
 
     let payload = {};
     switch (action) {
-      case 'approve':
+      case "approve":
         payload = { is_approved: true };
         break;
-      case 'activate':
+      case "activate":
         payload = { is_active: true };
         break;
-      case 'deactivate':
+      case "deactivate":
         payload = { is_active: false };
         break;
     }
@@ -92,13 +93,19 @@ export function DeliveryPartnerTable({
   };
 
   const getRejectionReasonText = (type: string, customReason?: string) => {
-    if (type === 'other') {
-      return customReason || 'Other';
+    if (type === "other") {
+      return customReason || "Other";
     }
-    return rejectionReasonsMap[type] || 'No reason specified';
+    return rejectionReasonsMap[type] || "No reason specified";
   };
 
-  const handleRejectConfirm = async ({ type, customReason }: { type: string; customReason?: string }) => {
+  const handleRejectConfirm = async ({
+    type,
+    customReason,
+  }: {
+    type: string;
+    customReason?: string;
+  }) => {
     if (!rejectPartnerId || !onStatusChange) return;
 
     const reasonText = getRejectionReasonText(type, customReason);
@@ -124,7 +131,14 @@ export function DeliveryPartnerTable({
     if (isActive) {
       return <Badge variant="success">Active</Badge>;
     }
-    return <Badge variant="outline" className="bg-slate-200 text-slate-800 border-slate-400">Inactive</Badge>;
+    return (
+      <Badge
+        variant="outline"
+        className="bg-slate-200 text-slate-800 border-slate-400"
+      >
+        Inactive
+      </Badge>
+    );
   };
 
   const getApprovalStatusBadge = (isApproved: boolean) => {
@@ -145,7 +159,9 @@ export function DeliveryPartnerTable({
                 <TableHead className="hidden md:table-cell">Type</TableHead>
                 <TableHead>Approval Status</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Registered</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  Registered
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -192,11 +208,14 @@ export function DeliveryPartnerTable({
                       {getStatusBadge(partner.is_active ?? false)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {format(new Date(partner.created_at), 'PP')}
+                      {format(new Date(partner.created_at), "PP")}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuTrigger
+                          asChild
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
@@ -209,52 +228,107 @@ export function DeliveryPartnerTable({
                               onPartnerClick(partner);
                             }}
                           >
-                            <Eye className="mr-2 h-4 w-4"/>
+                            <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onPartnerEdit(partner);
-                            }}
-                          >
-                            <Edit className="mr-2 h-4 w-4"/>
-                            Edit Partner
-                          </DropdownMenuItem>
+                          <Can permission="delivery-partners:update">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onPartnerEdit(partner);
+                              }}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Partner
+                            </DropdownMenuItem>
+                          </Can>
                           <DropdownMenuSeparator />
 
                           {/* --- Approval Actions --- */}
                           {!partner.is_approved && (
                             <>
                               {partner.kyc?.verified && (
+                                <Can permission="delivery-partners:update">
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStatusChange(
+                                        partner.partner_id,
+                                        "approve",
+                                      );
+                                    }}
+                                    disabled={
+                                      processingId === partner.partner_id
+                                    }
+                                  >
+                                    {processingId === partner.partner_id ? (
+                                      <Spinner
+                                        size="sm"
+                                        className="mr-2 h-4 w-4"
+                                      />
+                                    ) : (
+                                      <Check className="mr-2 h-4 w-4" />
+                                    )}
+                                    Approve
+                                  </DropdownMenuItem>
+                                </Can>
+                              )}
+                              <Can permission="delivery-partners:update">
                                 <DropdownMenuItem
-                                  onClick={(e) => { e.stopPropagation(); handleStatusChange(partner.partner_id, 'approve'); }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStatusChange(
+                                      partner.partner_id,
+                                      "reject",
+                                    );
+                                  }}
                                   disabled={processingId === partner.partner_id}
                                 >
-                                  {processingId === partner.partner_id ? <Spinner size="sm" className="mr-2 h-4 w-4"/> : <Check className="mr-2 h-4 w-4" />}
-                                  Approve
+                                  {processingId === partner.partner_id ? (
+                                    <Spinner
+                                      size="sm"
+                                      className="mr-2 h-4 w-4"
+                                    />
+                                  ) : (
+                                    <XCircle className="mr-2 h-4 w-4" />
+                                  )}
+                                  Reject
                                 </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                onClick={(e) => { e.stopPropagation(); handleStatusChange(partner.partner_id, 'reject'); }}
-                                disabled={processingId === partner.partner_id}
-                              >
-                                {processingId === partner.partner_id ? <Spinner size="sm" className="mr-2 h-4 w-4"/> : <XCircle className="mr-2 h-4 w-4" />}
-                                Reject
-                              </DropdownMenuItem>
+                              </Can>
                             </>
                           )}
 
                           {/* --- Activation and Rejection Actions for Approved Partners --- */}
                           {partner.is_approved && (
                             <>
-                              <DropdownMenuItem
-                                onClick={(e) => { e.stopPropagation(); handleStatusChange(partner.partner_id, partner.is_active ? 'deactivate' : 'activate'); }}
-                                disabled={processingId === partner.partner_id}
-                              >
-                                {processingId === partner.partner_id ? <Spinner size="sm" className="mr-2 h-4 w-4"/> : (partner.is_active ? <X className="mr-2 h-4 w-4" /> : <Check className="mr-2 h-4 w-4" />) }
-                                {partner.is_active ? 'Deactivate' : 'Activate'}
-                              </DropdownMenuItem>
+                              <Can permission="delivery-partners:update">
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStatusChange(
+                                      partner.partner_id,
+                                      partner.is_active
+                                        ? "deactivate"
+                                        : "activate",
+                                    );
+                                  }}
+                                  disabled={processingId === partner.partner_id}
+                                >
+                                  {processingId === partner.partner_id ? (
+                                    <Spinner
+                                      size="sm"
+                                      className="mr-2 h-4 w-4"
+                                    />
+                                  ) : partner.is_active ? (
+                                    <X className="mr-2 h-4 w-4" />
+                                  ) : (
+                                    <Check className="mr-2 h-4 w-4" />
+                                  )}
+                                  {partner.is_active
+                                    ? "Deactivate"
+                                    : "Activate"}
+                                </DropdownMenuItem>
+                              </Can>
                             </>
                           )}
                         </DropdownMenuContent>

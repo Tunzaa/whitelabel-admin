@@ -65,7 +65,11 @@ import {
   VendorPartnerRequest,
   AffiliateLink,
 } from "@/features/affiliates/types";
-import { AffiliateRejectionDialog, AffiliateRequestsTable, AffiliateLinksTable } from "@/features/affiliates/components";
+import {
+  AffiliateRejectionDialog,
+  AffiliateRequestsTable,
+  AffiliateLinksTable,
+} from "@/features/affiliates/components";
 import { FilePreviewModal } from "@/components/ui/file-preview-modal";
 import { VerificationDocumentManager } from "@/components/ui/verification-document-manager";
 import { isImageFile, isPdfFile } from "@/lib/services/file-upload.service";
@@ -96,118 +100,143 @@ const VendorsTab = React.memo(function VendorsTab({
 
   const [requests, setRequests] = useState<any[]>([]); // Use any[] to avoid AffiliateRequest error
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<{ message: string; status?: number } | null>(null);
+  const [error, setError] = useState<{
+    message: string;
+    status?: number;
+  } | null>(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [search, setSearch] = useState("");
 
-  const fetchData = useCallback(async (pageArg = page, searchArg = search) => {
-    let isMounted = true;
-    const fetchRequest = async () => {
-      try {
-        setLoading(true);
-        const headers = tenantId ? { "X-Tenant-ID": tenantId } : {};
-        const { activeTab } = stateRef.current;
-        const filters = {
-          affiliate_id: affiliateId,
-          skip: (pageArg - 1) * pageSize,
-          limit: pageSize,
-          ...(searchArg && { search: searchArg }),
-          ...(activeTab !== "all" && { status: activeTab }),
-        };
-        const { fetchAffiliateRequests } = useAffiliateStore.getState();
-        const result = await fetchAffiliateRequests(filters, headers) as any;
-        if (!isMounted) return;
-        setRequests(result?.requests || []);
-        setTotal(result?.total || 0);
-        setError(null);
-      } catch (err: any) {
-        if (!isMounted) return;
-        setRequests([]);
-        setTotal(0);
-        setError({
-          message: err.message || 'Failed to fetch vendor partners',
-          status: err.status,
-        });
-      } finally {
-        if (isMounted) {
-          setLoading(false);
+  const fetchData = useCallback(
+    async (pageArg = page, searchArg = search) => {
+      let isMounted = true;
+      const fetchRequest = async () => {
+        try {
+          setLoading(true);
+          const headers = tenantId ? { "X-Tenant-ID": tenantId } : {};
+          const { activeTab } = stateRef.current;
+          const filters = {
+            affiliate_id: affiliateId,
+            skip: (pageArg - 1) * pageSize,
+            limit: pageSize,
+            ...(searchArg && { search: searchArg }),
+            ...(activeTab !== "all" && { status: activeTab }),
+          };
+          const { fetchAffiliateRequests } = useAffiliateStore.getState();
+          const result = (await fetchAffiliateRequests(
+            filters,
+            headers,
+          )) as any;
+          if (!isMounted) return;
+          setRequests(result?.requests || []);
+          setTotal(result?.total || 0);
+          setError(null);
+        } catch (err: any) {
+          if (!isMounted) return;
+          setRequests([]);
+          setTotal(0);
+          setError({
+            message: err.message || "Failed to fetch vendor partners",
+            status: err.status,
+          });
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
         }
-      }
-    };
-    const timer = setTimeout(fetchRequest, 300);
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [affiliateId, tenantId, page, pageSize, search]);
+      };
+      const timer = setTimeout(fetchRequest, 300);
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
+    },
+    [affiliateId, tenantId, page, pageSize, search],
+  );
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    setPage(1);
-    fetchData(1, e.target.value);
-  }, [fetchData]);
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearch(e.target.value);
+      setPage(1);
+      fetchData(1, e.target.value);
+    },
+    [fetchData],
+  );
 
-  const handleTabChange = useCallback((value: string) => {
-    stateRef.current.activeTab = value;
-    setPage(1);
-    fetchData(1, search);
-  }, [fetchData, search]);
+  const handleTabChange = useCallback(
+    (value: string) => {
+      stateRef.current.activeTab = value;
+      setPage(1);
+      fetchData(1, search);
+    },
+    [fetchData, search],
+  );
 
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
-    fetchData(newPage, search);
-  }, [fetchData, search]);
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setPage(newPage);
+      fetchData(newPage, search);
+    },
+    [fetchData, search],
+  );
 
   useEffect(() => {
     const cleanup = fetchData();
     return () => {
-      cleanup.then(cleanupFn => cleanupFn?.());
+      cleanup.then((cleanupFn) => cleanupFn?.());
     };
   }, [fetchData]);
 
-  const handleStatusChange = async (requestId: string, status: string, reason?: string) => {
+  const handleStatusChange = async (
+    requestId: string,
+    status: string,
+    reason?: string,
+  ) => {
     try {
       setLoading(true);
       const headers = tenantId ? { "X-Tenant-ID": tenantId } : {};
 
       // Make API call to update the request status
-      const response = await fetch(`/api/affiliates/requests/${requestId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
+      const response = await fetch(
+        `/api/affiliates/requests/${requestId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...headers,
+          },
+          body: JSON.stringify({
+            status,
+            ...(reason && { rejection_reason: reason }),
+          }),
         },
-        body: JSON.stringify({
-          status,
-          ...(reason && { rejection_reason: reason })
-        }),
-      });
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to update request status');
+        throw new Error("Failed to update request status");
       }
 
       // Update the local state to reflect the change
-      setRequests(prev =>
-        prev.map(req =>
+      setRequests((prev) =>
+        prev.map((req) =>
           req.id === requestId
             ? {
-              ...req,
-              status,
-              ...(reason && { rejection_reason: reason })
-            }
-            : req
-        )
+                ...req,
+                status,
+                ...(reason && { rejection_reason: reason }),
+              }
+            : req,
+        ),
       );
 
       // Show success message
       // You can add a toast notification here if needed
     } catch (error) {
-      console.error('Failed to update request status:', error);
+      console.error("Failed to update request status:", error);
       setError({
-        message: 'Failed to update request status',
+        message: "Failed to update request status",
         status: 500,
       });
     } finally {
@@ -308,11 +337,15 @@ function AffiliateDetailPage() {
   const [linksSearch, setLinksSearch] = useState("");
   const [linksLoading, setLinksLoading] = useState(false);
   const [linksError, setLinksError] = useState<string | null>(null);
-  const [linksActiveTab, setLinksActiveTab] = useState('all');
+  const [linksActiveTab, setLinksActiveTab] = useState("all");
 
   // Fetch affiliate links
   const fetchLinks = useCallback(
-    async (page = linksPage, search = linksSearch, activeTab = linksActiveTab) => {
+    async (
+      page = linksPage,
+      search = linksSearch,
+      activeTab = linksActiveTab,
+    ) => {
       if (!affiliate?.id || !tenantId) return;
       setLinksLoading(true);
       setLinksError(null);
@@ -323,22 +356,29 @@ function AffiliateDetailPage() {
           limit: linksPageSize,
           ...(search ? { search } : {}),
         };
-        if (activeTab === 'active') filters.is_active = true;
-        if (activeTab === 'inactive') filters.is_active = false;
+        if (activeTab === "active") filters.is_active = true;
+        if (activeTab === "inactive") filters.is_active = false;
         const { links, total } = await fetchAffiliateLinks(
           affiliate.id,
           filters,
-          { "X-Tenant-ID": tenantId }
+          { "X-Tenant-ID": tenantId },
         );
         setLinks(links);
         setLinksTotal(total);
       } catch (err: any) {
-        setLinksError(err?.message || 'Failed to fetch affiliate links');
+        setLinksError(err?.message || "Failed to fetch affiliate links");
       } finally {
         setLinksLoading(false);
       }
     },
-    [affiliate?.id, tenantId, linksPage, linksPageSize, linksSearch, linksActiveTab]
+    [
+      affiliate?.id,
+      tenantId,
+      linksPage,
+      linksPageSize,
+      linksSearch,
+      linksActiveTab,
+    ],
   );
 
   useEffect(() => {
@@ -377,7 +417,7 @@ function AffiliateDetailPage() {
   // Unified status change handler
   const handleStatusChange = async (
     action: "approve" | "reject" | "activate" | "deactivate",
-    reason?: string
+    reason?: string,
   ) => {
     if (!affiliate?.id) return;
     setIsUpdating(true);
@@ -400,7 +440,7 @@ function AffiliateDetailPage() {
       const result = await updateAffiliateStatus(
         affiliate.id,
         statusData,
-        tenantHeaders
+        tenantHeaders,
       );
       if (result) {
         await fetchAffiliate(affiliate.id, tenantHeaders); // Only update the current affiliate
@@ -586,7 +626,7 @@ function AffiliateDetailPage() {
           </Badge>
 
           <div className="flex items-center gap-2 ml-2">
-            <Can permission="affiliate:update">
+            <Can permission="affiliates:update">
               <Button variant="outline" size="sm" onClick={handleEdit}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
@@ -664,7 +704,10 @@ function AffiliateDetailPage() {
             toast.error("Please provide a rejection reason.");
             return;
           }
-          handleStatusChange("reject", reason === "other" ? customReason : reason);
+          handleStatusChange(
+            "reject",
+            reason === "other" ? customReason : reason,
+          );
         }}
         loading={isUpdating}
         title="Reject Affiliate"
@@ -698,12 +741,13 @@ function AffiliateDetailPage() {
                 {affiliate?.status && (
                   <Badge
                     variant="outline"
-                    className={`mt-2 ${affiliate?.status === "approved"
-                      ? "text-green-600 border-green-200 bg-green-50"
-                      : affiliate?.status === "rejected"
-                        ? "text-red-600 border-red-200 bg-red-50"
-                        : "text-amber-600 border-amber-200 bg-amber-50"
-                      }`}
+                    className={`mt-2 ${
+                      affiliate?.status === "approved"
+                        ? "text-green-600 border-green-200 bg-green-50"
+                        : affiliate?.status === "rejected"
+                          ? "text-red-600 border-red-200 bg-red-50"
+                          : "text-amber-600 border-amber-200 bg-amber-50"
+                    }`}
                   >
                     {affiliate?.status.charAt(0).toUpperCase() +
                       affiliate?.status.slice(1)}
@@ -915,7 +959,7 @@ function AffiliateDetailPage() {
                   await updateAffiliateStatus(
                     affiliate.id,
                     { status: "approved", is_active: true },
-                    tenantHeaders
+                    tenantHeaders,
                   );
                   fetchAffiliate(affiliate.id, tenantHeaders);
                 }
@@ -925,7 +969,7 @@ function AffiliateDetailPage() {
                   await updateAffiliateStatus(
                     affiliate.id,
                     { status: "rejected", rejection_reason: reason },
-                    tenantHeaders
+                    tenantHeaders,
                   );
                   fetchAffiliate(affiliate.id, tenantHeaders);
                 }
@@ -1063,4 +1107,6 @@ function AffiliateDetailPage() {
   }
 }
 
-export default withAuthorization(AffiliateDetailPage, { permission: "affiliate:read" });
+export default withAuthorization(AffiliateDetailPage, {
+  permission: "affiliates:read",
+});

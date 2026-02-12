@@ -17,7 +17,13 @@ import { Spinner } from "@/components/ui/spinner";
 import Pagination from "@/components/ui/pagination";
 import { ErrorCard } from "@/components/ui/error-card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ProductRejectionDialog } from "@/features/products/components/product-rejection-dialog";
 import {
   AlertDialog,
@@ -46,13 +52,13 @@ function ProductsPage() {
     deleteProduct,
   } = useProductStore();
 
-  const {
-    vendors,
-    loading: vendorsLoading,
-    fetchVendors,
-  } = useVendorStore();
+  const { vendors, loading: vendorsLoading, fetchVendors } = useVendorStore();
 
-  console.log("DEBUG: Data from product store:", { productData, loading, error });
+  console.log("DEBUG: Data from product store:", {
+    productData,
+    loading,
+    error,
+  });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,9 +91,17 @@ function ProductsPage() {
 
     switch (activeTab) {
       case "published":
-        return { ...baseFilter, verification_status: "approved", is_active: true };
+        return {
+          ...baseFilter,
+          verification_status: "approved",
+          is_active: true,
+        };
       case "draft":
-        return { ...baseFilter, verification_status: "approved", is_active: false };
+        return {
+          ...baseFilter,
+          verification_status: "approved",
+          is_active: false,
+        };
       case "pending":
         return { ...baseFilter, verification_status: "pending" };
       case "rejected":
@@ -104,7 +118,7 @@ function ProductsPage() {
       try {
         const filters = getFilters();
         const response = await fetchProducts(filters, tenantHeaders);
-        if (response && typeof response.total === 'number') {
+        if (response && typeof response.total === "number") {
           setTotalProducts(response.total);
         }
       } catch (err) {
@@ -127,9 +141,12 @@ function ProductsPage() {
     if (!searchQuery) {
       return productData || [];
     }
-    return (productData || []).filter(product =>
-      (product.name && product.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()))
+    return (productData || []).filter(
+      (product) =>
+        (product.name &&
+          product.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (product.sku &&
+          product.sku.toLowerCase().includes(searchQuery.toLowerCase())),
     );
   }, [productData, searchQuery]);
 
@@ -137,7 +154,10 @@ function ProductsPage() {
     router.push(`/dashboard/products/${product.product_id}`);
   };
 
-  const handleUpdateProduct = async (productId: string, data: Partial<Product>) => {
+  const handleUpdateProduct = async (
+    productId: string,
+    data: Partial<Product>,
+  ) => {
     try {
       await updateProductStatus(productId, data, tenantHeaders);
       toast.success("Product status updated successfully.");
@@ -152,7 +172,7 @@ function ProductsPage() {
   const handleRejectOrSuspend = async (
     productId: string,
     reason: string,
-    customReason?: string
+    customReason?: string,
   ) => {
     const reasonText = customReason || reason;
     await handleUpdateProduct(productId, {
@@ -192,9 +212,7 @@ function ProductsPage() {
   };
 
   if (loading && !productData?.length) {
-    return (
-      <Spinner />
-    );
+    return <Spinner />;
   }
 
   if (error && !productData?.length) {
@@ -224,7 +242,7 @@ function ProductsPage() {
           </p>
         </div>
         <div className="flex">
-          <Can permission="product:create">
+          <Can permission="products:create">
             <Button
               variant="outline"
               onClick={() => router.push("/dashboard/products/add")}
@@ -233,8 +251,9 @@ function ProductsPage() {
               Add Product
             </Button>
           </Can>
-          <Can permission="product:create">
-            <Button onClick={() => router.push("/dashboard/products/bulk-upload")}
+          <Can permission="products:create">
+            <Button
+              onClick={() => router.push("/dashboard/products/bulk-upload")}
               className="ml-2"
             >
               <Files className="mr-2 h-4 w-4" />
@@ -304,17 +323,25 @@ function ProductsPage() {
         </Tabs>
       </div>
 
-      <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
+      <AlertDialog
+        open={!!productToDelete}
+        onOpenChange={(open) => !open && setProductToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the product "{productToDelete?.name}".
+              This action cannot be undone. This will permanently delete the
+              product "{productToDelete?.name}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>Delete</AlertDialogAction>
+            <AlertDialogCancel onClick={() => setProductToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -330,4 +357,4 @@ function ProductsPage() {
   );
 }
 
-export default withAuthorization(ProductsPage, { permission: "product:read" });
+export default withAuthorization(ProductsPage, { permission: "products:read" });

@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Can } from "@/components/auth/can";
 
 interface UserTableProps {
   users: User[];
@@ -40,8 +41,8 @@ interface UserTableProps {
 
 const getInitials = (name: string) => {
   if (!name) return "";
-  const names = name.split(' ');
-  const initials = names.map(n => n[0]).join('');
+  const names = name.split(" ");
+  const initials = names.map((n) => n[0]).join("");
   return initials.toUpperCase();
 };
 
@@ -64,7 +65,9 @@ export function UserTable({
 
   const getVerifiedBadge = (isVerified?: boolean) => {
     if (isVerified) {
-      return <Badge className="bg-green-500 hover:bg-green-600">Verified</Badge>;
+      return (
+        <Badge className="bg-green-500 hover:bg-green-600">Verified</Badge>
+      );
     } else {
       return <Badge variant="secondary">Not Verified</Badge>;
     }
@@ -92,16 +95,28 @@ export function UserTable({
               </TableRow>
             ) : (
               users.map((user) => (
-                <TableRow key={user.user_id} onClick={() => onUserClick(user)} className="cursor-pointer">
+                <TableRow
+                  key={user.user_id}
+                  onClick={() => onUserClick(user)}
+                  className="cursor-pointer"
+                >
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback>{getInitials(user.name || `${user.first_name} ${user.last_name}`)}</AvatarFallback>
+                        <AvatarFallback>
+                          {getInitials(
+                            user.name || `${user.first_name} ${user.last_name}`,
+                          )}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{user.name || `${user.first_name} ${user.last_name}`}</div>
-                        <div className="text-xs text-muted-foreground">User_ID: {user.user_id}</div>
+                        <div className="font-medium">
+                          {user.name || `${user.first_name} ${user.last_name}`}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          User_ID: {user.user_id}
+                        </div>
                       </div>
                     </div>
                   </TableCell>
@@ -119,48 +134,52 @@ export function UserTable({
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => onUserClick(user)}
-                        >
+                        <DropdownMenuItem onClick={() => onUserClick(user)}>
                           <Eye className="mr-2 h-4 w-4" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditUser(user.user_id);
-                          }}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        {/* {user.is_active ? (
+                        <Can permission="users:update">
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
-                              onDeactivateUser(user.user_id);
+                              onEditUser(user.user_id);
                             }}
                           >
-                            <ShieldOff className="mr-2 h-4 w-4" />
-                            Deactivate
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
                           </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onActivateUser(user.user_id);
-                            }}
-                          >
-                            <ShieldCheck className="mr-2 h-4 w-4" />
-                            Activate
-                          </DropdownMenuItem>
-                        )} */}
+                          {/* {user.is_active ? (
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeactivateUser(user.user_id);
+                              }}
+                            >
+                              <ShieldOff className="mr-2 h-4 w-4" />
+                              Deactivate
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onActivateUser(user.user_id);
+                              }}
+                            >
+                              <ShieldCheck className="mr-2 h-4 w-4" />
+                              Activate
+                            </DropdownMenuItem>
+                          )} */}
+                        </Can>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

@@ -45,44 +45,43 @@ export const navigationData: NavigationData = {
       title: "Tenants",
       url: "/dashboard/tenants",
       icon: IconChartBar,
-      requiredPermission: "tenant:read",
-      requiredRole: "super",
+      requiredPermission: "tenants:read",
     },
     {
       title: "Categories",
       url: "/dashboard/categories",
       icon: IconCategory,
-      requiredPermission: "category:read",
-    },
-    {
-      title: "Products & Services",
-      url: "/dashboard/products",
-      icon: IconPackage,
-      requiredPermission: "product:read",
+      requiredPermission: "categories:read",
     },
     {
       title: "Vendors",
       url: "/dashboard/vendors",
       icon: IconUsers,
-      requiredPermission: "vendor:view",
+      requiredPermission: "vendors:read",
+    },
+    {
+      title: "Products & Services",
+      url: "/dashboard/products",
+      icon: IconPackage,
+      requiredPermission: "products:read",
     },
     ...(isAffiliatesEnabled() ? [{
       title: "Affiliates (Mawinga)",
       url: "/dashboard/affiliates",
       icon: IconUserCode,
-      requiredPermission: "affiliate:read",
+      requiredPermission: "affiliates:read",
     }] : []),
     {
       title: "Delivery Partners",
       url: "/dashboard/delivery-partners",
       icon: IconTruck,
-      requiredPermission: "kyc:view",
+      requiredPermission: "delivery-partners:read",
     },
     {
       title: "Orders",
       url: "/dashboard/orders",
       icon: IconListDetails,
-      requiredPermission: "order:read",
+      requiredPermission: "orders:read",
       items: [
         {
           title: "Deliveries",
@@ -102,13 +101,13 @@ export const navigationData: NavigationData = {
       title: "Rewards & Referrals",
       url: "/dashboard/rewards",
       icon: IconGift,
-      requiredPermission: "earnings:view",
+      requiredPermission: "rewards:read",
     },
     {
       title: "Vendor Loans",
       url: "/dashboard/vendor-loans/requests",
       icon: IconCreditCard,
-      // requiredPermission: "vendor-loans:read",
+      requiredPermission: "vendor-loans:read",
       items: [
         {
           title: "Providers",
@@ -129,6 +128,7 @@ export const navigationData: NavigationData = {
       url: "https://support.afrizon.africa/app/accounts/1/dashboard",
       target: "_blank",
       icon: IconHelp,
+      requiredPermission: "support",
     },
   ],
 
@@ -137,19 +137,19 @@ export const navigationData: NavigationData = {
       title: "Marketplace Settings",
       url: "/dashboard/tenants/marketplace",
       icon: IconSettings2,
-      requiredPermission: "branding:update",
+      requiredPermission: "marketplace-settings",
     },
     {
       title: "Users",
       url: "/dashboard/auth/users",
       icon: IconUsers,
-      requiredPermission: "account:read",
+      requiredPermission: "users:read",
     },
     {
       title: "User Roles",
       url: "/dashboard/auth/roles",
       icon: IconUserShield,
-      requiredPermission: "account:read",
+      requiredPermission: "roles:read",
     },
     // {
     //   title: "Get Help",

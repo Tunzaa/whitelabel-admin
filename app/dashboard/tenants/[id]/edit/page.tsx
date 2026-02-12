@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, SaveAllIcon } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorCard } from "@/components/ui/error-card";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { TenantForm } from "@/features/tenants/components/tenant-form";
 import { useTenantStore } from "@/features/tenants/store";
@@ -41,7 +41,7 @@ function TenantEditPage({ params }: TenantEditPageProps) {
       await tenantStore.updateTenant(tenantId, data);
       toast.success("Tenant updated successfully");
       const result = { id: tenantId };
-      console.log('[TenantEditPage] Returning result to TenantForm:', result);
+      console.log("[TenantEditPage] Returning result to TenantForm:", result);
       return result; // <-- Return the correct tenantId
     } catch (error) {
       toast.error("Failed to update tenant. Please try again.");
@@ -66,7 +66,7 @@ function TenantEditPage({ params }: TenantEditPageProps) {
         title="Error Loading Tenant"
         error={{
           message: storeError?.message || "Failed to load tenant",
-          status: storeError?.status ? String(storeError.status) : "error"
+          status: storeError?.status ? String(storeError.status) : "error",
         }}
         buttonText="Back to Tenants"
         buttonAction={() => router.push("/dashboard/tenants")}
@@ -122,18 +122,38 @@ function TenantEditPage({ params }: TenantEditPageProps) {
             id="marketplace-tenant-form"
             initialData={{
               ...tenant,
-              tenant_id: typeof tenant.tenant_id === 'string' ? tenant.tenant_id : tenant.id,
-              plan: tenant.plan === 'monthly' || tenant.plan === 'quarterly' || tenant.plan === 'annually' ? tenant.plan : undefined,
+              tenant_id:
+                typeof tenant.tenant_id === "string"
+                  ? tenant.tenant_id
+                  : tenant.id,
+              plan:
+                tenant.plan === "monthly" ||
+                tenant.plan === "quarterly" ||
+                tenant.plan === "annually"
+                  ? tenant.plan
+                  : undefined,
               banners: tenant.banners === null ? [] : tenant.banners,
               branding: {
                 ...tenant.branding,
-                logoUrl: tenant.branding?.logoUrl === null ? undefined : tenant.branding?.logoUrl,
+                logoUrl:
+                  tenant.branding?.logoUrl === null
+                    ? undefined
+                    : tenant.branding?.logoUrl,
                 theme: {
                   ...tenant.branding?.theme,
                   logo: {
-                    primary: tenant.branding?.theme?.logo?.primary === null ? undefined : tenant.branding?.theme?.logo?.primary,
-                    secondary: tenant.branding?.theme?.logo?.secondary === null ? undefined : tenant.branding?.theme?.logo?.secondary,
-                    icon: tenant.branding?.theme?.logo?.icon === null ? undefined : tenant.branding?.theme?.logo?.icon,
+                    primary:
+                      tenant.branding?.theme?.logo?.primary === null
+                        ? undefined
+                        : tenant.branding?.theme?.logo?.primary,
+                    secondary:
+                      tenant.branding?.theme?.logo?.secondary === null
+                        ? undefined
+                        : tenant.branding?.theme?.logo?.secondary,
+                    icon:
+                      tenant.branding?.theme?.logo?.icon === null
+                        ? undefined
+                        : tenant.branding?.theme?.logo?.icon,
                   },
                 },
               },
@@ -147,4 +167,4 @@ function TenantEditPage({ params }: TenantEditPageProps) {
   ) : null;
 }
 
-export default withAuthorization(TenantEditPage, "tenant:update");
+export default withAuthorization(TenantEditPage, "tenants:update");

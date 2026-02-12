@@ -36,7 +36,7 @@ function VendorAddPage() {
       const randomSlug = Math.random().toString(36).substring(2, 10); // TODO: temp
       const payload: VendorFormValues = {
         ...data,
-        tenant_id: (data.tenant_id || tenantId),
+        tenant_id: data.tenant_id || tenantId,
         // stores: [
         //   {
         //     ...data.stores?.[0],
@@ -59,15 +59,15 @@ function VendorAddPage() {
           store_slug: randomSlug,
           branding: {
             ...data.stores?.[0].branding,
-            "colors": {
-              "primary": "#4285F4",
-              "secondary": "#34A853",
-              "accent": "#FBBC05",
-              "text": "#333333",
-              "background": "#FFFFFF"
-            }
+            colors: {
+              primary: "#4285F4",
+              secondary: "#34A853",
+              accent: "#FBBC05",
+              text: "#333333",
+              background: "#FFFFFF",
+            },
           },
-        }
+        },
       };
 
       console.log("Creating vendor with unified payload:", payload);
@@ -139,4 +139,6 @@ function VendorAddPage() {
   );
 }
 
-export default withAuthorization(VendorAddPage, { permission: "vendor:create" });
+export default withAuthorization(VendorAddPage, {
+  permission: "vendors:create",
+});

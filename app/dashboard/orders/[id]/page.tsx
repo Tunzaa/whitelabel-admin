@@ -15,7 +15,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { User as NextAuthUser, DefaultSession } from "next-auth";
 import { format } from "date-fns";
-import { EllipsisVertical, Check, AlertCircle, Code2, X, CheckCircle2 } from "lucide-react";
+import {
+  EllipsisVertical,
+  Check,
+  AlertCircle,
+  Code2,
+  X,
+  CheckCircle2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useOrderStore } from "@/features/orders/store";
 import { useTransactionStore } from "@/features/orders/transactions/store";
@@ -101,21 +108,24 @@ const OrderPage = () => {
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "payment">(
-    "overview"
+    "overview",
   );
   const handleTabChange = (value: "overview" | "payment") =>
     setActiveTab(value);
   const [loadedVendors, setLoadedVendors] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
-  const [vendorData, setVendorData] = useState<Record<string, { vendor: any; loading: boolean }>>({});
+  const [vendorData, setVendorData] = useState<
+    Record<string, { vendor: any; loading: boolean }>
+  >({});
   const [currentTransaction, setCurrentTransaction] = useState<any>(null);
   const [loadingTransactionId, setLoadingTransactionId] = useState<
     string | null
   >(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [isProcessingRefund, setIsProcessingRefund] = useState(false);
-  const [showCompleteRefundConfirm, setShowCompleteRefundConfirm] = useState(false);
+  const [showCompleteRefundConfirm, setShowCompleteRefundConfirm] =
+    useState(false);
   const [isCompletingRefund, setIsCompletingRefund] = useState(false);
 
   const { data: session } = useSession();
@@ -176,7 +186,7 @@ const OrderPage = () => {
   const formatPrice = (
     price: number | string | undefined,
     currency: any = "TZS",
-    options?: { currency?: string | object }
+    options?: { currency?: string | object },
   ): string => {
     if (price === undefined || price === null || price === "") return "N/A";
     const numPrice = typeof price === "string" ? parseFloat(price) : price;
@@ -268,7 +278,7 @@ const OrderPage = () => {
 
   // Fetch transactions when the order loads
   const [expandedTransaction, setExpandedTransaction] = useState<string | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -323,14 +333,25 @@ const OrderPage = () => {
         user?.tenant_id
       ) {
         setLoadedVendors((prev) => ({ ...prev, [item.vendor_id]: true }));
-        setVendorData((prev) => ({ ...prev, [item.vendor_id]: { vendor: null, loading: true } }));
+        setVendorData((prev) => ({
+          ...prev,
+          [item.vendor_id]: { vendor: null, loading: true },
+        }));
 
         try {
-          const vendor = await fetchVendor(item.vendor_id, { "X-Tenant-ID": user.tenant_id });
-          setVendorData((prev) => ({ ...prev, [item.vendor_id]: { vendor, loading: false } }));
+          const vendor = await fetchVendor(item.vendor_id, {
+            "X-Tenant-ID": user.tenant_id,
+          });
+          setVendorData((prev) => ({
+            ...prev,
+            [item.vendor_id]: { vendor, loading: false },
+          }));
         } catch (error) {
           console.error("Error fetching vendor:", error);
-          setVendorData((prev) => ({ ...prev, [item.vendor_id]: { vendor: null, loading: false } }));
+          setVendorData((prev) => ({
+            ...prev,
+            [item.vendor_id]: { vendor: null, loading: false },
+          }));
         }
       }
     }
@@ -412,11 +433,14 @@ const OrderPage = () => {
   };
 
   const allVendorsAccepted = useMemo(() => {
-    return order?.items && order.vendor_responses && 
-      order.items.every(item => {
+    return (
+      order?.items &&
+      order.vendor_responses &&
+      order.items.every((item) => {
         const vendorResponse = order.vendor_responses?.[item.vendor_id];
-        return vendorResponse && vendorResponse.status === 'accept';
-      });
+        return vendorResponse && vendorResponse.status === "accept";
+      })
+    );
   }, [order?.items, order?.vendor_responses]);
 
   if (orderLoading && !order) {
@@ -486,7 +510,7 @@ const OrderPage = () => {
 
         {order?.status &&
           ["pending", "processing", "confirmed", "shipped"].includes(
-            order.status
+            order.status,
           ) && (
             <>
               <Button
@@ -549,8 +573,8 @@ const OrderPage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Mark as Refunded?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will mark the order as fully refunded. 
-              This action indicates that all refunds have been processed.
+              This will mark the order as fully refunded. This action indicates
+              that all refunds have been processed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -629,8 +653,8 @@ const OrderPage = () => {
                                   order.support_ticket.status === "open"
                                     ? "destructive"
                                     : order.support_ticket.status === "resolved"
-                                    ? "success"
-                                    : "secondary"
+                                      ? "success"
+                                      : "secondary"
                                 }
                                 className="text-xs"
                               >
@@ -675,9 +699,11 @@ const OrderPage = () => {
                         {order?.items?.length || 0} items in this order
                       </CardDescription>
                     </div>
-                    <Can permission="order:update" role="admin">
+                    <Can permission="orders:update" role="admin">
                       {order?.status &&
-                        !["cancelled", "refund_requested", "refunded"].includes(order.status) && (
+                        !["cancelled", "refund_requested", "refunded"].includes(
+                          order.status,
+                        ) && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -707,7 +733,7 @@ const OrderPage = () => {
                       {order?.items?.map((item, index) => (
                         <React.Fragment key={index}>
                           <TableRow
-                            className={`relative cursor-pointer hover:bg-muted/50 ${order.vendor_responses?.[item.vendor_id]?.status == 'reject' ? "bg-amber-50 dark:bg-amber-950" : undefined}`}
+                            className={`relative cursor-pointer hover:bg-muted/50 ${order.vendor_responses?.[item.vendor_id]?.status == "reject" ? "bg-amber-50 dark:bg-amber-950" : undefined}`}
                             onClick={() => handleAccordionChange(index)}
                           >
                             <TableCell>
@@ -743,13 +769,13 @@ const OrderPage = () => {
                             <TableCell className="text-right font-medium">
                               {formatPrice(
                                 item.unit_price,
-                                order?.currency || "TZS"
+                                order?.currency || "TZS",
                               )}
                             </TableCell>
                             <TableCell className="text-right font-medium">
                               {formatPrice(
                                 item.total,
-                                order?.currency || "TZS"
+                                order?.currency || "TZS",
                               )}
                             </TableCell>
                             <TableCell className="text-right">
@@ -772,8 +798,13 @@ const OrderPage = () => {
                                       responded_at: undefined,
                                     }
                                   }
-                                  vendor={vendorData[item.vendor_id]?.vendor || undefined}
-                                  isLoading={vendorData[item.vendor_id]?.loading || false}
+                                  vendor={
+                                    vendorData[item.vendor_id]?.vendor ||
+                                    undefined
+                                  }
+                                  isLoading={
+                                    vendorData[item.vendor_id]?.loading || false
+                                  }
                                 />
                               </TableCell>
                             </TableRow>
@@ -806,7 +837,9 @@ const OrderPage = () => {
                                 size="sm"
                                 variant="outline"
                                 className="gap-2"
-                                onClick={() => setShowCompleteRefundConfirm(true)}
+                                onClick={() =>
+                                  setShowCompleteRefundConfirm(true)
+                                }
                                 disabled={isCompletingRefund}
                               >
                                 <CheckCircle2 className="h-4 w-4" />
@@ -814,7 +847,10 @@ const OrderPage = () => {
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Mark all refunds as processed and update order status</p>
+                              <p>
+                                Mark all refunds as processed and update order
+                                status
+                              </p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -830,11 +866,12 @@ const OrderPage = () => {
                         >
                           <div className="flex items-center justify-between mb-2">
                             {order.status != "refunded" ? (
-                              <Badge className="capitalize">
-                                Pending
-                              </Badge>
+                              <Badge className="capitalize">Pending</Badge>
                             ) : (
-                              <Badge variant="destructive" className="capitalize">
+                              <Badge
+                                variant="destructive"
+                                className="capitalize"
+                              >
                                 Refunded
                               </Badge>
                             )}
@@ -850,7 +887,7 @@ const OrderPage = () => {
                             <p className="font-medium text-destructive">
                               {formatPrice(
                                 refund.amount,
-                                order?.currency || "TZS"
+                                order?.currency || "TZS",
                               )}
                             </p>
                           </div>
@@ -921,9 +958,9 @@ const OrderPage = () => {
                                   {format(
                                     new Date(
                                       transaction.payment_date ||
-                                        transaction.created_at
+                                        transaction.created_at,
                                     ),
-                                    "MMM d, yyyy h:mm a"
+                                    "MMM d, yyyy h:mm a",
                                   )}
                                 </div>
                               </div>
@@ -937,13 +974,13 @@ const OrderPage = () => {
                                 </div>
                                 <Badge
                                   variant={getTransactionStatusBadgeVariant(
-                                    transaction.status as any
+                                    transaction.status as any,
                                   )}
                                   className="text-xs"
                                 >
                                   {String(transaction.status).replace(
                                     /_/g,
-                                    " "
+                                    " ",
                                   )}
                                 </Badge>
                               </div>
@@ -977,7 +1014,7 @@ const OrderPage = () => {
                                               {
                                                 currency:
                                                   order?.currency || "TZS",
-                                              }
+                                              },
                                             )}
                                           </p>
                                         </div>
@@ -992,7 +1029,7 @@ const OrderPage = () => {
                                                 {
                                                   currency:
                                                     order?.currency || "TZS",
-                                                }
+                                                },
                                               )}
                                             </p>
                                           </div>
@@ -1005,7 +1042,7 @@ const OrderPage = () => {
                                           </span>
                                           <Badge
                                             variant={getTransactionStatusBadgeVariant(
-                                              currentTransaction.status as any
+                                              currentTransaction.status as any,
                                             )}
                                             className="capitalize"
                                           >
@@ -1089,7 +1126,7 @@ const OrderPage = () => {
                                           <p className="text-sm">
                                             {formatTransactionDate(
                                               currentTransaction.payment_date ||
-                                                currentTransaction.created_at
+                                                currentTransaction.created_at,
                                             )}
                                           </p>
                                         </div>
@@ -1121,10 +1158,10 @@ const OrderPage = () => {
                                                     value.length > 100
                                                       ? `${value.substring(
                                                           0,
-                                                          100
+                                                          100,
                                                         )}...`
                                                       : value,
-                                                  2
+                                                  2,
                                                 )}
                                               </pre>
                                             </div>
@@ -1191,7 +1228,7 @@ const OrderPage = () => {
                                   ((order.payment_details?.paid_installments ||
                                     0) /
                                     (order.plan.installments?.length || 1)) *
-                                    100
+                                    100,
                                 )}
                                 %
                               </span>
@@ -1237,7 +1274,7 @@ const OrderPage = () => {
                                           (order.payment_details
                                             ?.paid_installments || 0);
                                         const dueDate = new Date(
-                                          installment.due_date
+                                          installment.due_date,
                                         );
                                         const today = new Date();
                                         today.setHours(0, 0, 0, 0);
@@ -1251,8 +1288,8 @@ const OrderPage = () => {
                                               isOverdue
                                                 ? "border-red-200 bg-red-50"
                                                 : isCurrent
-                                                ? "border-primary/50 bg-primary/5"
-                                                : "border-border"
+                                                  ? "border-primary/50 bg-primary/5"
+                                                  : "border-border"
                                             }`}
                                           >
                                             <div className="flex justify-between items-center">
@@ -1262,10 +1299,10 @@ const OrderPage = () => {
                                                     isPaid
                                                       ? "bg-green-100 text-green-600"
                                                       : isOverdue
-                                                      ? "bg-red-100 text-red-600"
-                                                      : isCurrent
-                                                      ? "bg-blue-100 text-blue-600"
-                                                      : "bg-muted"
+                                                        ? "bg-red-100 text-red-600"
+                                                        : isCurrent
+                                                          ? "bg-blue-100 text-blue-600"
+                                                          : "bg-muted"
                                                   }`}
                                                 >
                                                   {isPaid ? (
@@ -1321,7 +1358,7 @@ const OrderPage = () => {
                                                       currency:
                                                         order?.currency ||
                                                         "TZS",
-                                                    }
+                                                    },
                                                   )}
                                                 </p>
                                                 <p
@@ -1329,25 +1366,25 @@ const OrderPage = () => {
                                                     isPaid
                                                       ? "text-green-600"
                                                       : isOverdue
-                                                      ? "text-red-600 font-medium"
-                                                      : isCurrent
-                                                      ? "text-blue-600 font-medium"
-                                                      : "text-muted-foreground"
+                                                        ? "text-red-600 font-medium"
+                                                        : isCurrent
+                                                          ? "text-blue-600 font-medium"
+                                                          : "text-muted-foreground"
                                                   }`}
                                                 >
                                                   {isPaid
                                                     ? "Paid"
                                                     : isOverdue
-                                                    ? "Overdue"
-                                                    : isCurrent
-                                                    ? "Upcoming"
-                                                    : "Pending"}
+                                                      ? "Overdue"
+                                                      : isCurrent
+                                                        ? "Upcoming"
+                                                        : "Pending"}
                                                 </p>
                                               </div>
                                             </div>
                                           </div>
                                         );
-                                      }
+                                      },
                                     )}
                                   </div>
                                 </AccordionContent>
@@ -1375,7 +1412,7 @@ const OrderPage = () => {
                     <span className="font-medium">
                       {formatPrice(
                         order?.totals?.subtotal,
-                        order?.currency || "TZS"
+                        order?.currency || "TZS",
                       )}
                     </span>
                   </div>
@@ -1385,7 +1422,7 @@ const OrderPage = () => {
                       -
                       {formatPrice(
                         order?.totals?.discount,
-                        order?.currency || "TZS"
+                        order?.currency || "TZS",
                       ) || `${order?.currency || "TZS"} 0.00`}
                     </span>
                   </div>
@@ -1394,7 +1431,7 @@ const OrderPage = () => {
                     <span className="font-medium">
                       {formatPrice(
                         order?.totals?.tax,
-                        order?.currency || "TZS"
+                        order?.currency || "TZS",
                       ) || `${order?.currency || "TZS"} 0.00`}
                     </span>
                   </div>
@@ -1403,7 +1440,7 @@ const OrderPage = () => {
                     <span className="font-medium">
                       {formatPrice(
                         order?.totals?.shipping,
-                        order?.currency || "TZS"
+                        order?.currency || "TZS",
                       ) || `${order?.currency || "TZS"} 0.00`}
                     </span>
                   </div>
@@ -1412,7 +1449,7 @@ const OrderPage = () => {
                     <span className="text-lg font-bold">
                       {formatPrice(
                         order?.totals?.total,
-                        order?.currency || "TZS"
+                        order?.currency || "TZS",
                       )}
                     </span>
                   </div>

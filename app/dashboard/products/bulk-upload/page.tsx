@@ -25,10 +25,24 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Store, HelpCircle, FileDown, History, User, FileUp, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  Store,
+  HelpCircle,
+  FileDown,
+  History,
+  User,
+  FileUp,
+  Check,
+} from "lucide-react";
 import { toast } from "sonner";
 import { BulkUploadDocsModal } from "@/features/products/components/bulk-upload-docs-modal";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Copy } from "@/components/ui/copy";
 import { withAuthorization } from "@/components/auth/with-authorization";
 
@@ -40,39 +54,56 @@ function BulkUploadPage() {
   const [storeId, setStoreId] = useState<string>("");
   const [batches, setBatches] = useState<any[]>([]);
   const [loadingBatches, setLoadingBatches] = useState(false);
-  const [status, setStatus] = useState<"idle" | "uploading" | "processing" | "error" | "complete">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "uploading" | "processing" | "error" | "complete"
+  >("idle");
   const [errors, setErrors] = useState<string[]>([]);
   const [batchId, setBatchId] = useState<string | undefined>(undefined);
   const [showStatus, setShowStatus] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const { fetchBulkUploadStatus, fetchBulkUploadBatches, uploadBulkProducts, fetchBulkUploadTemplateCSV, approveBulkUploadBatch } = useProductStore();
-  const { vendors, fetchVendors, fetchVendor, loading: loadingVendors } = useVendorStore();
+  const {
+    fetchBulkUploadStatus,
+    fetchBulkUploadBatches,
+    uploadBulkProducts,
+    fetchBulkUploadTemplateCSV,
+    approveBulkUploadBatch,
+  } = useProductStore();
+  const {
+    vendors,
+    fetchVendors,
+    fetchVendor,
+    loading: loadingVendors,
+  } = useVendorStore();
   const [selectedVendor, setSelectedVendor] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("upload");
   const [docsOpen, setDocsOpen] = useState(false);
   const [clearFileSignal, setClearFileSignal] = useState(0);
   const [uploadResult, setUploadResult] = useState<any>(null);
-  const [responseStatusCode, setResponseStatusCode] = useState<number | undefined>(undefined);
+  const [responseStatusCode, setResponseStatusCode] = useState<
+    number | undefined
+  >(undefined);
   const [approvingBatchId, setApprovingBatchId] = useState<string | null>(null);
 
   // Fetch vendors on mount
   useEffect(() => {
     if (tenantId) {
-      fetchVendors(undefined, { 'X-Tenant-ID': tenantId });
+      fetchVendors(undefined, { "X-Tenant-ID": tenantId });
     }
   }, [fetchVendors, tenantId]);
 
   // When vendor is selected, fetch vendor details and set storeId
   useEffect(() => {
     if (selectedVendorId && tenantId) {
-      fetchVendor(selectedVendorId, { 'X-Tenant-ID': tenantId }).then((vendor) => {
-        setSelectedVendor(vendor);
-        if (vendor.stores && vendor.stores.length > 0) {
-          setStoreId(vendor.stores[0].store_id || "");
-        } else {
-          setStoreId("");
-        }
-      });
+      fetchVendor(selectedVendorId, { "X-Tenant-ID": tenantId }).then(
+        (vendor) => {
+          setSelectedVendor(vendor);
+          if (vendor.stores && vendor.stores.length > 0) {
+            setStoreId(vendor.stores[0].store_id || "");
+          } else {
+            setStoreId("");
+          }
+        },
+      );
     } else {
       setSelectedVendor(null);
       setStoreId("");
@@ -83,7 +114,9 @@ function BulkUploadPage() {
   useEffect(() => {
     if (selectedVendorId && storeId && tenantId) {
       setLoadingBatches(true);
-      fetchBulkUploadBatches(selectedVendorId, storeId, { 'X-Tenant-ID': tenantId }).then((data: any) => {
+      fetchBulkUploadBatches(selectedVendorId, storeId, {
+        "X-Tenant-ID": tenantId,
+      }).then((data: any) => {
         const batchArray = data?.items || data || [];
         setBatches(batchArray);
         setLoadingBatches(false);
@@ -107,10 +140,13 @@ function BulkUploadPage() {
         file,
         selectedVendorId,
         storeId,
-        tenantId
+        tenantId,
       );
       // If error response (no batch_id and has detail/error/message)
-      if ((!result.batch_id) && (result.detail || result.error || result.message)) {
+      if (
+        !result.batch_id &&
+        (result.detail || result.error || result.message)
+      ) {
         setUploadResult(result);
         setResponseStatusCode(400); // or use actual status if available
         setStatus("error");
@@ -138,7 +174,9 @@ function BulkUploadPage() {
         setBatchId(result.batch_id);
         setTimeout(async () => {
           try {
-            const batch = await fetchBulkUploadStatus(result.batch_id, { 'X-Tenant-ID': tenantId });
+            const batch = await fetchBulkUploadStatus(result.batch_id, {
+              "X-Tenant-ID": tenantId,
+            });
             setUploadResult(batch);
             setResponseStatusCode(undefined);
             if (batch && batch.status === "complete") {
@@ -188,49 +226,58 @@ function BulkUploadPage() {
   const renderStatusBadge = (status: string) => {
     let variant: any = "secondary";
     if (status === "complete") variant = "success";
-    else if (status === "processing" || status === "uploading") variant = "warning";
+    else if (status === "processing" || status === "uploading")
+      variant = "warning";
     else if (status === "error") variant = "destructive";
-    return <Badge variant={variant} className="capitalize animate-fade-in">{status}</Badge>;
+    return (
+      <Badge variant={variant} className="capitalize animate-fade-in">
+        {status}
+      </Badge>
+    );
   };
 
   // Download sample CSV handler (fetches from API and triggers download)
   const handleDownloadSample = async () => {
     try {
-      const csv = await fetchBulkUploadTemplateCSV({ 'X-Tenant-ID': tenantId });
-      const blob = new Blob([csv], { type: 'text/csv' });
+      const csv = await fetchBulkUploadTemplateCSV({ "X-Tenant-ID": tenantId });
+      const blob = new Blob([csv], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'bulk-upload-template.csv';
+      a.download = "bulk-upload-template.csv";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error('Failed to download template. Please try again.');
+      toast.error("Failed to download template. Please try again.");
     }
   };
 
   // Handle batch approval
   const handleApproveBatch = async (batchId: string) => {
     if (!session?.user?.name) {
-      toast.error('User information not available');
+      toast.error("User information not available");
       return;
     }
 
     setApprovingBatchId(batchId);
     try {
-      await approveBulkUploadBatch(batchId, session.user.name, { 'X-Tenant-ID': tenantId });
-      toast.success('Batch approved successfully!');
+      await approveBulkUploadBatch(batchId, session.user.name, {
+        "X-Tenant-ID": tenantId,
+      });
+      toast.success("Batch approved successfully!");
 
       // Refresh batches to show updated status
       if (selectedVendorId && storeId && tenantId) {
-        const data = await fetchBulkUploadBatches(selectedVendorId, storeId, { 'X-Tenant-ID': tenantId });
+        const data = await fetchBulkUploadBatches(selectedVendorId, storeId, {
+          "X-Tenant-ID": tenantId,
+        });
         const batchArray = data?.items || data || [];
         setBatches(batchArray);
       }
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to approve batch');
+      toast.error(err?.message || "Failed to approve batch");
     } finally {
       setApprovingBatchId(null);
     }
@@ -252,7 +299,9 @@ function BulkUploadPage() {
           </Button>
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Bulk Product Upload</h1>
+              <h1 className="text-2xl font-bold tracking-tight">
+                Bulk Product Upload
+              </h1>
               <p className="text-muted-foreground text-base mt-1">
                 Upload and manage product batches for your vendors.
               </p>
@@ -271,7 +320,9 @@ function BulkUploadPage() {
                 <CardTitle className="flex items-center gap-2">
                   <Store className="h-5 w-5" /> Select Vendor
                 </CardTitle>
-                <CardDescription>Choose a vendor to upload products for.</CardDescription>
+                <CardDescription>
+                  Choose a vendor to upload products for.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {loadingVendors ? (
@@ -288,9 +339,15 @@ function BulkUploadPage() {
                     <SelectContent>
                       {vendorList.length > 0 ? (
                         vendorList
-                          .filter((vendor: any) => vendor.vendor_id && vendor.vendor_id !== "")
+                          .filter(
+                            (vendor: any) =>
+                              vendor.vendor_id && vendor.vendor_id !== "",
+                          )
                           .map((vendor: any) => (
-                            <SelectItem key={vendor.vendor_id} value={vendor.vendor_id!}>
+                            <SelectItem
+                              key={vendor.vendor_id}
+                              value={vendor.vendor_id!}
+                            >
                               {vendor.business_name}
                             </SelectItem>
                           ))
@@ -315,24 +372,39 @@ function BulkUploadPage() {
                 {selectedVendor ? (
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Vendor</span>
-                      <span className="text-sm font-medium">{selectedVendor.business_name}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Vendor
+                      </span>
+                      <span className="text-sm font-medium">
+                        {selectedVendor.business_name}
+                      </span>
                     </div>
-                    {selectedVendor.stores && selectedVendor.stores.length > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Store</span>
-                        <span className="text-sm font-medium">{selectedVendor.stores[0].store_name}</span>
-                      </div>
-                    )}
+                    {selectedVendor.stores &&
+                      selectedVendor.stores.length > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">
+                            Store
+                          </span>
+                          <span className="text-sm font-medium">
+                            {selectedVendor.stores[0].store_name}
+                          </span>
+                        </div>
+                      )}
                     {selectedVendor.email && (
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Email</span>
-                        <span className="text-sm font-medium">{selectedVendor.email}</span>
+                        <span className="text-sm text-muted-foreground">
+                          Email
+                        </span>
+                        <span className="text-sm font-medium">
+                          {selectedVendor.email}
+                        </span>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground text-center">Select a vendor to see details.</div>
+                  <div className="text-muted-foreground text-center">
+                    Select a vendor to see details.
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -344,8 +416,15 @@ function BulkUploadPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-2">Check our documentation or contact support for assistance with bulk uploads.</p>
-                <Button variant="secondary" className="w-full" onClick={() => setDocsOpen(true)}>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Check our documentation or contact support for assistance with
+                  bulk uploads.
+                </p>
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => setDocsOpen(true)}
+                >
                   View Bulk Upload Guide
                 </Button>
               </CardContent>
@@ -353,12 +432,19 @@ function BulkUploadPage() {
           </div>
           {/* Main Section */}
           <div className="lg:col-span-3 space-y-8 order-1 lg:order-2">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
               <TabsList className="w-full">
                 <TabsTrigger value="upload" className="flex items-center gap-2">
                   <FileUp className="h-4 w-4" /> Upload
                 </TabsTrigger>
-                <TabsTrigger value="history" className="flex items-center gap-2">
+                <TabsTrigger
+                  value="history"
+                  className="flex items-center gap-2"
+                >
                   <History className="h-4 w-4" /> History
                 </TabsTrigger>
               </TabsList>
@@ -367,9 +453,16 @@ function BulkUploadPage() {
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                       <CardTitle>Bulk Upload</CardTitle>
-                      <CardDescription>Upload a CSV file to add products in bulk.</CardDescription>
+                      <CardDescription>
+                        Upload a CSV file to add products in bulk.
+                      </CardDescription>
                     </div>
-                    <Button variant="outline" size="sm" onClick={handleDownloadSample} className="gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadSample}
+                      className="gap-2"
+                    >
                       <FileDown className="h-4 w-4" /> Download CSV Template
                     </Button>
                   </CardHeader>
@@ -378,31 +471,48 @@ function BulkUploadPage() {
                       onUpload={handleFileUpload}
                       uploading={uploading}
                       disabled={
-                        !selectedVendorId || (selectedVendor && (!selectedVendor.stores || selectedVendor.stores.length === 0))
+                        !selectedVendorId ||
+                        (selectedVendor &&
+                          (!selectedVendor.stores ||
+                            selectedVendor.stores.length === 0))
                       }
                       disabledReason={
                         !selectedVendorId
-                          ? 'Select a vendor to enable upload'
-                          : (selectedVendor && (!selectedVendor.stores || selectedVendor.stores.length === 0))
-                            ? 'Selected vendor has no store. Please add a store first.'
+                          ? "Select a vendor to enable upload"
+                          : selectedVendor &&
+                              (!selectedVendor.stores ||
+                                selectedVendor.stores.length === 0)
+                            ? "Selected vendor has no store. Please add a store first."
                             : undefined
                       }
                       clearFileSignal={clearFileSignal}
                     />
                     {showStatus && (
                       <div className="transition-all duration-300 animate-fade-in">
-                        <BulkUploadStatus status={status} errors={errors} onRetry={handleRetry} batchId={batchId} result={uploadResult} responseStatusCode={responseStatusCode} />
+                        <BulkUploadStatus
+                          status={status}
+                          errors={errors}
+                          onRetry={handleRetry}
+                          batchId={batchId}
+                          result={uploadResult}
+                          responseStatusCode={responseStatusCode}
+                        />
                       </div>
                     )}
                     {status === "complete" && (
                       <div className="flex justify-end mt-4">
-                        <Button onClick={handleRetry} variant="outline">Start New Upload</Button>
+                        <Button onClick={handleRetry} variant="outline">
+                          Start New Upload
+                        </Button>
                       </div>
                     )}
                   </CardContent>
                 </Card>
               </TabsContent>
-              <TabsContent value="history" className="space-y-6 animate-fade-in">
+              <TabsContent
+                value="history"
+                className="space-y-6 animate-fade-in"
+              >
                 <Card className="shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -410,7 +520,8 @@ function BulkUploadPage() {
                       Batch History
                     </CardTitle>
                     <CardDescription>
-                      Review and manage previous bulk upload batches for this vendor/store.
+                      Review and manage previous bulk upload batches for this
+                      vendor/store.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -420,7 +531,9 @@ function BulkUploadPage() {
                       </div>
                     ) : batches.length === 0 ? (
                       <div className="text-center py-12">
-                        <div className="text-muted-foreground text-lg mb-2">No batches found</div>
+                        <div className="text-muted-foreground text-lg mb-2">
+                          No batches found
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           Upload your first batch to see it here.
                         </p>
@@ -428,7 +541,11 @@ function BulkUploadPage() {
                     ) : (
                       <Accordion type="single" collapsible className="w-full">
                         {batches.map((batch, idx) => (
-                          <AccordionItem key={batch.batch_id} value={batch.batch_id} className="border rounded-lg mb-3 hover:shadow-md transition-all duration-200 bg-gradient-to-r from-background to-muted/20">
+                          <AccordionItem
+                            key={batch.batch_id}
+                            value={batch.batch_id}
+                            className="border rounded-lg mb-3 hover:shadow-md transition-all duration-200 bg-gradient-to-r from-background to-muted/20"
+                          >
                             <AccordionTrigger className="px-6 py-4 hover:no-underline group">
                               <div className="flex items-center justify-between w-full pr-4">
                                 <div className="flex items-center gap-4">
@@ -438,12 +555,18 @@ function BulkUploadPage() {
                                         <span className="font-mono text-sm text-muted-foreground">
                                           {batch.batch_id?.slice(0, 8)}...
                                         </span>
-                                        <Copy text={batch.batch_id} size={14} className="opacity-60 hover:opacity-100 transition-opacity" />
+                                        <Copy
+                                          text={batch.batch_id}
+                                          size={14}
+                                          className="opacity-60 hover:opacity-100 transition-opacity"
+                                        />
                                       </div>
                                       {renderStatusBadge(batch.status)}
                                     </div>
                                     <div className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
-                                      <span className="font-medium">{batch.filename || 'Unknown file'}</span>
+                                      <span className="font-medium">
+                                        {batch.filename || "Unknown file"}
+                                      </span>
                                       {batch.total_products && (
                                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                                           {batch.total_products} products
@@ -454,15 +577,27 @@ function BulkUploadPage() {
                                 </div>
                                 <div className="flex items-center gap-6 text-sm text-muted-foreground">
                                   <div className="text-right">
-                                    <div className="text-xs uppercase tracking-wide">Created</div>
+                                    <div className="text-xs uppercase tracking-wide">
+                                      Created
+                                    </div>
                                     <div className="font-medium">
-                                      {batch.created_at ? new Date(batch.created_at).toLocaleDateString() : "-"}
+                                      {batch.created_at
+                                        ? new Date(
+                                            batch.created_at,
+                                          ).toLocaleDateString()
+                                        : "-"}
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-xs uppercase tracking-wide">Time</div>
+                                    <div className="text-xs uppercase tracking-wide">
+                                      Time
+                                    </div>
                                     <div className="font-medium">
-                                      {batch.created_at ? new Date(batch.created_at).toLocaleTimeString() : "-"}
+                                      {batch.created_at
+                                        ? new Date(
+                                            batch.created_at,
+                                          ).toLocaleTimeString()
+                                        : "-"}
                                     </div>
                                   </div>
                                 </div>
@@ -480,28 +615,55 @@ function BulkUploadPage() {
                                       </h4>
                                       <dl className="space-y-2 text-sm">
                                         <div className="flex justify-between items-center">
-                                          <dt className="text-muted-foreground">Batch ID:</dt>
+                                          <dt className="text-muted-foreground">
+                                            Batch ID:
+                                          </dt>
                                           <dd className="font-mono text-xs bg-muted px-2 py-1 rounded flex items-center gap-1">
                                             {batch.batch_id}
-                                            <Copy text={batch.batch_id} size={12} />
+                                            <Copy
+                                              text={batch.batch_id}
+                                              size={12}
+                                            />
                                           </dd>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                          <dt className="text-muted-foreground">Status:</dt>
-                                          <dd>{renderStatusBadge(batch.status)}</dd>
+                                          <dt className="text-muted-foreground">
+                                            Status:
+                                          </dt>
+                                          <dd>
+                                            {renderStatusBadge(batch.status)}
+                                          </dd>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                          <dt className="text-muted-foreground">Filename:</dt>
-                                          <dd className="truncate max-w-[200px] font-medium">{batch.filename || 'N/A'}</dd>
+                                          <dt className="text-muted-foreground">
+                                            Filename:
+                                          </dt>
+                                          <dd className="truncate max-w-[200px] font-medium">
+                                            {batch.filename || "N/A"}
+                                          </dd>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                          <dt className="text-muted-foreground">Created:</dt>
-                                          <dd className="font-medium">{batch.created_at ? new Date(batch.created_at).toLocaleString() : 'N/A'}</dd>
+                                          <dt className="text-muted-foreground">
+                                            Created:
+                                          </dt>
+                                          <dd className="font-medium">
+                                            {batch.created_at
+                                              ? new Date(
+                                                  batch.created_at,
+                                                ).toLocaleString()
+                                              : "N/A"}
+                                          </dd>
                                         </div>
                                         {batch.updated_at && (
                                           <div className="flex justify-between items-center">
-                                            <dt className="text-muted-foreground">Updated:</dt>
-                                            <dd className="font-medium">{new Date(batch.updated_at).toLocaleString()}</dd>
+                                            <dt className="text-muted-foreground">
+                                              Updated:
+                                            </dt>
+                                            <dd className="font-medium">
+                                              {new Date(
+                                                batch.updated_at,
+                                              ).toLocaleString()}
+                                            </dd>
                                           </div>
                                         )}
                                       </dl>
@@ -516,36 +678,62 @@ function BulkUploadPage() {
                                       <dl className="space-y-2 text-sm">
                                         {batch.total_products !== undefined && (
                                           <div className="flex justify-between items-center">
-                                            <dt className="text-muted-foreground">Total Products:</dt>
-                                            <dd className="font-semibold">{batch.total_products}</dd>
+                                            <dt className="text-muted-foreground">
+                                              Total Products:
+                                            </dt>
+                                            <dd className="font-semibold">
+                                              {batch.total_products}
+                                            </dd>
                                           </div>
                                         )}
                                         {batch.valid_products !== undefined && (
                                           <div className="flex justify-between items-center">
-                                            <dt className="text-muted-foreground">Valid Products:</dt>
-                                            <dd className="text-green-600 font-semibold">{batch.valid_products}</dd>
+                                            <dt className="text-muted-foreground">
+                                              Valid Products:
+                                            </dt>
+                                            <dd className="text-green-600 font-semibold">
+                                              {batch.valid_products}
+                                            </dd>
                                           </div>
                                         )}
-                                        {batch.invalid_products !== undefined && (
+                                        {batch.invalid_products !==
+                                          undefined && (
                                           <div className="flex justify-between items-center">
-                                            <dt className="text-muted-foreground">Invalid Products:</dt>
-                                            <dd className="text-red-600 font-semibold">{batch.invalid_products}</dd>
+                                            <dt className="text-muted-foreground">
+                                              Invalid Products:
+                                            </dt>
+                                            <dd className="text-red-600 font-semibold">
+                                              {batch.invalid_products}
+                                            </dd>
                                           </div>
                                         )}
-                                        {batch.warning_products !== undefined && (
+                                        {batch.warning_products !==
+                                          undefined && (
                                           <div className="flex justify-between items-center">
-                                            <dt className="text-muted-foreground">Warnings:</dt>
-                                            <dd className="text-yellow-600 font-semibold">{batch.warning_products}</dd>
+                                            <dt className="text-muted-foreground">
+                                              Warnings:
+                                            </dt>
+                                            <dd className="text-yellow-600 font-semibold">
+                                              {batch.warning_products}
+                                            </dd>
                                           </div>
                                         )}
-                                        {batch.summary?.success_rate !== undefined && (
+                                        {batch.summary?.success_rate !==
+                                          undefined && (
                                           <div className="flex justify-between items-center pt-2 border-t">
-                                            <dt className="text-muted-foreground font-medium">Success Rate:</dt>
+                                            <dt className="text-muted-foreground font-medium">
+                                              Success Rate:
+                                            </dt>
                                             <dd className="font-bold text-lg">
                                               {batch.summary.success_rate > 1
-                                                ? Math.round(batch.summary.success_rate)
-                                                : (batch.summary.success_rate * 100).toFixed(0)
-                                              }%
+                                                ? Math.round(
+                                                    batch.summary.success_rate,
+                                                  )
+                                                : (
+                                                    batch.summary.success_rate *
+                                                    100
+                                                  ).toFixed(0)}
+                                              %
                                             </dd>
                                           </div>
                                         )}
@@ -558,31 +746,49 @@ function BulkUploadPage() {
                                 <div className="flex items-center justify-between pt-4 border-t">
                                   <div className="flex gap-3">
                                     {batch.status === "error" && (
-                                      <Button size="sm" variant="destructive" className="gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        className="gap-2"
+                                      >
                                         <FileDown className="h-4 w-4" />
                                         Download Errors
                                       </Button>
                                     )}
-                                    {(batch.status === "complete" || batch.status === "pending") && !batch.approved_at && (
-                                      <Button
-                                        size="sm"
-                                        variant="default"
-                                        className="gap-2"
-                                        onClick={() => handleApproveBatch(batch.batch_id)}
-                                        disabled={approvingBatchId === batch.batch_id}
-                                      >
-                                        {approvingBatchId === batch.batch_id ? (
-                                          <Spinner className="h-4 w-4" />
-                                        ) : (
-                                          <Check className="h-4 w-4" />
-                                        )}
-                                        {approvingBatchId === batch.batch_id ? 'Approving...' : 'Approve Batch'}
-                                      </Button>
-                                    )}
+                                    {(batch.status === "complete" ||
+                                      batch.status === "pending") &&
+                                      !batch.approved_at && (
+                                        <Button
+                                          size="sm"
+                                          variant="default"
+                                          className="gap-2"
+                                          onClick={() =>
+                                            handleApproveBatch(batch.batch_id)
+                                          }
+                                          disabled={
+                                            approvingBatchId === batch.batch_id
+                                          }
+                                        >
+                                          {approvingBatchId ===
+                                          batch.batch_id ? (
+                                            <Spinner className="h-4 w-4" />
+                                          ) : (
+                                            <Check className="h-4 w-4" />
+                                          )}
+                                          {approvingBatchId === batch.batch_id
+                                            ? "Approving..."
+                                            : "Approve Batch"}
+                                        </Button>
+                                      )}
                                     {batch.approved_at && (
                                       <div className="flex items-center gap-2 text-sm text-green-600">
                                         <Check className="h-4 w-4" />
-                                        <span>Approved on {new Date(batch.approved_at).toLocaleDateString()}</span>
+                                        <span>
+                                          Approved on{" "}
+                                          {new Date(
+                                            batch.approved_at,
+                                          ).toLocaleDateString()}
+                                        </span>
                                       </div>
                                     )}
                                   </div>
@@ -604,9 +810,15 @@ function BulkUploadPage() {
         </div>
       </div>
       {/* Bulk Upload Documentation Modal */}
-      <BulkUploadDocsModal open={docsOpen} onOpenChange={setDocsOpen} onDownloadTemplate={handleDownloadSample} />
+      <BulkUploadDocsModal
+        open={docsOpen}
+        onOpenChange={setDocsOpen}
+        onDownloadTemplate={handleDownloadSample}
+      />
     </div>
   );
 }
 
-export default withAuthorization(BulkUploadPage, { permission: "product:create" });
+export default withAuthorization(BulkUploadPage, {
+  permission: "products:create",
+});

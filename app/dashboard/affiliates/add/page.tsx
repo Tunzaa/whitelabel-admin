@@ -14,12 +14,8 @@ import { withAuthorization } from "@/components/auth/with-authorization";
 function AddAffiliatePage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const {
-    createAffiliate,
-    setActiveAction,
-    setError,
-    loading,
-  } = useAffiliateStore();
+  const { createAffiliate, setActiveAction, setError, loading } =
+    useAffiliateStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (values: any) => {
@@ -61,9 +57,7 @@ function AddAffiliatePage() {
             <span className="sr-only">Back</span>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Add Affiliate
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight">Add Affiliate</h1>
             <p className="text-muted-foreground">
               Add a new affiliate to your marketplace
             </p>
@@ -80,16 +74,21 @@ function AddAffiliatePage() {
               Adding...
             </>
           ) : (
-            'Create Affiliate'
+            "Create Affiliate"
           )}
         </Button>
       </div>
 
       <div className="p-4">
-        <AffiliateForm onSubmit={handleSubmit} isSubmitting={isSubmitting || loading} />
+        <AffiliateForm
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting || loading}
+        />
       </div>
     </div>
   );
 }
 
-export default withAuthorization(AddAffiliatePage, { permission: "affiliate:create" });
+export default withAuthorization(AddAffiliatePage, {
+  permission: "affiliates:create",
+});

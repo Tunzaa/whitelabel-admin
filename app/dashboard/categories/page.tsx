@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Plus, Search, RefreshCw } from "lucide-react";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ import { Can } from "@/components/auth/can";
 import { Category } from "@/features/categories/types";
 
 function CategoriesPage() {
-  const { t } = useTranslation(['categories', 'common']);
+  const { t } = useTranslation(["categories", "common"]);
   const router = useRouter();
   const session = useSession();
   const tenantId: string | undefined = (session.data?.user as any)?.tenant_id;
@@ -38,7 +38,7 @@ function CategoriesPage() {
     activeAction,
     setActiveAction,
     setCategory,
-    category
+    category,
   } = useCategoryStore();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,7 +84,7 @@ function CategoriesPage() {
         const filters = getFilters();
         await fetchCategories(filters, tenantHeaders);
       } catch (error) {
-        console.error(t('page.error.loading'), error);
+        console.error(t("page.error.loading"), error);
       } finally {
         setIsTabLoading(false);
       }
@@ -131,13 +131,13 @@ function CategoriesPage() {
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-4 border-b">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-            <p className="text-muted-foreground">{t('description')}</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+            <p className="text-muted-foreground">{t("description")}</p>
           </div>
-          <Can permission="category:create">
+          <Can permission="categories:create">
             <Button onClick={handleAddCategory}>
               <Plus className="mr-2 h-4 w-4" />
-              {t('add_category')}
+              {t("add_category")}
             </Button>
           </Can>
         </div>
@@ -153,24 +153,26 @@ function CategoriesPage() {
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-4 border-b">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-            <p className="text-muted-foreground">{t('description')}</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+            <p className="text-muted-foreground">{t("description")}</p>
           </div>
-          <Can permission="category:create">
+          <Can permission="categories:create">
             <Button onClick={handleAddCategory}>
               <Plus className="mr-2 h-4 w-4" />
-              {t('add_category')}
+              {t("add_category")}
             </Button>
           </Can>
         </div>
         <div>
           <ErrorCard
-            title={t('page.errorLoading')}
+            title={t("page.errorLoading")}
             error={{
-              status: storeError.status?.toString() || t('common:messages.error'),
-              message: storeError.message || t('common:messages.an_error_occurred'),
+              status:
+                storeError.status?.toString() || t("common:messages.error"),
+              message:
+                storeError.message || t("common:messages.an_error_occurred"),
             }}
-            buttonText={t('page.retry')}
+            buttonText={t("page.retry")}
             buttonAction={() => fetchCategories(getFilters(), tenantHeaders)}
             buttonIcon={RefreshCw}
           />
@@ -183,13 +185,13 @@ function CategoriesPage() {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 border-b">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-          <p className="text-muted-foreground">{t('description')}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("description")}</p>
         </div>
-        <Can permission="category:create">
+        <Can permission="categories:create">
           <Button onClick={handleAddCategory}>
             <Plus className="mr-2 h-4 w-4" />
-            {t('add_category')}
+            {t("add_category")}
           </Button>
         </Can>
       </div>
@@ -200,7 +202,7 @@ function CategoriesPage() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder={t('search_placeholder')}
+              placeholder={t("search_placeholder")}
               className="pl-8"
               value={searchQuery}
               onChange={(e) => {
@@ -213,9 +215,9 @@ function CategoriesPage() {
 
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="all">{t('tabs.all')}</TabsTrigger>
-            <TabsTrigger value="active">{t('tabs.active')}</TabsTrigger>
-            <TabsTrigger value="inactive">{t('tabs.inactive')}</TabsTrigger>
+            <TabsTrigger value="all">{t("tabs.all")}</TabsTrigger>
+            <TabsTrigger value="active">{t("tabs.active")}</TabsTrigger>
+            <TabsTrigger value="inactive">{t("tabs.inactive")}</TabsTrigger>
           </TabsList>
 
           {isTabLoading ? (
@@ -243,11 +245,16 @@ function CategoriesPage() {
       </div>
 
       {activeAction === "delete" && category && (
-        <DeleteCategoryDialog category={category} tenantId={tenantId} onClose={onDialogClose} />
+        <DeleteCategoryDialog
+          category={category}
+          tenantId={tenantId}
+          onClose={onDialogClose}
+        />
       )}
-
     </div>
   );
 }
 
-export default withAuthorization(CategoriesPage, { permission: "category:read" });
+export default withAuthorization(CategoriesPage, {
+  permission: "categories:read",
+});

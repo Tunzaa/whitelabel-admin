@@ -3,22 +3,41 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { ArrowLeft, Edit, ExternalLink, Settings, Languages, Globe, Calendar, CreditCard } from "lucide-react";
-import { platformModules, isModuleEnabled } from "@/features/settings/data/modules";
+import {
+  ArrowLeft,
+  Edit,
+  ExternalLink,
+  Settings,
+  Languages,
+  Globe,
+  Calendar,
+  CreditCard,
+} from "lucide-react";
+import {
+  platformModules,
+  isModuleEnabled,
+} from "@/features/settings/data/modules";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorCard } from "@/components/ui/error-card";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+  CardDescription,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 import { useTenantStore } from "@/features/tenants/store";
 import { Tenant } from "@/features/tenants/types";
-import { TenantBillingTab } from '@/features/tenants/components/tenant-billing-tab';
+import { TenantBillingTab } from "@/features/tenants/components/tenant-billing-tab";
 import { withAuthorization } from "@/components/auth/with-authorization";
 
 interface TenantPageProps {
@@ -51,9 +70,7 @@ function TenantPage({ params }: TenantPageProps) {
   };
 
   if (loading && !tenant) {
-    return (
-      <Spinner />
-    );
+    return <Spinner />;
   }
 
   if (storeError && !tenant) {
@@ -62,7 +79,7 @@ function TenantPage({ params }: TenantPageProps) {
         title="Error Loading Tenant"
         error={{
           message: storeError?.message || "Failed to load tenant",
-          status: storeError?.status ? String(storeError.status) : "error"
+          status: storeError?.status ? String(storeError.status) : "error",
         }}
         buttonText="Back to Tenants"
         buttonAction={() => router.push("/dashboard/tenants")}
@@ -89,20 +106,33 @@ function TenantPage({ params }: TenantPageProps) {
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage
-                src={tenant.branding?.theme?.logo?.primary || tenant.branding?.logoUrl}
+                src={
+                  tenant.branding?.theme?.logo?.primary ||
+                  tenant.branding?.logoUrl
+                }
                 alt={tenant.name}
               />
-              <AvatarFallback style={{ backgroundColor: tenant.branding?.theme?.colors?.primary }}>
+              <AvatarFallback
+                style={{
+                  backgroundColor: tenant.branding?.theme?.colors?.primary,
+                }}
+              >
                 {tenant.name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
 
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{tenant.name}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {tenant.name}
+              </h1>
               <p className="text-muted-foreground text-sm flex items-center gap-1">
                 <Globe className="h-3 w-3" />
                 <a
-                  href={tenant.domain.startsWith('http') ? tenant.domain : `https://${tenant.domain}`}
+                  href={
+                    tenant.domain.startsWith("http")
+                      ? tenant.domain
+                      : `https://${tenant.domain}.tunzaa.co.tz`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:underline flex items-center"
@@ -118,7 +148,11 @@ function TenantPage({ params }: TenantPageProps) {
         <div className="flex items-center gap-2">
           <Badge
             variant={tenant.is_active ? "default" : "destructive"}
-            className={tenant.is_active ? "bg-green-500 hover:bg-green-600 px-2 py-1" : "px-2 py-1"}
+            className={
+              tenant.is_active
+                ? "bg-green-500 hover:bg-green-600 px-2 py-1"
+                : "px-2 py-1"
+            }
           >
             {tenant.is_active ? "Active" : "Inactive"}
           </Badge>
@@ -150,7 +184,9 @@ function TenantPage({ params }: TenantPageProps) {
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-center">
                         <CardTitle>Overview</CardTitle>
-                        <Badge variant={tenant.is_active ? "outline" : "secondary"}>
+                        <Badge
+                          variant={tenant.is_active ? "outline" : "secondary"}
+                        >
                           {tenant.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </div>
@@ -163,14 +199,19 @@ function TenantPage({ params }: TenantPageProps) {
                             <Globe className="h-4 w-4" /> Country & Currency
                           </p>
                           <p className="text-sm flex items-center gap-2">
-                            <Badge variant="outline">{tenant.country_code || "Not specified"}</Badge>
-                            <Badge variant="outline">{tenant.currency || "Not specified"}</Badge>
+                            <Badge variant="outline">
+                              {tenant.country_code || "Not specified"}
+                            </Badge>
+                            <Badge variant="outline">
+                              {tenant.currency || "Not specified"}
+                            </Badge>
                           </p>
                         </div>
 
                         <div className="space-y-1">
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
-                            <Languages className="h-4 w-4" /> Supported Languages
+                            <Languages className="h-4 w-4" /> Supported
+                            Languages
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {tenant.languages && tenant.languages.length > 0 ? (
@@ -180,7 +221,9 @@ function TenantPage({ params }: TenantPageProps) {
                                 </Badge>
                               ))
                             ) : (
-                              <span className="text-sm text-muted-foreground">None specified</span>
+                              <span className="text-sm text-muted-foreground">
+                                None specified
+                              </span>
                             )}
                           </div>
                         </div>
@@ -189,7 +232,9 @@ function TenantPage({ params }: TenantPageProps) {
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                             <Calendar className="h-4 w-4" /> Created On
                           </p>
-                          <p className="text-sm">{formatDate(tenant.created_at)}</p>
+                          <p className="text-sm">
+                            {formatDate(tenant.created_at)}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -207,25 +252,41 @@ function TenantPage({ params }: TenantPageProps) {
                     <CardContent>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {platformModules.map((moduleConfig) => {
-                          const enabled = isModuleEnabled(tenant.modules, moduleConfig.name);
+                          const enabled = isModuleEnabled(
+                            tenant.modules,
+                            moduleConfig.name,
+                          );
 
                           return (
-                            <Card key={moduleConfig.name} className={`border py-1 ${enabled ? 'border-primary/30' : 'border-muted'}`}>
+                            <Card
+                              key={moduleConfig.name}
+                              className={`border py-1 ${enabled ? "border-primary/30" : "border-muted"}`}
+                            >
                               <CardContent className="p-4 items-center">
-                                <div className="flex justify-between" >
+                                <div className="flex justify-between">
                                   <div className="flex items-center gap-2">
-                                    <div className={`p-2 rounded-md ${enabled ? 'bg-primary/10' : 'bg-muted'}`}>
-                                      <Settings className={`h-4 w-4 ${enabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                                    <div
+                                      className={`p-2 rounded-md ${enabled ? "bg-primary/10" : "bg-muted"}`}
+                                    >
+                                      <Settings
+                                        className={`h-4 w-4 ${enabled ? "text-primary" : "text-muted-foreground"}`}
+                                      />
                                     </div>
                                     <div>
-                                      <span className="font-medium">{moduleConfig.label}</span>
+                                      <span className="font-medium">
+                                        {moduleConfig.label}
+                                      </span>
                                     </div>
                                   </div>
-                                  <Badge variant={enabled ? "default" : "outline"}>
+                                  <Badge
+                                    variant={enabled ? "default" : "outline"}
+                                  >
                                     {enabled ? "Active" : "Inactive"}
                                   </Badge>
                                 </div>
-                                <p className="text-xs text-muted-foreground p-1">{moduleConfig.description}</p>
+                                <p className="text-xs text-muted-foreground p-1">
+                                  {moduleConfig.description}
+                                </p>
                               </CardContent>
                             </Card>
                           );
@@ -254,11 +315,24 @@ function TenantPage({ params }: TenantPageProps) {
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col gap-1">
-                              <p className="text-sm text-muted-foreground">Total Revenue</p>
-                              <p className="text-2xl font-bold">{tenant.currency} {tenant?.metadata?.revenue_summary?.total || "0.00"}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Total Revenue
+                              </p>
+                              <p className="text-2xl font-bold">
+                                {tenant.currency}{" "}
+                                {tenant?.metadata?.revenue_summary?.total ||
+                                  "0.00"}
+                              </p>
                               <div className="flex items-center text-xs text-green-500">
-                                <span>+{tenant?.metadata?.revenue_summary?.growth || "0"}%</span>
-                                <span className="text-muted-foreground ml-1">vs last month</span>
+                                <span>
+                                  +
+                                  {tenant?.metadata?.revenue_summary?.growth ||
+                                    "0"}
+                                  %
+                                </span>
+                                <span className="text-muted-foreground ml-1">
+                                  vs last month
+                                </span>
                               </div>
                             </div>
                           </CardContent>
@@ -267,9 +341,18 @@ function TenantPage({ params }: TenantPageProps) {
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col gap-1">
-                              <p className="text-sm text-muted-foreground">Commission</p>
-                              <p className="text-2xl font-bold">{tenant.currency} {tenant?.metadata?.revenue_summary?.commission || "0.00"}</p>
-                              <p className="text-xs text-muted-foreground">Rate: {tenant?.metadata?.commission_rate || "0"}%</p>
+                              <p className="text-sm text-muted-foreground">
+                                Commission
+                              </p>
+                              <p className="text-2xl font-bold">
+                                {tenant.currency}{" "}
+                                {tenant?.metadata?.revenue_summary
+                                  ?.commission || "0.00"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Rate: {tenant?.metadata?.commission_rate || "0"}
+                                %
+                              </p>
                             </div>
                           </CardContent>
                         </Card>
@@ -277,9 +360,16 @@ function TenantPage({ params }: TenantPageProps) {
                         <Card>
                           <CardContent className="p-4">
                             <div className="flex flex-col gap-1">
-                              <p className="text-sm text-muted-foreground">Transactions</p>
-                              <p className="text-2xl font-bold">{tenant?.metadata?.revenue_summary?.transactions || "0"}</p>
-                              <p className="text-xs text-muted-foreground">Last 30 days</p>
+                              <p className="text-sm text-muted-foreground">
+                                Transactions
+                              </p>
+                              <p className="text-2xl font-bold">
+                                {tenant?.metadata?.revenue_summary
+                                  ?.transactions || "0"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Last 30 days
+                              </p>
                             </div>
                           </CardContent>
                         </Card>
@@ -303,7 +393,9 @@ function TenantPage({ params }: TenantPageProps) {
 
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Admin Email</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Admin Email
+                  </p>
                   <p className="text-sm break-all">
                     <a
                       href={`mailto:${tenant.admin_email}`}
@@ -316,7 +408,9 @@ function TenantPage({ params }: TenantPageProps) {
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Admin Phone</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Admin Phone
+                  </p>
                   <p className="text-sm">
                     <a
                       href={`tel:${tenant.admin_phone}`}
@@ -338,21 +432,29 @@ function TenantPage({ params }: TenantPageProps) {
 
               <CardContent>
                 <div className="grid grid-cols-2 gap-2">
-                  {tenant.branding?.theme?.colors && Object.entries(tenant.branding.theme.colors).map(([colorName, value]) => {
-                    // Skip nested color objects
-                    if (typeof value === 'string') {
-                      return (
-                        <div key={colorName} className="flex items-center gap-2">
-                          <div
-                            className="w-6 h-6 rounded-full border"
-                            style={{ backgroundColor: value }}
-                          />
-                          <span className="text-xs capitalize">{colorName}</span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })}
+                  {tenant.branding?.theme?.colors &&
+                    Object.entries(tenant.branding.theme.colors).map(
+                      ([colorName, value]) => {
+                        // Skip nested color objects
+                        if (typeof value === "string") {
+                          return (
+                            <div
+                              key={colorName}
+                              className="flex items-center gap-2"
+                            >
+                              <div
+                                className="w-6 h-6 rounded-full border"
+                                style={{ backgroundColor: value }}
+                              />
+                              <span className="text-xs capitalize">
+                                {colorName}
+                              </span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      },
+                    )}
                 </div>
               </CardContent>
             </Card>
@@ -372,11 +474,12 @@ function TenantPage({ params }: TenantPageProps) {
                     try {
                       setIsSubmitting(true);
                       await tenantStore.updateTenant(tenantId, {
-                        is_active: !tenant.is_active
+                        is_active: !tenant.is_active,
                       });
-                      toast.success(tenant.is_active
-                        ? "Tenant deactivated successfully"
-                        : "Tenant activated successfully"
+                      toast.success(
+                        tenant.is_active
+                          ? "Tenant deactivated successfully"
+                          : "Tenant activated successfully",
                       );
                     } catch (error) {
                       toast.error("Failed to update tenant status");
@@ -387,15 +490,19 @@ function TenantPage({ params }: TenantPageProps) {
                 >
                   {isSubmitting ? (
                     <Spinner size="sm" color="white" />
+                  ) : tenant.is_active ? (
+                    "Deactivate Tenant"
                   ) : (
-                    tenant.is_active ? "Deactivate Tenant" : "Activate Tenant"
+                    "Activate Tenant"
                   )}
                 </Button>
 
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => router.push(`/dashboard/tenants/${tenantId}/edit`)}
+                  onClick={() =>
+                    router.push(`/dashboard/tenants/${tenantId}/edit`)
+                  }
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Tenant
@@ -409,4 +516,4 @@ function TenantPage({ params }: TenantPageProps) {
   ) : null;
 }
 
-export default withAuthorization(TenantPage, { permission: "tenant:read", role: "super" });
+export default withAuthorization(TenantPage, { permission: "tenants:read" });

@@ -49,7 +49,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorCard } from "@/components/ui/error-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { DriversTab } from "@/features/delivery-partners/components/DriversTab";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
@@ -79,6 +78,8 @@ import {
   VerificationDocument,
   VerificationActionPayload,
 } from "@/components/ui/verification-document-manager";
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { Can } from "@/components/auth/can";
 
 interface DeliveryPartnerPageProps {
   params: {
@@ -97,11 +98,11 @@ const InfoItem = ({
 }) => (
   <div className="flex items-start space-x-2 py-1">
     {icon && (
-      <div className="flex-shrink-0 w-5 h-5 text-muted-foreground mt-0.5">
+      <div className="shrink-0 w-5 h-5 text-muted-foreground mt-0.5">
         {icon}
       </div>
     )}
-    <div className="flex-grow">
+    <div className="grow">
       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
         {label}
       </p>
@@ -134,7 +135,6 @@ const StatusBadge = ({
   className?: string;
 }) => {
   if (typeof status !== "string" || !status.trim()) {
-    // Fallback for undefined, null, or empty status
     return (
       <Badge
         variant="outline"
@@ -190,12 +190,12 @@ const StatusBadge = ({
   );
 };
 
-export default function DeliveryPartnerPage({
+function DeliveryPartnerPage({
   params,
 }: DeliveryPartnerPageProps) {
   const router = useRouter();
   const { data: session } = useSession();
-  const tenantId = session?.user?.tenant_id;
+  const tenantId = (session?.user as any)?.tenant_id;
   const { id } = params;
 
   const {
@@ -213,10 +213,9 @@ export default function DeliveryPartnerPage({
   const [showRejectDialog, setShowRejectDialog] = useState(false);
 
   const transformKycToVerificationDoc = (
-    doc: any, // Using 'any' as the received data structure differs from the expected KycDocument type
+    doc: any,
   ): VerificationDocument => {
-    console.log("Transforming source document:", JSON.stringify(doc, null, 2));
-    const transformed = {
+    return {
       document_id: doc.document_id,
       document_type_id: doc.document_type_id,
       document_type_name: 'KYC Document',
@@ -225,11 +224,10 @@ export default function DeliveryPartnerPage({
       rejection_reason: doc.rejection_reason,
       created_at: doc.created_at,
       expires_at: doc.expires_at,
-      number: doc.number || undefined, // Ensure number is included
-    };
-    console.log("Transformed to verification document:", JSON.stringify(transformed, null, 2));
-    return transformed;
+      number: doc.number || undefined,
+    } as any;
   };
+
   const handleDocumentVerification = useCallback(async (payload: VerificationActionPayload) => {
     if (!partner) {
       toast.error("Verification failed: Partner data not available.");
@@ -242,7 +240,7 @@ export default function DeliveryPartnerPage({
 
     setIsUpdating(true);
     const action = payload.verification_status === 'verified' ? 'Approving' : 'Rejecting';
-    const toastId = toast.loading(`${action} document...`);
+    const toastId = toast.loading(\`\${action} document...\`);
 
     try {
       await updateDeliveryPartnerDocumentStatus(
@@ -250,9 +248,9 @@ export default function DeliveryPartnerPage({
         payload,
         { "X-Tenant-ID": tenantId }
       );
-      toast.success(`Document ${payload.verification_status} successfully.`, { id: toastId });
+      toast.success(\`Document \${payload.verification_status} successfully.\`, { id: toastId });
     } catch (error) {
-      toast.error(`Failed to ${action.toLowerCase()} document.`, { id: toastId });
+      toast.error(\`Failed to \${action.toLowerCase()} document.\`, { id: toastId });
     } finally {
       setIsUpdating(false);
     }
@@ -264,13 +262,6 @@ export default function DeliveryPartnerPage({
       fetchDeliveryPartner(id, { "X-Tenant-ID": tenantId });
     }
   }, [id, tenantId, fetchDeliveryPartner]);
-
-  useEffect(() => {
-    if (partner) {
-      console.log("Partner data received:", JSON.stringify(partner, null, 2));
-      console.log("Partner KYC documents for inspection:", JSON.stringify(partner?.kyc?.documents, null, 2));
-    }
-  }, [partner]);
 
   const handleStatusChange = async (
     action: 'approve' | 'reject' | 'activate' | 'deactivate'
@@ -302,7 +293,7 @@ export default function DeliveryPartnerPage({
       toast.success("Partner status updated successfully.", { id: toastId });
     } catch (error) {
       toast.error("Failed to update partner status.", { id: toastId });
-      console.error(`Error changing partner status to ${action}:`, error);
+      console.error(\`Error changing partner status to \${action}:\`, error);
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -346,7 +337,6 @@ export default function DeliveryPartnerPage({
     }
   };
 
-  // Show a spinner while the data is being fetched.
   if (loading && !partner) {
     return <Spinner />;
   }
@@ -370,17 +360,15 @@ export default function DeliveryPartnerPage({
 
   const partnerName =
     partner?.name ||
-    `${partner?.user_details?.first_name || ""} ${partner?.user_details?.last_name || ""
-      }`.trim() ||
+    \`\${partner?.user_details?.first_name || ""} \${partner?.user_details?.last_name || ""
+      }\`.trim() ||
     "Unnamed Partner";
   const partnerAvatarFallback = (
     partnerName.substring(0, 2) || "DP"
   ).toUpperCase();
 
-  // Main layout: Two columns (Content and Sidebar)
   return partner ? (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-background z-10">
         <div className="flex items-center gap-4">
           <Button
@@ -410,13 +398,13 @@ export default function DeliveryPartnerPage({
               </h1>
               <p className="text-muted-foreground text-xs lg:text-sm flex items-center gap-1.5 capitalize">
                 {partner?.type === "individual" && (
-                  <User className="h-3.5 w-3.5" />
+                  <UserIcon className="h-3.5 w-3.5" />
                 )}
                 {partner?.type === "business" && (
                   <Briefcase className="h-3.5 w-3.5" />
                 )}
                 {partner?.type === "pickup_point" && (
-                  <MapPin className="h-3.5 w-3.5" />
+                  <MapPinIcon className="h-3.5 w-3.5" />
                 )}
                 {partner?.type ? partner?.type.replace("_", " ") : "Type N/A"}
                 <span className="text-gray-500 font-mono text-[11px] lg:text-xs ml-1">
@@ -435,23 +423,24 @@ export default function DeliveryPartnerPage({
         <div className="flex items-center gap-2.5">
           <StatusBadge status={partner?.is_approved ? "approved" : "not_approved"} />
           <StatusBadge status={partner?.is_active ? "active" : "inactive"} />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              router.push(
-                `/dashboard/delivery-partners/${partner?.partner_id}/edit`
-              )
-            }
-          >
-            <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit
-          </Button>
+          <Can permission="delivery-partners:update">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                router.push(
+                  \`/dashboard/delivery-partners/\${partner?.partner_id}/edit\`
+                )
+              }
+            >
+              <Edit className="h-3.5 w-3.5 mr-1.5" /> Edit
+            </Button>
+          </Can>
         </div>
       </div>
 
       <div className="p-4 md:p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 xl:gap-8">
-          {/* Main Content Area - Takes 2/3 width on large screens */}
           <div className="lg:col-span-2 space-y-6">
             {partner?.type === "business" ? (
               <Tabs defaultValue="overview" className="w-full">
@@ -513,14 +502,14 @@ export default function DeliveryPartnerPage({
                           icon={<Mail className="h-4 w-4" />}
                           label="Contact Email"
                           value={partner?.user_details?.email ? (
-                            <a href={`mailto:${partner.user_details.email}`} className="hover:underline">{partner.user_details.email}</a>
+                            <a href={\`mailto:\${partner.user_details.email}\`} className="hover:underline">{partner.user_details.email}</a>
                           ) : "N/A"}
                         />
                         <InfoItem
                           icon={<Phone className="h-4 w-4" />}
                           label="Contact Phone"
                           value={partner?.user_details?.phone ? (
-                            <a href={`tel:${partner.user_details.phone}`} className="hover:underline">{partner.user_details.phone}</a>
+                            <a href={\`tel:\${partner.user_details.phone}\`} className="hover:underline">{partner.user_details.phone}</a>
                           ) : "N/A"}
                         />
                         <InfoItem
@@ -538,8 +527,8 @@ export default function DeliveryPartnerPage({
                           icon={<UserIcon className="h-4 w-4" />}
                           label="Account Name"
                           value={
-                            `${partner?.user_details?.first_name || ""} ${partner?.user_details?.last_name || ""
-                              }`.trim() || "N/A"
+                            \`\${partner?.user_details?.first_name || ""} \${partner?.user_details?.last_name || ""
+                              }\`.trim() || "N/A"
                           }
                         />
                       </div>
@@ -555,7 +544,6 @@ export default function DeliveryPartnerPage({
                 </TabsContent>
               </Tabs>
             ) : (
-              // Non-Business Partner Layout (Stack of Cards)
               <>
                 <Card>
                   <CardHeader>
@@ -597,14 +585,14 @@ export default function DeliveryPartnerPage({
                         icon={<Mail className="h-4 w-4" />}
                         label="Contact Email"
                         value={partner?.user_details?.email ? (
-                          <a href={`mailto:${partner.user_details.email}`} className="hover:underline">{partner.user_details.email}</a>
+                          <a href={\`mailto:\${partner.user_details.email}\`} className="hover:underline">{partner.user_details.email}</a>
                         ) : "N/A"}
                       />
                       <InfoItem
                         icon={<Phone className="h-4 w-4" />}
                         label="Contact Phone"
                         value={partner?.user_details?.phone ? (
-                          <a href={`tel:${partner.user_details.phone}`} className="hover:underline">{partner.user_details.phone}</a>
+                          <a href={\`tel:\${partner.user_details.phone}\`} className="hover:underline">{partner.user_details.phone}</a>
                         ) : "N/A"}
                       />
                       {partner?.location?.address && (
@@ -624,15 +612,14 @@ export default function DeliveryPartnerPage({
                         icon={<UserIcon className="h-4 w-4" />}
                         label="Account Name"
                         value={
-                          `${partner?.user_details?.first_name || ""} ${partner?.user_details?.last_name || ""
-                            }`.trim() || "N/A"
+                          \`\${partner?.user_details?.first_name || ""} \${partner?.user_details?.last_name || ""
+                            }\`.trim() || "N/A"
                         }
                       />
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Operational Info Card for Non-Business */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
@@ -716,9 +703,7 @@ export default function DeliveryPartnerPage({
                 </Card>
               </>
             )}
-          </div>{" "}
-          {/* End Main Content Area (lg:col-span-2) */}
-          {/* Sidebar - Takes 1/3 width on large screens */}
+          </div>
           <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24 self-start">
             <Card>
               <CardHeader>
@@ -760,106 +745,114 @@ export default function DeliveryPartnerPage({
                 <CardTitle className="text-lg">Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {/* --- Approval Actions (only for unapproved partners) --- */}
                 {!partner.is_approved && (
                   <div className="space-y-2">
                     {partner.kyc?.verified && (
-                      <Button
-                        onClick={() => handleStatusChange("approve")}
-                        disabled={isUpdatingStatus}
-                        size="sm"
-                        className="w-full bg-green-100 text-green-600 border-green-600 hover:bg-green-200"
-                      >
-                        {isUpdatingStatus ? (
-                          <Spinner size="sm" />
-                        ) : (
-                          <Check className="mr-2 h-4 w-4" />
-                        )}
-                        Approve
-                      </Button>
+                      <Can permission="delivery-partners:update">
+                        <Button
+                          onClick={() => handleStatusChange("approve")}
+                          disabled={isUpdatingStatus}
+                          size="sm"
+                          className="w-full bg-green-100 text-green-600 border-green-600 hover:bg-green-200"
+                        >
+                          {isUpdatingStatus ? (
+                            <Spinner size="sm" />
+                          ) : (
+                            <Check className="mr-2 h-4 w-4" />
+                          )}
+                          Approve
+                        </Button>
+                      </Can>
                     )}
                   </div>
                 )}
 
-                {/* --- Activation Actions (only for approved partners) --- */}
                 {partner.is_approved && (
                   <div className="space-y-2">
-                    <Button
-                      onClick={() =>
-                        handleStatusChange(partner.is_active ? "deactivate" : "activate")
-                      }
-                      disabled={isUpdatingStatus}
-                      size="sm"
-                      className="w-full"
-                    >
-                      {isUpdatingStatus ? (
-                        <Spinner size="sm" />
-                      ) : (
-                        <Power className="mr-2 h-4 w-4" />
-                      )}
-                      {partner.is_active ? "Deactivate" : "Activate"}
-                    </Button>
+                    <Can permission="delivery-partners:update">
+                      <Button
+                        onClick={() =>
+                          handleStatusChange(partner.is_active ? "deactivate" : "activate")
+                        }
+                        disabled={isUpdatingStatus}
+                        size="sm"
+                        className="w-full"
+                      >
+                        {isUpdatingStatus ? (
+                          <Spinner size="sm" />
+                        ) : (
+                          <Power className="mr-2 h-4 w-4" />
+                        )}
+                        {partner.is_active ? "Deactivate" : "Activate"}
+                      </Button>
+                    </Can>
                   </div>
                 )}
-                <Button
-                  onClick={() => handleStatusChange("reject")}
-                  disabled={isUpdatingStatus}
-                  size="sm"
-                  className="w-full bg-red-100 text-red-600 border-red-600 hover:bg-red-200"
-                >
-                  {isUpdatingStatus ? (
-                    <Spinner size="sm" />
-                  ) : (
-                    <XCircle className="mr-2 h-4 w-4" />
-                  )}
-                  {!partner.is_approved ? "Reject Partner" : "Suspend Partner"}
-                </Button>
+                <Can permission="delivery-partners:update">
+                  <Button
+                    onClick={() => handleStatusChange("reject")}
+                    disabled={isUpdatingStatus}
+                    size="sm"
+                    className="w-full bg-red-100 text-red-600 border-red-600 hover:bg-red-200"
+                  >
+                    {isUpdatingStatus ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <XCircle className="mr-2 h-4 w-4" />
+                    )}
+                    {!partner.is_approved ? "Reject Partner" : "Suspend Partner"}
+                  </Button>
+                </Can>
                 <Separator className="my-3" />
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    router.push(
-                      `/dashboard/delivery-partners/${partner?.partner_id || partner?._id
-                      }/edit`
-                    )
-                  }
-                  className="w-full"
-                  size="sm"
-                >
-                  <Edit className="mr-2 h-4 w-4" /> Edit Partner Details
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      className="w-full hover:bg-red-700"
-                      size="sm"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete Partner
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Are you absolutely sure?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete the delivery partner
-                        <strong>{partnerName}</strong> and all associated data.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                        onClick={handleDeletePartner}
+                <Can permission="delivery-partners:update">
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      router.push(
+                        \`/dashboard/delivery-partners/\${partner?.partner_id || partner?._id
+                        }/edit\`
+                      )
+                    }
+                    className="w-full"
+                    size="sm"
+                  >
+                    <Edit className="mr-2 h-4 w-4" /> Edit Partner Details
+                  </Button>
+                </Can>
+                <Can permission="delivery-partners:delete">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        className="w-full hover:bg-red-700"
+                        size="sm"
                       >
-                        Confirm Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Partner
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Are you absolutely sure?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently
+                          delete the delivery partner
+                          <strong>{partnerName}</strong> and all associated data.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                          onClick={handleDeletePartner}
+                        >
+                          Delete Partner
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </Can>
               </CardContent>
             </Card>
           </div>
@@ -869,8 +862,9 @@ export default function DeliveryPartnerPage({
         isOpen={showRejectDialog}
         onOpenChange={setShowRejectDialog}
         onConfirm={handleRejectConfirm}
-        isProcessing={isUpdatingStatus}
       />
     </div>
   ) : null;
 }
+
+export default withAuthorization(DeliveryPartnerPage, { permission: "delivery-partners:read" });

@@ -9,7 +9,7 @@ import { DeliveryPartnerForm } from "@/features/delivery-partners/components/del
 import { DeliveryPartner } from "@/features/delivery-partners/types"
 import { toast } from "sonner";
 import { DeliveryPartnerFormValues } from "@/features/delivery-partners/schema";
-import { KycDocument } from "@/features/delivery-partners/types";
+import { withAuthorization } from "@/components/auth/with-authorization";
 
 const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues): Partial<DeliveryPartner> => {
   const vehicle_metadata = {
@@ -27,7 +27,7 @@ const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues):
     metadata: vehicle_metadata,
   };
   const kyc_documents = (formValues.kyc_documents || []).map((doc) => ({
-    document_id: doc.document_type_id || "", // TODO: remove this later, when not required anymore by the backend
+    document_id: doc.document_type_id || "", 
     document_type_id: doc.document_type_id || "",
     number: doc.number || "",
     link: doc.link || "",
@@ -70,7 +70,7 @@ const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues):
   return apiPayload;
 };
 
-export default function CreateDeliveryPartnerPage() {
+function CreateDeliveryPartnerPage() {
   const router = useRouter()
   const { data: session } = useSession();
 
@@ -123,3 +123,5 @@ export default function CreateDeliveryPartnerPage() {
     </div>
   )
 }
+
+export default withAuthorization(CreateDeliveryPartnerPage, { permission: "delivery-partners:create" });

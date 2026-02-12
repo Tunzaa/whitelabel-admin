@@ -42,10 +42,7 @@ import { Product } from "../types";
 interface ProductTableProps {
   products: Product[];
   onProductClick: (product: Product) => void;
-  onUpdateProduct: (
-    productId: string,
-    data: Partial<Product>
-  ) => Promise<void>;
+  onUpdateProduct: (productId: string, data: Partial<Product>) => Promise<void>;
   onDelete: (product: Product) => void;
   onReject: (product: Product) => void;
 }
@@ -169,7 +166,10 @@ export function ProductTable({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => onProductClick(product)}>
+                  <TableCell
+                    className="cursor-pointer"
+                    onClick={() => onProductClick(product)}
+                  >
                     <div className="flex flex-wrap gap-1">
                       {product.categories?.slice(0, 2).map((cat) => (
                         <Badge key={cat.category_id} variant="secondary">
@@ -183,37 +183,65 @@ export function ProductTable({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => onProductClick(product)}>
+                  <TableCell
+                    className="cursor-pointer"
+                    onClick={() => onProductClick(product)}
+                  >
                     {getApprovalStatusBadge(product.verification_status)}
                   </TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => onProductClick(product)}>
+                  <TableCell
+                    className="cursor-pointer"
+                    onClick={() => onProductClick(product)}
+                  >
                     {getStatusBadge(product.is_active)}
                   </TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => onProductClick(product)}>
+                  <TableCell
+                    className="cursor-pointer"
+                    onClick={() => onProductClick(product)}
+                  >
                     <div className="flex flex-col">
                       <div className="font-medium">
-                        {`Tsh ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(product.sale_price ?? 0)}`}
+                        {`Tsh ${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(product.sale_price ?? 0)}`}
                       </div>
-                      {product.base_price && product.base_price > (product.sale_price ?? 0) && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground line-through">
-                            {`Tsh ${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(product.base_price)}`}
-                          </span>
-                          <Badge variant="destructive" className="text-xs px-1 py-0">
-                            {(((product.base_price - (product.sale_price ?? 0)) / product.base_price) * 100).toFixed(1)}% OFF
-                          </Badge>
-                        </div>
-                      )}
+                      {product.base_price &&
+                        product.base_price > (product.sale_price ?? 0) && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground line-through">
+                              {`Tsh ${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(product.base_price)}`}
+                            </span>
+                            <Badge
+                              variant="destructive"
+                              className="text-xs px-1 py-0"
+                            >
+                              {(
+                                ((product.base_price -
+                                  (product.sale_price ?? 0)) /
+                                  product.base_price) *
+                                100
+                              ).toFixed(1)}
+                              % OFF
+                            </Badge>
+                          </div>
+                        )}
                     </div>
                   </TableCell>
-                  <TableCell className="cursor-pointer" onClick={() => onProductClick(product)}>{formatDate(product.created_at)}</TableCell>
+                  <TableCell
+                    className="cursor-pointer"
+                    onClick={() => onProductClick(product)}
+                  >
+                    {formatDate(product.created_at)}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end">
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           asChild
                           disabled={processingId === product.product_id}
-                          className={processingId === product.product_id ? 'opacity-50' : ''}
+                          className={
+                            processingId === product.product_id
+                              ? "opacity-50"
+                              : ""
+                          }
                         >
                           <div className="relative">
                             {processingId === product.product_id && (
@@ -238,14 +266,22 @@ export function ProductTable({
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem
-                            onClick={() => router.push(`/dashboard/products/${product.product_id}`)}
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/products/${product.product_id}`,
+                              )
+                            }
                           >
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <Can permission="product:update">
+                          <Can permission="products:update">
                             <DropdownMenuItem
-                              onClick={() => router.push(`/dashboard/products/${product.product_id}/edit`)}
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/products/${product.product_id}/edit`,
+                                )
+                              }
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit Product
@@ -254,15 +290,17 @@ export function ProductTable({
                           <DropdownMenuSeparator />
                           {product.verification_status === "pending" && (
                             <>
-                              <Can permission="product:update">
+                              <Can permission="products:update">
                                 <DropdownMenuItem
-                                  onClick={() => handleApprove(product.product_id)}
+                                  onClick={() =>
+                                    handleApprove(product.product_id)
+                                  }
                                 >
                                   <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
                                   Approve
                                 </DropdownMenuItem>
                               </Can>
-                              <Can permission="product:update">
+                              <Can permission="products:update">
                                 <DropdownMenuItem
                                   onClick={() => handleReject(product)}
                                 >
@@ -274,7 +312,7 @@ export function ProductTable({
                           )}
                           {product.verification_status === "approved" && (
                             <>
-                              <Can permission="product:update">
+                              <Can permission="products:update">
                                 <DropdownMenuItem
                                   onClick={() => handleToggleIsActive(product)}
                                 >
@@ -291,7 +329,7 @@ export function ProductTable({
                                   )}
                                 </DropdownMenuItem>
                               </Can>
-                              <Can permission="product:update">
+                              <Can permission="products:update">
                                 <DropdownMenuItem
                                   onClick={() => handleReject(product)}
                                 >
@@ -302,9 +340,11 @@ export function ProductTable({
                             </>
                           )}
                           {product.verification_status === "rejected" && (
-                            <Can permission="product:update">
+                            <Can permission="products:update">
                               <DropdownMenuItem
-                                onClick={() => handleApprove(product.product_id)}
+                                onClick={() =>
+                                  handleApprove(product.product_id)
+                                }
                               >
                                 <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
                                 Approve

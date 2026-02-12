@@ -68,7 +68,11 @@ export function TenantTable({
   const getStatusBadge = (status: boolean) => {
     switch (status) {
       case true:
-        return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Active</Badge>;
+        return (
+          <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+            Active
+          </Badge>
+        );
       case false:
         return <Badge variant="destructive">Inactive</Badge>;
     }
@@ -129,7 +133,8 @@ export function TenantTable({
                         className="w-8 h-8 rounded-md flex items-center justify-center overflow-hidden bg-muted"
                         style={{
                           backgroundColor:
-                            tenant.branding?.theme?.colors?.background?.primary || "#000",
+                            tenant.branding?.theme?.colors?.background
+                              ?.primary || "#000",
                         }}
                       >
                         {tenant.branding?.logoUrl ? (
@@ -142,7 +147,9 @@ export function TenantTable({
                           <span
                             className="text-sm font-medium"
                             style={{
-                              color: tenant.branding?.theme?.colors?.text?.primary || "#fff",
+                              color:
+                                tenant.branding?.theme?.colors?.text?.primary ||
+                                "#fff",
                             }}
                           >
                             {tenant.name.charAt(0)}
@@ -169,9 +176,7 @@ export function TenantTable({
                     </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(tenant.is_active)}</TableCell>
-                  <TableCell>
-                    {formatDate(tenant.created_at)}
-                  </TableCell>
+                  <TableCell>{formatDate(tenant.created_at)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger
@@ -185,27 +190,31 @@ export function TenantTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <Can permission="tenant:read" role="super">
+                        <Can permission="tenants:read">
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/dashboard/tenants/${tenant.tenant_id}`);
+                              router.push(
+                                `/dashboard/tenants/${tenant.tenant_id}`,
+                              );
                             }}
                           >
                             View Details
                           </DropdownMenuItem>
                         </Can>
-                        <Can permission="tenant:update">
+                        <Can permission="tenants:update">
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/dashboard/tenants/${tenant.tenant_id}/edit`);
+                              router.push(
+                                `/dashboard/tenants/${tenant.tenant_id}/edit`,
+                              );
                             }}
                           >
                             Marketplace Settings
                           </DropdownMenuItem>
                         </Can>
-                        <Can permission="tenant:update">
+                        <Can permission="tenants:update">
                           <DropdownMenuSeparator />
                           {tenant.is_active ? (
                             <DropdownMenuItem

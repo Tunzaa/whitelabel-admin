@@ -3,7 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Check, Edit, Eye, MoreHorizontal, RefreshCw, XCircle, AlertTriangle, Power } from "lucide-react";
+import {
+  Check,
+  Edit,
+  Eye,
+  MoreHorizontal,
+  RefreshCw,
+  XCircle,
+  AlertTriangle,
+  Power,
+} from "lucide-react";
 import { VendorRejectionModal } from "./vendor-rejection-modal";
 
 import { Button } from "@/components/ui/button";
@@ -41,17 +50,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 interface VendorTableProps {
   vendors: VendorListResponse["items"];
   onVendorClick: (vendor: VendorListResponse["items"][0]) => void;
-  onStatusChange?: (vendorId: string, status: string, rejectionReason?: string) => Promise<void>;
+  onStatusChange?: (
+    vendorId: string,
+    status: string,
+    rejectionReason?: string,
+  ) => Promise<void>;
   activeTab?: string;
 }
 
@@ -59,7 +69,7 @@ export function VendorTable({
   vendors,
   onVendorClick,
   onStatusChange,
-  activeTab = "all"
+  activeTab = "all",
 }: VendorTableProps) {
   const router = useRouter();
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -68,30 +78,30 @@ export function VendorTable({
 
   // Filter vendors by various status combinations
   const allApprovedVendors = vendors.filter(
-    (vendor) => vendor.verification_status === "approved"
+    (vendor) => vendor.verification_status === "approved",
   );
   const activeVendors = vendors.filter(
-    (vendor) => vendor.verification_status === "approved" && vendor.is_active
+    (vendor) => vendor.verification_status === "approved" && vendor.is_active,
   );
   const inactiveVendors = vendors.filter(
-    (vendor) => vendor.verification_status === "approved" && !vendor.is_active
+    (vendor) => vendor.verification_status === "approved" && !vendor.is_active,
   );
   const pendingVendors = vendors.filter(
-    (vendor) => vendor.verification_status === "pending"
+    (vendor) => vendor.verification_status === "pending",
   );
   const rejectedVendors = vendors.filter(
-    (vendor) => vendor.verification_status === "rejected"
+    (vendor) => vendor.verification_status === "rejected",
   );
 
   // Helper function to handle status change with loading state
   const handleStatusChange = async (
     vendorId: string | undefined,
-    action: 'approve' | 'reject' | 'activate' | 'deactivate'
+    action: "approve" | "reject" | "activate" | "deactivate",
   ) => {
     if (!onStatusChange || !vendorId) return; // Skip if no ID or handler
 
     // For rejection, show the dialog instead of immediate action
-    if (action === 'reject') {
+    if (action === "reject") {
       setRejectVendorId(vendorId);
       setShowRejectDialog(true);
       return;
@@ -105,17 +115,17 @@ export function VendorTable({
       let isActive;
 
       switch (action) {
-        case 'approve':
+        case "approve":
           // API expects: status: "approved", is_active: false
-          status = 'approved';
+          status = "approved";
           break;
-        case 'activate':
+        case "activate":
           // API expects: is_active: true
-          status = 'active'; // This will be mapped to is_active: true in the store
+          status = "active"; // This will be mapped to is_active: true in the store
           break;
-        case 'deactivate':
+        case "deactivate":
           // API expects: is_active: false
-          status = 'inactive'; // This will be mapped to is_active: false in the store
+          status = "inactive"; // This will be mapped to is_active: false in the store
           break;
         default:
           return;
@@ -130,10 +140,16 @@ export function VendorTable({
   };
 
   // Handle the rejection confirmation
-  const handleRejectConfirm = ({ type, customReason }: { type: string; customReason?: string }) => {
+  const handleRejectConfirm = ({
+    type,
+    customReason,
+  }: {
+    type: string;
+    customReason?: string;
+  }) => {
     if (!rejectVendorId || !onStatusChange) return;
 
-    const reason = type === 'other' ? customReason : type;
+    const reason = type === "other" ? customReason : type;
     if (!reason) {
       console.error("Rejection reason is missing.");
       return;
@@ -237,7 +253,9 @@ export function VendorTable({
                 <TableHead className="hidden md:table-cell">City</TableHead>
                 <TableHead>Approval Status</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Registered</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  Registered
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -273,7 +291,9 @@ export function VendorTable({
                         </Avatar>
                         <div>
                           <div>{vendor.business_name}</div>
-                          <div className="text-xs text-muted-foreground">Vendor ID: {vendor.vendor_id}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Vendor ID: {vendor.vendor_id}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
@@ -302,29 +322,33 @@ export function VendorTable({
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={`${vendor.verification_status === "approved"
+                        className={`${
+                          vendor.verification_status === "approved"
                             ? "bg-green-200 text-green-800"
                             : vendor.verification_status === "pending"
                               ? "bg-amber-200 text-amber-800"
                               : vendor.verification_status === "rejected"
                                 ? "bg-red-200 text-red-800"
                                 : "bg-slate-200 text-slate-800"
-                          }`}
+                        }`}
                       >
-                        {vendor.verification_status.charAt(0).toUpperCase() + vendor.verification_status.slice(1)}
+                        {vendor.verification_status.charAt(0).toUpperCase() +
+                          vendor.verification_status.slice(1)}
                       </Badge>
-                      {vendor.verification_status === "rejected" && vendor.rejection_reason && (
-                        <div className="hidden group-hover:block absolute mt-1 bg-white p-2 rounded shadow-md text-xs max-w-xs z-10">
-                          {vendor.rejection_reason}
-                        </div>
-                      )}
+                      {vendor.verification_status === "rejected" &&
+                        vendor.rejection_reason && (
+                          <div className="hidden group-hover:block absolute mt-1 bg-white p-2 rounded shadow-md text-xs max-w-xs z-10">
+                            {vendor.rejection_reason}
+                          </div>
+                        )}
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={`${vendor.is_active
+                        className={`${
+                          vendor.is_active
                             ? "bg-green-200 text-green-800"
                             : "bg-slate-200 text-slate-800"
-                          }`}
+                        }`}
                       >
                         {vendor.is_active ? "Active" : "Inactive"}
                       </Badge>
@@ -350,19 +374,19 @@ export function VendorTable({
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(
-                                `/dashboard/vendors/${vendor.vendor_id}`
+                                `/dashboard/vendors/${vendor.vendor_id}`,
                               );
                             }}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <Can permission="vendor:update">
+                          <Can permission="vendors:update">
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(
-                                  `/dashboard/vendors/${vendor.vendor_id}/edit`
+                                  `/dashboard/vendors/${vendor.vendor_id}/edit`,
                                 );
                               }}
                             >
@@ -380,21 +404,27 @@ export function VendorTable({
                               {vendor.verification_status !== "approved" &&
                                 vendor.verification_documents?.length > 0 &&
                                 vendor.verification_documents.every(
-                                  (doc: any) => doc.verification_status === "verified"
+                                  (doc: any) =>
+                                    doc.verification_status === "verified",
                                 ) && (
-                                  <Can permission="vendor:approve">
+                                  <Can permission="vendors:update">
                                     <DropdownMenuItem
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         handleStatusChange(
                                           vendor.vendor_id,
-                                          "approve"
+                                          "approve",
                                         );
                                       }}
-                                      disabled={processingId === vendor.vendor_id}
+                                      disabled={
+                                        processingId === vendor.vendor_id
+                                      }
                                     >
                                       {processingId === vendor.vendor_id ? (
-                                        <Spinner size="sm" className="mr-2 h-4 w-4" />
+                                        <Spinner
+                                          size="sm"
+                                          className="mr-2 h-4 w-4"
+                                        />
                                       ) : (
                                         <Check className="h-4 w-4 mr-2" />
                                       )}
@@ -403,19 +433,22 @@ export function VendorTable({
                                   </Can>
                                 )}
                               {vendor.verification_status !== "rejected" && (
-                                <Can permission="vendor:reject">
+                                <Can permission="vendors:update">
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleStatusChange(
                                         vendor.vendor_id,
-                                        "reject"
+                                        "reject",
                                       );
                                     }}
                                     disabled={processingId === vendor.vendor_id}
                                   >
                                     {processingId === vendor.vendor_id ? (
-                                      <Spinner size="sm" className="mr-2 h-4 w-4" />
+                                      <Spinner
+                                        size="sm"
+                                        className="mr-2 h-4 w-4"
+                                      />
                                     ) : (
                                       <XCircle className="h-4 w-4 mr-2" />
                                     )}
@@ -425,23 +458,30 @@ export function VendorTable({
                               )}
                               {/* For approved vendors */}
                               {vendor.verification_status === "approved" && (
-                                <Can permission="vendor:update">
+                                <Can permission="vendors:update">
                                   <DropdownMenuItem
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleStatusChange(
                                         vendor.vendor_id,
-                                        vendor.is_active ? "deactivate" : "activate"
+                                        vendor.is_active
+                                          ? "deactivate"
+                                          : "activate",
                                       );
                                     }}
                                     disabled={processingId === vendor.vendor_id}
                                   >
                                     {processingId === vendor.vendor_id ? (
-                                      <Spinner size="sm" className="mr-2 h-4 w-4" />
+                                      <Spinner
+                                        size="sm"
+                                        className="mr-2 h-4 w-4"
+                                      />
                                     ) : (
                                       <Power className="h-4 w-4 mr-2" />
                                     )}
-                                    {vendor.is_active ? "Deactivate" : "Activate"}
+                                    {vendor.is_active
+                                      ? "Deactivate"
+                                      : "Activate"}
                                   </DropdownMenuItem>
                                 </Can>
                               )}

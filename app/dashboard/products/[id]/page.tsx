@@ -43,7 +43,6 @@ import { toast } from "sonner";
 import { useProductStore } from "@/features/products/store";
 import { Product } from "@/features/products/types";
 
-
 import { ProductRejectionDialog } from "@/features/products/components/product-rejection-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { withAuthorization } from "@/components/auth/with-authorization";
@@ -53,7 +52,13 @@ interface ProductPageProps {
   params: Promise<{ id: string }>;
 }
 
-const InfoCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const InfoCard = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
   <Card>
     <CardHeader>
       <CardTitle className="text-lg">{title}</CardTitle>
@@ -62,7 +67,15 @@ const InfoCard = ({ title, children }: { title: string; children: React.ReactNod
   </Card>
 );
 
-const InfoItem = ({ label, value, children }: { label: string; value?: React.ReactNode; children?: React.ReactNode }) => (
+const InfoItem = ({
+  label,
+  value,
+  children,
+}: {
+  label: string;
+  value?: React.ReactNode;
+  children?: React.ReactNode;
+}) => (
   <div className="flex justify-between items-start py-2 border-b border-border/50 last:border-b-0">
     <span className="text-sm text-muted-foreground font-medium">{label}</span>
     {value ? <span className="text-sm text-right">{value}</span> : children}
@@ -224,7 +237,7 @@ function ProductPage({ params }: ProductPageProps) {
   const handleRejectOrSuspend = async (
     productId: string,
     reason: string,
-    customReason?: string
+    customReason?: string,
   ) => {
     const finalReason = customReason || reason;
     await handleUpdate({
@@ -323,7 +336,9 @@ function ProductPage({ params }: ProductPageProps) {
 
             <div>
               <div className="flex items-center gap-4 mb-1">
-                <h1 className="text-2xl font-bold tracking-tight">{product.name}</h1>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {product.name}
+                </h1>
                 <div className="flex items-center gap-2">
                   {product.verification_status === "approved" ? (
                     <Badge className="bg-green-100 text-green-800 border-green-200">
@@ -336,8 +351,8 @@ function ProductPage({ params }: ProductPageProps) {
                       Not Approved
                     </Badge>
                   )}
-                  {product.verification_status === "approved" && (
-                    product.is_active ? (
+                  {product.verification_status === "approved" &&
+                    (product.is_active ? (
                       <Badge className="bg-green-100 text-green-800 border-green-200">
                         <Eye className="h-3 w-3 mr-1" />
                         Published
@@ -347,19 +362,19 @@ function ProductPage({ params }: ProductPageProps) {
                         <EyeOff className="h-3 w-3 mr-1" />
                         Draft
                       </Badge>
-                    )
-                  )}
+                    ))}
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
-                Product ID: {product.product_id} <Copy text={product.product_id} size={14} />
+                Product ID: {product.product_id}{" "}
+                <Copy text={product.product_id} size={14} />
               </p>
             </div>
           </div>
         </div>
 
         <div className="flex gap-2">
-          <Can permission="product:update">
+          <Can permission="products:update">
             <Button
               variant="outline"
               size="sm"
@@ -377,7 +392,11 @@ function ProductPage({ params }: ProductPageProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {/* Main details */}
           <div className="md:col-span-2 lg:col-span-3 space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="shipping">Shipping & Variants</TabsTrigger>
@@ -387,13 +406,21 @@ function ProductPage({ params }: ProductPageProps) {
                 <InfoCard title="Product Details">
                   {product.short_description && (
                     <div className="mb-4 pb-4 border-b">
-                      <h4 className="font-semibold text-sm mb-2">Short Description</h4>
-                      <p className="text-sm text-muted-foreground">{product.short_description}</p>
+                      <h4 className="font-semibold text-sm mb-2">
+                        Short Description
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {product.short_description}
+                      </p>
                     </div>
                   )}
                   <div
                     className="prose prose-sm dark:prose-invert max-w-none mb-10"
-                    dangerouslySetInnerHTML={{ __html: product.description || "<p>No description provided.</p>" }}
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        product.description ||
+                        "<p>No description provided.</p>",
+                    }}
                   ></div>
 
                   <InfoItem label="Categories">
@@ -403,7 +430,11 @@ function ProductPage({ params }: ProductPageProps) {
                           key={cat.category_id}
                           variant="secondary"
                           className="cursor-pointer hover:bg-muted"
-                          onClick={() => router.push(`/dashboard/categories/${cat.category_id}`)}
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/categories/${cat.category_id}`,
+                            )
+                          }
                         >
                           {cat.name}
                         </Badge>
@@ -423,10 +454,22 @@ function ProductPage({ params }: ProductPageProps) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <InfoCard title="Pricing">
-                    <InfoItem label="Base Price" value={formatPrice(product.pricing.base_price)} />
-                    <InfoItem label="Sale Price" value={formatPrice(product.pricing.sale_price)} />
-                    <InfoItem label="Cost Price" value={formatPrice(product.cost_price)} />
-                    <InfoItem label="Effective Price" value={formatPrice(product.pricing.effective_price)} />
+                    <InfoItem
+                      label="Base Price"
+                      value={formatPrice(product.pricing.base_price)}
+                    />
+                    <InfoItem
+                      label="Sale Price"
+                      value={formatPrice(product.pricing.sale_price)}
+                    />
+                    <InfoItem
+                      label="Cost Price"
+                      value={formatPrice(product.cost_price)}
+                    />
+                    <InfoItem
+                      label="Effective Price"
+                      value={formatPrice(product.pricing.effective_price)}
+                    />
                     {product.pricing.has_discount && (
                       <InfoItem label="Discount">
                         <Badge variant="success">
@@ -437,11 +480,20 @@ function ProductPage({ params }: ProductPageProps) {
                   </InfoCard>
 
                   <InfoCard title="Inventory">
-                    <InfoItem label="SKU" value={product.sku || 'N/A'} />
-                    <InfoItem label="Barcode" value={product.barcode || 'N/A'} />
-                    <InfoItem label="Quantity" value={product.inventory_quantity} />
+                    <InfoItem label="SKU" value={product.sku || "N/A"} />
+                    <InfoItem
+                      label="Barcode"
+                      value={product.barcode || "N/A"}
+                    />
+                    <InfoItem
+                      label="Quantity"
+                      value={product.inventory_quantity}
+                    />
                     {product.inventory_tracking && (
-                      <InfoItem label="Low Stock Threshold" value={product.low_stock_threshold} />
+                      <InfoItem
+                        label="Low Stock Threshold"
+                        value={product.low_stock_threshold}
+                      />
                     )}
                   </InfoCard>
                 </div>
@@ -472,12 +524,18 @@ function ProductPage({ params }: ProductPageProps) {
 
               <TabsContent value="shipping" className="space-y-6 mt-6">
                 <InfoCard title="Shipping">
-                  <InfoItem label="Requires Shipping" value={product.requires_shipping ? 'Yes' : 'No'} />
-                  <InfoItem label="Weight" value={`${product.weight || 0} kg`} />
+                  <InfoItem
+                    label="Requires Shipping"
+                    value={product.requires_shipping ? "Yes" : "No"}
+                  />
+                  <InfoItem
+                    label="Weight"
+                    value={`${product.weight || 0} kg`}
+                  />
                   <InfoItem label="Dimensions (L x W x H)">
-                    {product.dimensions ?
-                      `${product.dimensions.length} x ${product.dimensions.width} x ${product.dimensions.height} cm`
-                      : 'N/A'}
+                    {product.dimensions
+                      ? `${product.dimensions.length} x ${product.dimensions.width} x ${product.dimensions.height} cm`
+                      : "N/A"}
                   </InfoItem>
                 </InfoCard>
 
@@ -486,11 +544,16 @@ function ProductPage({ params }: ProductPageProps) {
                   {product.has_variants && product.variants?.length > 0 && (
                     <div className="mt-4 space-y-3">
                       {product.variants.map((variant: any, index: number) => (
-                        <div key={index} className="p-4 border rounded-md flex items-start gap-4 hover:bg-accent/50 transition-colors">
+                        <div
+                          key={index}
+                          className="p-4 border rounded-md flex items-start gap-4 hover:bg-accent/50 transition-colors"
+                        >
                           {variant.image_url && (
                             <div
                               className="relative w-20 h-20 rounded-md overflow-hidden cursor-pointer group flex-shrink-0"
-                              onClick={() => handlePreviewImage(variant.image_url)}
+                              onClick={() =>
+                                handlePreviewImage(variant.image_url)
+                              }
                             >
                               <img
                                 src={variant.image_url}
@@ -500,24 +563,39 @@ function ProductPage({ params }: ProductPageProps) {
                             </div>
                           )}
                           <div className="flex-1 space-y-2">
-                            <p className="font-semibold text-base">{variant.name}</p>
-                            {variant.attributes && Object.keys(variant.attributes).length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {Object.entries(variant.attributes).map(([name, value]: [string, any], attrIndex: number) => (
-                                  <span
-                                    key={attrIndex}
-                                    className="inline-flex items-center px-2.5 py-1 rounded-md bg-secondary text-xs font-medium"
-                                  >
-                                    <span className="text-muted-foreground">{name}:</span>
-                                    <span className="ml-1">{value}</span>
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                            <p className="font-semibold text-base">
+                              {variant.name}
+                            </p>
+                            {variant.attributes &&
+                              Object.keys(variant.attributes).length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {Object.entries(variant.attributes).map(
+                                    (
+                                      [name, value]: [string, any],
+                                      attrIndex: number,
+                                    ) => (
+                                      <span
+                                        key={attrIndex}
+                                        className="inline-flex items-center px-2.5 py-1 rounded-md bg-secondary text-xs font-medium"
+                                      >
+                                        <span className="text-muted-foreground">
+                                          {name}:
+                                        </span>
+                                        <span className="ml-1">{value}</span>
+                                      </span>
+                                    ),
+                                  )}
+                                </div>
+                              )}
                             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                              <span>Price: <strong>{formatPrice(variant.price)}</strong></span>
-                              <span>SKU: {variant.sku || 'N/A'}</span>
-                              <span>Quantity: {variant.inventory_quantity}</span>
+                              <span>
+                                Price:{" "}
+                                <strong>{formatPrice(variant.price)}</strong>
+                              </span>
+                              <span>SKU: {variant.sku || "N/A"}</span>
+                              <span>
+                                Quantity: {variant.inventory_quantity}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -542,14 +620,17 @@ function ProductPage({ params }: ProductPageProps) {
                     <span className="text-sm text-muted-foreground">
                       Approval Status
                     </span>
-                    {renderStatusBadge(product.verification_status || "pending")}
+                    {renderStatusBadge(
+                      product.verification_status || "pending",
+                    )}
                   </div>
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">
                       Visibility
                     </span>
-                    {product.verification_status === "approved" && product.is_active ? (
+                    {product.verification_status === "approved" &&
+                    product.is_active ? (
                       <Badge className="bg-green-100 text-green-800 border-green-200">
                         <Eye className="h-3 w-3 mr-1" />
                         Published
@@ -577,7 +658,8 @@ function ProductPage({ params }: ProductPageProps) {
                               : variant === "destructive"
                                 ? "rejected"
                                 : "default";
-                        const { classes, icon } = getLightBadgeProps(mapVariant);
+                        const { classes, icon } =
+                          getLightBadgeProps(mapVariant);
                         return (
                           <Badge className={classes}>
                             {icon}
@@ -622,27 +704,45 @@ function ProductPage({ params }: ProductPageProps) {
               <CardContent>
                 {store && (
                   <>
-                    <InfoItem
-                      label="Store Name"
-                      value={store.store_name}
-                    />
+                    <InfoItem label="Store Name" value={store.store_name} />
                     {store.general_policy && (
                       <InfoItem label="General Policy">
-                        <Button variant="link" className="p-0 h-auto justify-end" onClick={() => store.general_policy && setPreviewFile(store.general_policy)}>
+                        <Button
+                          variant="link"
+                          className="p-0 h-auto justify-end"
+                          onClick={() =>
+                            store.general_policy &&
+                            setPreviewFile(store.general_policy)
+                          }
+                        >
                           View Policy
                         </Button>
                       </InfoItem>
                     )}
                     {store.return_policy && (
                       <InfoItem label="Return Policy">
-                        <Button variant="link" className="p-0 h-auto justify-end" onClick={() => store.return_policy && setPreviewFile(store.return_policy)}>
+                        <Button
+                          variant="link"
+                          className="p-0 h-auto justify-end"
+                          onClick={() =>
+                            store.return_policy &&
+                            setPreviewFile(store.return_policy)
+                          }
+                        >
                           View Policy
                         </Button>
                       </InfoItem>
                     )}
                     {store.shipping_policy && (
                       <InfoItem label="Shipping Policy">
-                        <Button variant="link" className="p-0 h-auto justify-end" onClick={() => store.shipping_policy && setPreviewFile(store.shipping_policy)}>
+                        <Button
+                          variant="link"
+                          className="p-0 h-auto justify-end"
+                          onClick={() =>
+                            store.shipping_policy &&
+                            setPreviewFile(store.shipping_policy)
+                          }
+                        >
                           View Policy
                         </Button>
                       </InfoItem>
@@ -655,7 +755,9 @@ function ProductPage({ params }: ProductPageProps) {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => router.push(`/dashboard/vendors/${product.vendor_id}`)}
+                    onClick={() =>
+                      router.push(`/dashboard/vendors/${product.vendor_id}`)
+                    }
                   >
                     <ExternalLink className="mr-2 h-4 w-4" />
                     View Vendor Details
@@ -675,7 +777,7 @@ function ProductPage({ params }: ProductPageProps) {
               <CardContent className="space-y-3">
                 {product.verification_status === "pending" && (
                   <>
-                    <Can permission="product:update">
+                    <Can permission="products:update">
                       <Button
                         className="w-full"
                         onClick={() => handleUpdate({ status: "approved" })}
@@ -689,7 +791,7 @@ function ProductPage({ params }: ProductPageProps) {
                         Approve
                       </Button>
                     </Can>
-                    <Can permission="product:update">
+                    <Can permission="products:update">
                       <Button
                         className="w-full"
                         variant="destructive"
@@ -709,11 +811,13 @@ function ProductPage({ params }: ProductPageProps) {
 
                 {product.verification_status === "approved" && (
                   <>
-                    <Can permission="product:update">
+                    <Can permission="products:update">
                       <Button
                         className="w-full"
                         variant="outline"
-                        onClick={() => handleUpdate({ is_active: !product.is_active })}
+                        onClick={() =>
+                          handleUpdate({ is_active: !product.is_active })
+                        }
                         disabled={productLoading}
                       >
                         {productLoading ? (
@@ -726,7 +830,7 @@ function ProductPage({ params }: ProductPageProps) {
                         {product.is_active ? "Unpublish" : "Publish"}
                       </Button>
                     </Can>
-                    <Can permission="product:update">
+                    <Can permission="products:update">
                       <Button
                         className="w-full"
                         variant="destructive"
@@ -739,8 +843,9 @@ function ProductPage({ params }: ProductPageProps) {
                   </>
                 )}
 
-                {(product.verification_status === "rejected" || product.verification_status === "suspended") && (
-                  <Can permission="product:update">
+                {(product.verification_status === "rejected" ||
+                  product.verification_status === "suspended") && (
+                  <Can permission="products:update">
                     <Button
                       className="w-full"
                       onClick={() => handleUpdate({ status: "approved" })}
@@ -759,7 +864,7 @@ function ProductPage({ params }: ProductPageProps) {
                 <Separator className="my-3" />
 
                 <div className="space-y-2">
-                  <Can permission="product:update">
+                  <Can permission="products:delete">
                     {!confirmDelete ? (
                       <Button
                         variant="outline"
@@ -822,4 +927,4 @@ function ProductPage({ params }: ProductPageProps) {
   ) : null;
 }
 
-export default withAuthorization(ProductPage, { permission: "product:read" });
+export default withAuthorization(ProductPage, { permission: "products:read" });

@@ -19,7 +19,7 @@ function TenantsPage() {
             Manage marketplace tenants and their configurations
           </p>
         </div>
-        <Can permission="tenant:create">
+        <Can permission="tenants:create">
           <Button onClick={() => router.push("/dashboard/tenants/add")}>
             Add Tenant
           </Button>
@@ -33,5 +33,4 @@ function TenantsPage() {
   );
 }
 
-export default withAuthorization(TenantsPage, { permission: "tenant:read", role: "super" });
-
+export default withAuthorization(TenantsPage, {permission: "tenants:read"});

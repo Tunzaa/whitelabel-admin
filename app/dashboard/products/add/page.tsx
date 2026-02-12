@@ -35,7 +35,9 @@ function AddProductPage() {
       router.push("/dashboard/products");
     } catch (error) {
       console.error("Error creating product:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create product");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create product",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -58,4 +60,6 @@ function AddProductPage() {
   );
 }
 
-export default withAuthorization(AddProductPage, { permission: "product:create" });
+export default withAuthorization(AddProductPage, {
+  permission: "products:create",
+});

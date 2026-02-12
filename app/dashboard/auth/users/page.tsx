@@ -16,7 +16,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { ErrorCard } from "@/components/ui/error-card";
 import { toast } from "sonner";
 
-export default function UsersPage() {
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { Can } from "@/components/auth/can";
+
+function UsersPage() {
   const router = useRouter()
   const { data:session } = useSession()
   const {
@@ -76,7 +79,7 @@ export default function UsersPage() {
   const handleUserClick = (user: User) => {
     const userId = user.id || user.user_id
     if (userId) {
-      router.push(`/dashboard/auth/users/${userId}`)
+      router.push(\`/dashboard/auth/users/\${userId}\`)
     } else {
       toast.error("Cannot view details for a user without an ID.")
     }
@@ -101,10 +104,9 @@ export default function UsersPage() {
   
   // Navigate to edit user page
   const handleEditUser = (id: string) => {
-    router.push(`/dashboard/auth/users/${id}/edit`)
+    router.push(\`/dashboard/auth/users/\${id}/edit\`)
   }
   
-  // Navigate to add user page
   // Navigate to add user page
   const handleAddUser = () => {
     router.push('/dashboard/auth/users/add')
@@ -149,10 +151,12 @@ export default function UsersPage() {
           </p>
         </div>
         
-        <Button onClick={handleAddUser}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add User
-        </Button>
+        <Can permission="users:create">
+          <Button onClick={handleAddUser}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add User
+          </Button>
+        </Can>
       </div>
       <Separator />
 
@@ -191,3 +195,5 @@ export default function UsersPage() {
     </div>
   )
 }
+
+export default withAuthorization(UsersPage, { permission: "users:read" });

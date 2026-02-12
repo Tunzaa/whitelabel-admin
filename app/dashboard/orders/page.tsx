@@ -20,8 +20,10 @@ import { OrderTable } from "@/features/orders/components/order-table";
 import { useOrderStore } from "@/features/orders/store";
 import type { Order, OrderStatus, OrderFilter } from "@/features/orders/types";
 import Pagination from "@/components/ui/pagination";
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { Can } from "@/components/auth/can";
 
-export default function OrdersPage() {
+function OrdersPage() {
   const router = useRouter();
   const session = useSession();
   const tenantId = session?.data?.user
@@ -55,7 +57,8 @@ export default function OrdersPage() {
   // Define filter based on active tab
   const getFilter = () => {
     const filter: any = {};
-    if (activeTab !== "all" && activeTab !== "tickets") filter.status = activeTab as OrderStatus;
+    if (activeTab !== "all" && activeTab !== "tickets")
+      filter.status = activeTab as OrderStatus;
     if (activeTab === "tickets") filter.has_ticket = true;
     filter.skip = (currentPage - 1) * pageSize;
     filter.limit = pageSize;
@@ -81,7 +84,7 @@ export default function OrdersPage() {
           dateFrom: dateRange?.from?.toISOString(),
           dateTo: dateRange?.to?.toISOString(),
         },
-        tenantHeaders
+        tenantHeaders,
       );
       // If result is empty and we have a search term, ensure orders are cleared
       if (searchTerm && (!result || result.items.length === 0)) {
@@ -102,7 +105,7 @@ export default function OrdersPage() {
       } else {
         // For other errors, set the error
         setStoreError(
-          error instanceof Error ? error : new Error("Failed to load orders")
+          error instanceof Error ? error : new Error("Failed to load orders"),
         );
       }
     } finally {
@@ -121,7 +124,7 @@ export default function OrdersPage() {
   // Update order status
   const handleOrderStatusChange = async (
     orderId: string,
-    status: OrderStatus
+    status: OrderStatus,
   ) => {
     try {
       // Clear any previous error state first
@@ -300,7 +303,9 @@ export default function OrdersPage() {
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="tickets">Issues</TabsTrigger>
             <TabsTrigger value="pending">Pending Payment</TabsTrigger>
-            <TabsTrigger value="processing">Pending Vendor Acceptance</TabsTrigger>
+            <TabsTrigger value="processing">
+              Pending Vendor Acceptance
+            </TabsTrigger>
             <TabsTrigger value="confirmed">Confirmed by Vendor</TabsTrigger>
             <TabsTrigger value="shipped">Shipped</TabsTrigger>
             <TabsTrigger value="delivered">Delivered</TabsTrigger>
