@@ -1,38 +1,64 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useState, useRef, useEffect } from "react"
-import { useSession } from "next-auth/react"
-import { Upload, Loader, File, Calendar, Plus, Trash, Eye, AlertTriangle, CheckCircle, XCircle, Clock } from "lucide-react"
-import { Spinner } from "@/components/ui/spinner"
-import { Badge } from "@/components/ui/badge"
+import * as React from "react";
+import { useState, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useSelectedTenantStore } from "@/features/tenants/store";
+import { usePermissions } from "@/features/auth/hooks/use-permissions";
+import {
+  Upload,
+  Loader,
+  File,
+  Calendar,
+  Plus,
+  Trash,
+  Eye,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Clock,
+} from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { Badge } from "@/components/ui/badge";
 
-import { useConfigurationStore } from "@/features/configurations/store"
-import { DocumentType } from "@/features/configurations/types"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
-import { FilePreviewModal } from "@/components/ui/file-preview-modal"
-import { uploadFile } from "@/lib/services/file-upload.service"
+import { useConfigurationStore } from "@/features/configurations/store";
+import { DocumentType } from "@/features/configurations/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { FilePreviewModal } from "@/components/ui/file-preview-modal";
+import { uploadFile } from "@/lib/services/file-upload.service";
 
 // Type definitions
 export interface DocumentWithMeta {
-  id?: string
-  document_id?: string
-  document_type: string // This will now be document_type_id
-  file_name?: string
-  expires_at?: string
-  document_url?: string
-  verification_status?: string
-  submitted_at?: string
-  rejection_reason?: string
-  file?: File
-  file_id?: string
-  number?: string // Added number field
+  id?: string;
+  document_id?: string;
+  document_type: string; // This will now be document_type_id
+  file_name?: string;
+  expires_at?: string;
+  document_url?: string;
+  verification_status?: string;
+  submitted_at?: string;
+  rejection_reason?: string;
+  file?: File;
+  file_id?: string;
+  number?: string; // Added number field
 }
 
 export interface DocumentUploadProps {
@@ -60,7 +86,13 @@ export function DocumentUpload({
   const [error, setError] = useState<string | null>(null);
   const [isAddingDocument, setIsAddingDocument] = useState(false);
   const { data: session } = useSession();
-  const tenantId = session?.user?.tenant_id;
+  const { selectedTenantId } = useSelectedTenantStore();
+  const { hasRole } = usePermissions();
+
+  // Use selected tenant for super users, otherwise use session tenant
+  const tenantId = hasRole("super")
+    ? selectedTenantId
+    : session?.user?.tenant_id;
 
   const {
     configurations,
@@ -73,14 +105,20 @@ export function DocumentUpload({
     switch (status) {
       case "verified":
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 font-medium">
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 border-green-200 font-medium"
+          >
             <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
             Verified
           </Badge>
         );
       case "rejected":
         return (
-          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200 font-medium">
+          <Badge
+            variant="outline"
+            className="bg-red-100 text-red-800 border-red-200 font-medium"
+          >
             <XCircle className="mr-1.5 h-3.5 w-3.5" />
             Rejected
           </Badge>
@@ -88,7 +126,10 @@ export function DocumentUpload({
       case "pending":
       default:
         return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 font-medium">
+          <Badge
+            variant="outline"
+            className="bg-yellow-100 text-yellow-800 border-yellow-200 font-medium"
+          >
             <Clock className="mr-1.5 h-3.5 w-3.5" />
             Pending
           </Badge>
@@ -100,7 +141,10 @@ export function DocumentUpload({
   const [expires_at, setExpires_at] = useState<string>("");
   const [number, setNumber] = useState<string>(""); // Added state for number
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewFile, setPreviewFile] = useState<{ src: string; alt: string } | null>(null);
+  const [previewFile, setPreviewFile] = useState<{
+    src: string;
+    alt: string;
+  } | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const handlePreviewDocument = (url?: string, name?: string) => {
@@ -135,7 +179,9 @@ export function DocumentUpload({
   const handleUploadDocument = async () => {
     const file = fileInputRef.current?.files?.[0];
     if (!file || !selectedDocumentType) {
-      setError(!file ? "Please select a file" : "Please select a document type");
+      setError(
+        !file ? "Please select a file" : "Please select a document type",
+      );
       return;
     }
     if (!number) {
@@ -152,7 +198,7 @@ export function DocumentUpload({
         document_url: uploadResponse.fileCDNUrl,
         expires_at: expires_at || undefined,
         file_id: uploadResponse.filePath,
-        verification_status: 'pending',
+        verification_status: "pending",
         number, // Add number to new document
       };
       onUploadComplete?.(newDocument);
@@ -173,19 +219,21 @@ export function DocumentUpload({
   };
 
   const handleRemoveDocument = (index: number) => {
-    onDelete?.(index)
+    onDelete?.(index);
   };
 
   const handleOpenChange = (isOpen: boolean) => {
     setIsAddingDocument(isOpen);
-    console.log('Dialog open state changed:', isOpen);
+    console.log("Dialog open state changed:", isOpen);
 
     // Fetch configuration only when dialog is opened and data is not already available
     if (isOpen && entityName && tenantId && !configurations[entityName]) {
-      console.log(`Fetching configuration for entity: ${entityName}, tenant: ${tenantId}`);
+      console.log(
+        `Fetching configuration for entity: ${entityName}, tenant: ${tenantId}`,
+      );
       fetchEntityConfiguration(entityName, tenantId);
     } else if (isOpen) {
-      console.log('Did not fetch. Conditions:', {
+      console.log("Did not fetch. Conditions:", {
         entityName: !!entityName,
         tenantId: !!tenantId,
         configExists: !!configurations[entityName],
@@ -200,7 +248,9 @@ export function DocumentUpload({
       <div className="flex justify-between items-center mb-2">
         <div>
           {label && <Label>{label}</Label>}
-          {description && <p className="text-sm text-muted-foreground">{description}</p>}
+          {description && (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          )}
         </div>
         <Dialog open={isAddingDocument} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
@@ -240,7 +290,13 @@ export function DocumentUpload({
                   onValueChange={setSelectedDocumentType}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder={configLoading ? "Loading types..." : "Select document type"} />
+                    <SelectValue
+                      placeholder={
+                        configLoading
+                          ? "Loading types..."
+                          : "Select document type"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {configLoading ? (
@@ -258,7 +314,10 @@ export function DocumentUpload({
                       </SelectItem>
                     ) : (
                       documentTypes.map((type) => (
-                        <SelectItem key={type.document_type_id} value={type.document_type_id}>
+                        <SelectItem
+                          key={type.document_type_id}
+                          value={type.document_type_id}
+                        >
                           {type.name}
                         </SelectItem>
                       ))
@@ -331,9 +390,20 @@ export function DocumentUpload({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium flex items-center gap-2">
-                          <span>{doc.document_type_name || documentTypes.find((t) => t.document_type_id === doc.document_type)?.name || doc.document_type}</span>
+                          <span>
+                            {doc.document_type_name ||
+                              documentTypes.find(
+                                (t) => t.document_type_id === doc.document_type,
+                              )?.name ||
+                              doc.document_type}
+                          </span>
                           {doc.file_name ? (
-                            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 font-medium">New</Badge>
+                            <Badge
+                              variant="outline"
+                              className="bg-green-100 text-green-800 border-green-200 font-medium"
+                            >
+                              New
+                            </Badge>
                           ) : (
                             getStatusBadge(doc.verification_status)
                           )}
@@ -342,7 +412,9 @@ export function DocumentUpload({
                           {doc.file_name || ""}
                         </div>
                         {doc.number && (
-                          <span className="ml-2 text-xs text-muted-foreground">#{doc.number}</span>
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            #{doc.number}
+                          </span>
                         )}
                         {doc.expires_at && (
                           <div className="text-xs flex items-center text-muted-foreground">
@@ -357,7 +429,9 @@ export function DocumentUpload({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        onClick={() => handlePreviewDocument(doc.document_url, doc.file_name)}
+                        onClick={() =>
+                          handlePreviewDocument(doc.document_url, doc.file_name)
+                        }
                         disabled={disabled || !doc.document_url}
                         className="h-8 w-8"
                         title="Preview document"
@@ -379,7 +453,7 @@ export function DocumentUpload({
                       </Button>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           </ScrollArea>
@@ -388,7 +462,9 @@ export function DocumentUpload({
         <div className="flex flex-col items-center justify-center py-6 border border-dashed rounded-md">
           <Upload className="h-10 w-10 text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">No documents uploaded</p>
-          <p className="text-xs text-muted-foreground mt-1">Click "Add Document" to upload</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Click "Add Document" to upload
+          </p>
         </div>
       )}
 
@@ -401,5 +477,5 @@ export function DocumentUpload({
         />
       )}
     </div>
-  )
+  );
 }
