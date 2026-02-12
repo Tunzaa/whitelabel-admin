@@ -120,4 +120,4 @@ function EditProductPage() {
   );
 }
 
-export default withAuthorization(EditProductPage, { permission: "product:update" });
+export default withAuthorization(EditProductPage, { permission: "products:update" });
