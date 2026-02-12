@@ -1320,4 +1320,4 @@ function VendorPage({ params }: VendorPageProps) {
   }
 }
 
-export default withAuthorization(VendorPage, { permission: "vendor:view" });
+export default withAuthorization(VendorPage, { permission: "vendors:read" });
