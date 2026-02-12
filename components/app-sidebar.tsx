@@ -30,6 +30,8 @@ import { NotificationTrigger } from "@/components/notification-trigger";
 import { navigationData, NavItem } from "./sidebar-data";
 import { usePermissions } from "@/features/auth/hooks/use-permissions";
 import useAuthStore from "@/features/auth/store";
+import { TenantSwitcher } from "@/components/tenant-switcher";
+import { useSelectedTenantStore } from "@/features/tenants/store";
 
 // Use the imported navigation data instead of redefining it inline
 const data = {
@@ -44,24 +46,48 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { can, hasRole, isLoading, permissionsLoaded, permissions } = usePermissions();
+  const { can, hasRole, isLoading, permissionsLoaded, permissions } =
+    usePermissions();
   const userFromStore = useAuthStore((state) => state.user);
+  const { selectedTenantId } = useSelectedTenantStore();
 
   const user = userFromStore
     ? {
-      name: userFromStore.name,
-      email: userFromStore.email,
-      avatar: session?.user?.image || "/avatars/default.jpg", // Still get avatar from session for now
-    }
+        name: userFromStore.name,
+        email: userFromStore.email,
+        avatar: session?.user?.image || "/avatars/default.jpg", // Still get avatar from session for now
+      }
     : {
-      name: "Guest",
-      email: "",
-      avatar: "/avatars/default.jpg",
-    };
+        name: "Guest",
+        email: "",
+        avatar: "/avatars/default.jpg",
+      };
 
   const filterByPermissionAndRole = (item: NavItem) => {
+    // If user is super and no tenant is selected, hide tenant-specific items
+    const isSuperUser = hasRole("super");
+    const tenantSpecificUrls = [
+      "/dashboard/categories",
+      "/dashboard/vendors",
+      "/dashboard/products",
+      "/dashboard/affiliates",
+      "/dashboard/delivery-partners",
+      "/dashboard/orders",
+      "/dashboard/rewards",
+      "/dashboard/vendor-loans",
+    ];
+
+    if (
+      isSuperUser &&
+      !selectedTenantId &&
+      tenantSpecificUrls.some((url) => item.url.startsWith(url))
+    ) {
+      return false;
+    }
+
     // Check permission requirement
-    const hasRequiredPermission = !item.requiredPermission || can(item.requiredPermission);
+    const hasRequiredPermission =
+      !item.requiredPermission || can(item.requiredPermission);
 
     // Check role requirement
     const hasRequiredRole = !item.requiredRole || hasRole(item.requiredRole);
@@ -114,19 +140,7 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Marketplace</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <TenantSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
@@ -137,7 +151,8 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
               isActive={pathname === "/dashboard"}
               className={cn(
                 "min-w-8 duration-200 ease-linear",
-                pathname === "/dashboard" && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                pathname === "/dashboard" &&
+                  "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground",
               )}
             >
               <a href="/dashboard">
@@ -170,10 +185,19 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
                       isActive={pathname === item.url}
                       className={cn(
                         "data-[slot=sidebar-menu-button]:!p-1.5",
-                        pathname === item.url && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+                        pathname === item.url &&
+                          "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear",
                       )}
                     >
-                      <a href={item.url} target={item.target} rel={item.target === "_blank" ? "noopener noreferrer" : undefined}>
+                      <a
+                        href={item.url}
+                        target={item.target}
+                        rel={
+                          item.target === "_blank"
+                            ? "noopener noreferrer"
+                            : undefined
+                        }
+                      >
                         <item.icon />
                         <span>{item.title}</span>
                       </a>
@@ -181,7 +205,10 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
                     <SidebarMenuSub>
                       {item.items.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === subItem.url}
+                          >
                             <a href={subItem.url}>
                               <span>{subItem.title}</span>
                             </a>
@@ -196,10 +223,19 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
                     isActive={pathname === item.url}
                     className={cn(
                       "data-[slot=sidebar-menu-button]:!p-1.5",
-                      pathname === item.url && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+                      pathname === item.url &&
+                        "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear",
                     )}
                   >
-                    <a href={item.url} target={item.target} rel={item.target === "_blank" ? "noopener noreferrer" : undefined}>
+                    <a
+                      href={item.url}
+                      target={item.target}
+                      rel={
+                        item.target === "_blank"
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
+                    >
                       <item.icon />
                       <span>{item.title}</span>
                     </a>

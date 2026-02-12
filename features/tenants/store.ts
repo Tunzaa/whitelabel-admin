@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import {
   Tenant,
   TenantFilter,
@@ -13,6 +14,28 @@ import {
 import { apiClient } from '@/lib/api/client';
 import { toast } from "sonner";
 import { useUserStore } from '@/features/auth/stores/user-store';
+
+interface TenantState {
+  selectedTenantId: string | null;
+  selectedTenantName: string | null;
+  setSelectedTenant: (id: string | null, name?: string | null) => void;
+  clearSelectedTenant: () => void;
+}
+
+export const useSelectedTenantStore = create<TenantState>()(
+  persist(
+    (set) => ({
+      selectedTenantId: null,
+      selectedTenantName: null,
+      setSelectedTenant: (id, name = null) => set({ selectedTenantId: id, selectedTenantName: name }),
+      clearSelectedTenant: () => set({ selectedTenantId: null, selectedTenantName: null }),
+    }),
+    {
+      name: 'selected-tenant-storage',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+);
 
 interface TenantStore {
   tenants: Tenant[];

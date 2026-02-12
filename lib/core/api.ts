@@ -8,6 +8,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
 import { create } from 'zustand';
+import { useSelectedTenantStore } from '@/features/tenants/store';
 
 // API Response type for consistent typing
 export interface ApiResponse<T> {
@@ -187,11 +188,18 @@ const createApiClient = () => {
 
   // --- Interceptor logic as a reusable function ---
   function addAuthInterceptors(client: AxiosInstance) {
-    // Add auth token to requests
+    // Add auth token and tenant ID to requests
     client.interceptors.request.use(
       (config) => {
         const token = getToken();
         if (token) config.headers.Authorization = `Bearer ${token}`;
+
+        // Add X-Tenant-ID header if a tenant is selected in the store
+        const selectedTenantId = useSelectedTenantStore.getState().selectedTenantId;
+        if (selectedTenantId) {
+          config.headers['X-Tenant-ID'] = selectedTenantId;
+        }
+
         return config;
       },
       (error) => Promise.reject(error)
