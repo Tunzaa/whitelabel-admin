@@ -50,3 +50,4 @@ function RewardsPage() {
     </div>
   );
 }
+export default RewardsPage;
