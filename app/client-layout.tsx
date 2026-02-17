@@ -26,30 +26,37 @@ export default function ClientLayout({
   children: React.ReactNode;
   session: any;
 }) {
+  const [isMounted, setIsMounted] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Initialize theme on mount
   useEffect(() => {
+    setIsMounted(true);
+    
+    // Initialize theme on mount
     const savedTheme = localStorage.getItem('theme') || 'light';
-    // Remove any existing theme classes first
     document.documentElement.classList.remove('light', 'dark', 'system');
-    // Apply the theme class
     document.documentElement.classList.add(savedTheme);
     document.documentElement.style.colorScheme = savedTheme === 'dark' ? 'dark' : 'light';
   }, []);
 
   // Initialize fonts on mount
   useEffect(() => {
-    document.body.className = `${geistSans.variable} ${geistMono.variable} antialiased`;
-  }, []);
+    if (isMounted) {
+      document.body.className = `${geistSans.variable} ${geistMono.variable} antialiased`;
+    }
+  }, [isMounted]);
 
   // Mark as loaded after a small delay to ensure proper initialization
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoaded(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
+    if (isMounted) {
+      const timer = setTimeout(() => setIsLoaded(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isMounted]);
 
-  const isServer = typeof window === 'undefined';
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <Providers session={session}>
@@ -61,7 +68,7 @@ export default function ClientLayout({
         }}
       />
       <LanguageInitializer>
-        {(!isLoaded && !isServer) ? (
+        {!isLoaded ? (
           <div className="flex items-center justify-center min-h-screen">
             <Spinner />
           </div>

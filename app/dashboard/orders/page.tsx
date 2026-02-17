@@ -15,20 +15,17 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-
+import Pagination from "@/components/ui/pagination";
 import { OrderTable } from "@/features/orders/components/order-table";
 import { useOrderStore } from "@/features/orders/store";
 import type { Order, OrderStatus, OrderFilter } from "@/features/orders/types";
-import Pagination from "@/components/ui/pagination";
 import { withAuthorization } from "@/components/auth/with-authorization";
 import { Can } from "@/components/auth/can";
 
 function OrdersPage() {
   const router = useRouter();
-  const session = useSession();
-  const tenantId = session?.data?.user
-    ? (session.data.user as any).tenant_id
-    : undefined;
+  const { data: sessionData } = useSession();
+  const tenantId = (sessionData?.user as any)?.tenant_id;
 
   const {
     orders,
@@ -38,6 +35,7 @@ function OrdersPage() {
     updateOrderStatus,
     setOrders,
     setStoreError,
+    setLoading,
   } = useOrderStore();
 
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -344,3 +342,6 @@ function OrdersPage() {
     </div>
   );
 }
+
+const ExportedOrdersPage = withAuthorization(OrdersPage, "orders:read");
+export default ExportedOrdersPage;

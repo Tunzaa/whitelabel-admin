@@ -72,12 +72,18 @@ export default function OrdersPage() {
         dateFrom: dateRange?.from?.toISOString(),
         dateTo: dateRange?.to?.toISOString(),
       }, tenantHeaders);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading orders:", error);
-      // Always set empty orders array for 404 errors (no orders found)
-      if (error instanceof Error && 
-          ((error.message.includes("404") && error.message.includes("No orders found")) ||
-           error.message.includes("not found"))) {
+      
+      const isNoOrdersFound = 
+        (error?.response?.status === 404) || 
+        (error instanceof Error && (
+          error.message.includes("404") || 
+          error.message.toLowerCase().includes("no orders found") ||
+          error.message.toLowerCase().includes("not found")
+        ));
+
+      if (isNoOrdersFound) {
         setOrders({ items: [], total: 0, skip: 0, limit: pageSize });
         setStoreError(null);
       } else {
