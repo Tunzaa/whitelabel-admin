@@ -7,6 +7,8 @@ export interface User {
   name: string;
   email: string;
   roles: Role[];
+  tenant_id?: string;
+  role?: Role;
 }
 
 export interface AuthState {

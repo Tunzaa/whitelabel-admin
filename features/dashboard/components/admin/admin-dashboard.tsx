@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useDashboardStore } from "@/features/dashboard/store";
+import { useSelectedTenantStore } from "@/features/tenants/store";
+import { usePermissions } from "@/features/auth/hooks/use-permissions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -18,7 +20,12 @@ import { CartAbandonmentRateChart } from "./cart-abandonment-rate-chart";
 
 export function AdminDashboard() {
   const { data: session } = useSession();
-  const tenantId = session?.user?.tenant_id;
+  const { hasRole } = usePermissions();
+  const { selectedTenantId } = useSelectedTenantStore();
+
+  // For regular admin, use their own tenant_id from session
+  // For super user, use the selected tenant_id from store
+  const tenantId = hasRole("super") ? selectedTenantId : (session?.user as any)?.tenant_id;
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   
