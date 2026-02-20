@@ -571,7 +571,7 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
         undefined,
         headers
       );
-      const performanceData = (response.data as unknown as VendorPerformanceData[]) || [];
+      const performanceData = response.data?.data || [];
       set({ vendorPerformanceReport: performanceData });
     } catch (error: unknown) {
       const errorMessage =
