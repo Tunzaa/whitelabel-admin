@@ -17,23 +17,26 @@ const DashboardComponents = {
 } as const;
 
 // Role priority order (highest to lowest)
-const rolePriority = ["super", "admin", "sub_admin", "support"];
+const rolePriority = ['super', 'admin', 'sub_admin', 'support'];
 
 function getUserPrimaryRole(user: any): string | null {
   if (!user?.roles) {
-    return user?.role || null;
+    return user?.role || null; // Fallback to single role if roles array doesn't exist
   }
 
+  // Extract role names from roles array (handle both string and object formats)
   const userRoles = user.roles.map((role: any) =>
-    typeof role === "string" ? role : role.role
+    typeof role === 'string' ? role : role.role
   );
 
+  // Find the highest priority role the user has
   for (const role of rolePriority) {
     if (userRoles.includes(role)) {
       return role;
     }
   }
 
+  // If no recognized role found, return the first role or fallback
   return userRoles[0] || user?.role || null;
 }
 
@@ -57,6 +60,7 @@ export default function DashboardPage() {
   const primaryRole = getUserPrimaryRole(session.user);
   
   // Logic for super user: if tenant is selected, show AdminDashboard
+  // Only super users should check for selectedTenantId
   if (hasRole("super") && selectedTenantId) {
     return (
       <div className="flex flex-1 flex-col">
@@ -67,6 +71,7 @@ export default function DashboardPage() {
     );
   }
 
+  // For non-super users, always use their role-based dashboard
   const DashboardComponent = primaryRole
     ? DashboardComponents[primaryRole as keyof typeof DashboardComponents]
     : null;

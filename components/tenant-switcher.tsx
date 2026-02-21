@@ -30,7 +30,7 @@ export function TenantSwitcher() {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const { hasRole } = usePermissions();
-  const { tenants, fetchTenants, loading } = useTenantStore();
+  const { tenants, fetchTenants, tenant, fetchTenant, loading } = useTenantStore();
   const { selectedTenantId, setSelectedTenant } = useSelectedTenantStore();
   const user = useAuthStore((state) => state.user);
 
@@ -40,8 +40,11 @@ export function TenantSwitcher() {
   React.useEffect(() => {
     if (isSuperUser && tenants.length === 0) {
       fetchTenants();
+    } else if (!isSuperUser && userTenantId && !tenant) {
+      // For non-super users, fetch their tenant if not already loaded
+      fetchTenant(userTenantId);
     }
-  }, [isSuperUser, tenants.length, fetchTenants]);
+  }, [isSuperUser, tenants.length, fetchTenants, fetchTenant, userTenantId, tenant]);
 
   const filteredTenants = React.useMemo(() => {
     if (!searchQuery) return tenants;
@@ -68,13 +71,13 @@ export function TenantSwitcher() {
 
   // Find the tenant to display
   const displayTenant = isSuperUser
-    ? tenants.find((t) => (t.tenant_id || t.id) === selectedTenantId)
-    : tenants.find((t) => (t.tenant_id || t.id) === userTenantId);
+    ? tenants.find((t) => t.tenant_id === selectedTenantId)
+    : tenant;
 
   // If no tenant found but user has one (for non-super), or just the name from store
   const displayTitle =
     displayTenant?.name ||
-    (isSuperUser && !selectedTenantId ? "Global Dashboard" : "Loading...");
+    (isSuperUser && !selectedTenantId ? "Global Dashboard" : (userTenantId ? "Loading..." : "No Organization"));
 
   return (
     <Popover
@@ -197,7 +200,7 @@ export function TenantSwitcher() {
               ) : (
                 <div className="grid gap-0.5">
                   {filteredTenants.map((tenant) => {
-                    const tId = tenant.tenant_id || tenant.id;
+                    const tId = tenant.tenant_id;
                     const isActive = selectedTenantId === tId;
                     return (
                       <button

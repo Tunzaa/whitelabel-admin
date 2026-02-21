@@ -25,6 +25,7 @@ export function AdminDashboard() {
 
   // For regular admin, use their own tenant_id from session
   // For super user, use the selected tenant_id from store
+  // Non-super users should never use selectedTenantId even if it exists
   const tenantId = hasRole("super") ? selectedTenantId : (session?.user as any)?.tenant_id;
 
   const [isRefreshing, setIsRefreshing] = useState(false);

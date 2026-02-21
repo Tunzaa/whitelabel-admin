@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import { signOut } from "next-auth/react";
 import { NotificationTrigger } from "@/components/notification-trigger";
+import { useSelectedTenantStore } from "@/features/tenants/store";
 
 interface NavUserProps {
   user: {
@@ -39,6 +40,12 @@ interface NavUserProps {
 
 export function NavUser({ user, onNotificationClick }: NavUserProps) {
   const { isMobile } = useSidebar();
+  const { clearSelectedTenant } = useSelectedTenantStore();
+
+  const handleSignOut = () => {
+    clearSelectedTenant();
+    signOut();
+  };
 
   return (
     <SidebarMenu>
@@ -108,7 +115,7 @@ export function NavUser({ user, onNotificationClick }: NavUserProps) {
               <IconKey />
               Reset Password
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => signOut()}>
+            <DropdownMenuItem onClick={handleSignOut}>
               <IconLogout />
               Log out
             </DropdownMenuItem>

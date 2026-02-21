@@ -29,6 +29,8 @@ export default function DashboardLayout({
         email: session.user.email ?? "",
         // Set roles correctly - extractUserRoles expects the roles property to contain the role data
         roles: sessionUser.roles || (sessionUser.role ? [sessionUser.role] : []),
+        // Include tenant_id for non-super users
+        tenant_id: sessionUser.tenant_id,
       };
       setUser(userWithRoles);
 
