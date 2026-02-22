@@ -4,7 +4,6 @@ import { apiClient } from '@/lib/api/client';
 
 interface RoleStore {
   roles: Role[],
-  selectedRole: null,
   role: Role | null;
   permissions: Permission[];
   loading: boolean;
@@ -77,8 +76,9 @@ export const useRoleStore = create<RoleStore>()(
       return;
     }
     
-    setActiveAction('fetchMany');
-    setLoading(true);
+    try {
+      setActiveAction('fetchMany');
+      setLoading(true);
       
       // Build query parameters from filter
       const queryParams: Record<string, any> = { ...filter };
