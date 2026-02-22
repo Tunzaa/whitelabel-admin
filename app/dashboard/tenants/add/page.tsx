@@ -57,7 +57,7 @@ function TenantAddPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              Add New Tenant
+              Onboard New Tenant
             </h1>
             <p className="text-muted-foreground">
               Create a new tenant account and configurations

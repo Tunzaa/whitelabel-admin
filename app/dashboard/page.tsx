@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
-import { SuperOwnerDashboard } from "@/features/dashboard/components/super-owner/super-owner-dashboard";
+import { SuperAdminDashboard } from "@/features/dashboard/components/super-admin/super-admin-dashboard";
 import { AdminDashboard } from "@/features/dashboard/components/admin/admin-dashboard";
 import { SubAdminDashboard } from "@/features/dashboard/components/sub-admin/sub-admin-dashboard";
 import { SupportDashboard } from "@/features/dashboard/components/support/support-dashboard";
@@ -10,7 +10,7 @@ import { useSelectedTenantStore } from "@/features/tenants/store";
 import { usePermissions } from "@/features/auth/hooks/use-permissions";
 
 const DashboardComponents = {
-  super: SuperOwnerDashboard,
+  super: SuperAdminDashboard,
   admin: AdminDashboard,
   sub_admin: SubAdminDashboard,
   support: SupportDashboard,

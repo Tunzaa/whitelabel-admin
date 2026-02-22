@@ -160,7 +160,23 @@ export function TenantTable({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{tenant.domain}</TableCell>
+                  <TableCell>
+                        <a
+                          href={
+                            tenant.domain.startsWith("http")
+                              ? tenant.domain
+                              : `https://${tenant.domain}.tunzaa.co.tz`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline text-blue-600"
+                        >
+                          {tenant.domain.startsWith("http") 
+                            ? tenant.domain 
+                            : `${tenant.domain}.tunzaa.co.tz`
+                          }
+                        </a>
+                      </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Badge variant="outline">{tenant.country_code}</Badge>
