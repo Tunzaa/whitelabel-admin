@@ -4,10 +4,7 @@ import { create } from 'zustand';
 import { AuthState, Permission, Role } from "./types";
 import apiClient from '@/lib/api/client';
 import { extractUserRoles } from '@/lib/core/auth';
-
-// Cache to prevent redundant API calls
-const permissionsCache = new Map<string, { permissions: Permission[], timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+import { setCachedPermissions, getCachedPermissions, clearCache } from '@/lib/cache';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -17,7 +14,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   permissionsLoaded: false,
   setUser: (user) => set({ user, error: null }),
 
-  clearPermissions: () => set({ permissions: [], permissionsLoaded: false }),
+  clearPermissions: () => {
+    set({ permissions: [], permissionsLoaded: false });
+    // Clear all permission caches
+    clearCache('permissions');
+  },
+
+  logout: () => {
+    set({
+      user: null,
+      permissions: [],
+      isLoading: false,
+      error: null,
+      permissionsLoaded: false
+    });
+    // Clear all cached data on logout
+    clearCache();
+  },
 
   fetchPermissions: async (userId: string, headers?: Record<string, string>) => {
     if (!userId) {
@@ -26,19 +39,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     const { permissionsLoaded } = get();
+    const tenantId = headers?.['X-Tenant-ID'] || 'unknown';
 
-    // Check cache first
-    const cacheKey = `${userId}-${JSON.stringify(headers || {})}`;
-    const cached = permissionsCache.get(cacheKey);
-    const now = Date.now();
-
-    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-      set({ permissions: cached.permissions, isLoading: false, permissionsLoaded: true });
+    // Check persistent cache first
+    const cachedPermissions = getCachedPermissions(tenantId, userId);
+    if (cachedPermissions) {
+      set({ permissions: cachedPermissions, isLoading: false, permissionsLoaded: true });
       return;
     }
 
     // Don't fetch if already loaded and no cache miss
-    if (permissionsLoaded && !cached) {
+    if (permissionsLoaded && !cachedPermissions) {
       return;
     }
 
@@ -57,8 +68,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         permissionsData = response.data;
       }
 
-      // Cache the result
-      permissionsCache.set(cacheKey, { permissions: permissionsData, timestamp: now });
+      // Cache the result persistently
+      setCachedPermissions(permissionsData, tenantId, userId);
 
       set({ permissions: permissionsData, isLoading: false, permissionsLoaded: true });
     } catch (error) {
@@ -80,7 +91,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!user) {
       return false;
     }
-    const userRoles = extractUserRoles(user);
+    const userRoles = extractUserRoles(user as any);
     return userRoles.includes(requiredRole);
   },
 

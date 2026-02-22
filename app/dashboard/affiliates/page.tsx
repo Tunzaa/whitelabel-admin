@@ -59,6 +59,7 @@ import {
 import { AffiliateTable } from "@/features/affiliates/components/affiliate-table";
 import { AffiliateRejectionDialog } from "@/features/affiliates/components";
 import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 import { Can } from "@/components/auth/can";
 
 // Top Affiliates Table (mirrors AffiliateTable style)
@@ -714,6 +715,6 @@ function AffiliatesPage() {
   );
 }
 
-export default withAuthorization(AffiliatesPage, {
+export default withModuleAuthorization(withAuthorization(AffiliatesPage, {
   permission: "affiliates:read",
-});
+}), "affiliates");

@@ -29,6 +29,7 @@ import { Button } from "./ui/button";
 import { NotificationTrigger } from "@/components/notification-trigger";
 import { navigationData, NavItem } from "./sidebar-data";
 import { usePermissions } from "@/features/auth/hooks/use-permissions";
+import { useModules } from "@/features/auth/hooks/use-modules";
 import useAuthStore from "@/features/auth/store";
 import { TenantSwitcher } from "@/components/tenant-switcher";
 import { useSelectedTenantStore } from "@/features/tenants/store";
@@ -48,6 +49,7 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
   const { data: session } = useSession();
   const { can, hasRole, isLoading, permissionsLoaded, permissions } =
     usePermissions();
+  const { isModuleEnabled, isLoading: modulesLoading } = useModules();
   const userFromStore = useAuthStore((state) => state.user);
   const { selectedTenantId } = useSelectedTenantStore();
 
@@ -64,50 +66,93 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
       };
 
   const filterByPermissionAndRole = (item: NavItem) => {
-    // If user is super and no tenant is selected, hide tenant-specific items
-    const isSuperUser = hasRole("super");
-    const tenantSpecificUrls = [
-      "/dashboard/categories",
-      "/dashboard/vendors",
-      "/dashboard/products",
-      "/dashboard/affiliates",
-      "/dashboard/delivery-partners",
-      "/dashboard/orders",
-      "/dashboard/rewards",
-      "/dashboard/vendor-loans",
-    ];
+    try {
+      // If user is super and no tenant is selected, hide tenant-specific items
+      const isSuperUser = hasRole("super");
+      const tenantSpecificUrls = [
+        "/dashboard/categories",
+        "/dashboard/vendors",
+        "/dashboard/products",
+        "/dashboard/affiliates",
+        "/dashboard/delivery-partners",
+        "/dashboard/orders",
+        "/dashboard/rewards",
+        "/dashboard/vendor-loans",
+        "/dashboard/tenants/marketplace",
+      ];
 
-    if (
-      isSuperUser &&
-      !selectedTenantId &&
-      tenantSpecificUrls.some((url) => item.url.startsWith(url))
-    ) {
-      return false;
+      if (
+        isSuperUser &&
+        !selectedTenantId &&
+        tenantSpecificUrls.some((url) => item.url.startsWith(url))
+      ) {
+        return false;
+      }
+
+      // Check permission requirement
+      const hasRequiredPermission =
+        !item.requiredPermission || can(item.requiredPermission);
+
+      // Check role requirement
+      const hasRequiredRole = !item.requiredRole || hasRole(item.requiredRole);
+
+      // Check module requirement
+      const hasRequiredModule = !item.requiredModule || isModuleEnabled(item.requiredModule);
+
+      // All conditions must be met
+      return hasRequiredPermission && hasRequiredRole && hasRequiredModule;
+    } catch (error) {
+      // If filtering fails, default to showing the item
+      console.warn('Error filtering navigation item:', item.title, error);
+      return true;
     }
-
-    // Check permission requirement
-    const hasRequiredPermission =
-      !item.requiredPermission || can(item.requiredPermission);
-
-    // Check role requirement
-    const hasRequiredRole = !item.requiredRole || hasRole(item.requiredRole);
-
-    // Both conditions must be met
-    return hasRequiredPermission && hasRequiredRole;
   };
 
   const filteredNavMain = React.useMemo(() => {
-    // Don't show any navigation items until permissions are loaded
-    if (!permissionsLoaded) return [];
+    // Don't show any navigation items until permissions and modules are loaded
+    if (!permissionsLoaded || modulesLoading) return [];
 
-    return data.navMain.filter(filterByPermissionAndRole);
-  }, [filterByPermissionAndRole, permissionsLoaded]);
+    return data.navMain
+      .filter(filterByPermissionAndRole)
+      .map(item => {
+        // If item has sub-items, filter them as well
+        if (item.items && Array.isArray(item.items)) {
+          const filteredSubItems = item.items.filter(subItem => {
+            try {
+              // Check permission requirement for sub-item
+              const hasRequiredPermission =
+                !subItem.requiredPermission || can(subItem.requiredPermission);
+
+              // Check role requirement for sub-item
+              const hasRequiredRole = !subItem.requiredRole || hasRole(subItem.requiredRole);
+
+              // Check module requirement for sub-item
+              const hasRequiredModule = !subItem.requiredModule || isModuleEnabled(subItem.requiredModule);
+
+              // All conditions must be met
+              return hasRequiredPermission && hasRequiredRole && hasRequiredModule;
+            } catch (error) {
+              // If filtering fails, default to showing the sub-item
+              console.warn('Error filtering sub-item:', subItem.title, error);
+              return true;
+            }
+          });
+
+          // Only include the item if it has sub-items after filtering, or if it has no sub-items originally
+          return filteredSubItems.length > 0 ? { ...item, items: filteredSubItems } : null;
+        }
+
+        // For items without sub-items, keep as-is
+        return item;
+      })
+      .filter(Boolean); // Remove null items
+  }, [filterByPermissionAndRole, permissionsLoaded, modulesLoading]);
 
   const filteredNavSecondary = React.useMemo(() => {
-    // Don't show any navigation items until permissions are loaded
-    if (!permissionsLoaded) return [];
+    // Don't show any navigation items until permissions and modules are loaded
+    if (!permissionsLoaded || modulesLoading) return [];
     return data.navSecondary.filter(filterByPermissionAndRole);
-  }, [can, hasRole, permissionsLoaded]);
+  }, [filterByPermissionAndRole, permissionsLoaded, modulesLoading]);
 
   // Skeleton component for loading navigation items
   const NavigationSkeleton = () => (
@@ -176,7 +221,7 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
           {!permissionsLoaded ? (
             <NavigationSkeleton />
           ) : (
-            filteredNavMain.map((item) => (
+            Array.isArray(filteredNavMain) && filteredNavMain.map((item) => (
               <SidebarMenuItem key={item.title}>
                 {item.items ? (
                   <>
@@ -203,7 +248,7 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
                       </a>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
-                      {item.items.map((subItem) => (
+                      {Array.isArray(item.items) && item.items.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton
                             asChild

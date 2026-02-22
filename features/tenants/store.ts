@@ -14,6 +14,7 @@ import {
 import { apiClient } from '@/lib/api/client';
 import { toast } from "sonner";
 import { useUserStore } from '@/features/auth/stores/user-store';
+import { setCachedData, getCachedData, CACHE_KEYS } from '@/lib/cache';
 
 interface TenantState {
   selectedTenantId: string | null;
@@ -103,24 +104,40 @@ export const useTenantStore = create<TenantStore>()(
       setTenants: (tenants) => set({ tenants }),
 
       fetchTenant: async (id: string) => {
+        if (!id || id === 'null' || id === 'undefined') {
+          console.warn('fetchTenant called with invalid ID:', id);
+          return null as any;
+        }
+
         const { setActiveAction, setLoading, setStoreError, setTenant } = get();
+
+        // Check cache first for individual tenant
+        const cachedTenant = getCachedData<Tenant>(CACHE_KEYS.TENANTS, id);
+        if (cachedTenant) {
+          setTenant(cachedTenant);
+          setLoading(false);
+          return cachedTenant;
+        }
+
         try {
           setActiveAction('fetch');
           setLoading(true);
           const response = await apiClient.get<Tenant>(`/tenants/${id}`);
           if (response.data) {
-            let tenantData = response.data;
+            // Handle ApiResponse wrapper if present
+            const tenantData = (response.data as any).data || response.data;
+            let finalTenantData = tenantData;
             
             // Fetch user data if user object is missing first_name and last_name
-            if (tenantData.user_id && (!tenantData.first_name || !tenantData.last_name)) {
+            if (finalTenantData.user_id && (!finalTenantData.first_name || !finalTenantData.last_name)) {
               try {
                 // Get the fetchUser method from user store
                 const userStore = useUserStore.getState();
-                const userData = await userStore.fetchUser(tenantData.user_id, {'X-Tenant-ID': tenantData.tenant_id});
+                const userData = await userStore.fetchUser(finalTenantData.user_id, {'X-Tenant-ID': finalTenantData.tenant_id});
                 
                 // Inject first_name and last_name into tenant data
-                tenantData = {
-                  ...tenantData,
+                finalTenantData = {
+                  ...finalTenantData,
                   first_name: userData.first_name,
                   last_name: userData.last_name,
                   admin_email: userData.email,
@@ -132,15 +149,19 @@ export const useTenantStore = create<TenantStore>()(
               }
             }
             
-            setTenant(tenantData);
+            setTenant(finalTenantData);
+
+            // Cache the result using centralized system
+            setCachedData(CACHE_KEYS.TENANTS, finalTenantData, id);
+
             setLoading(false);
-            return tenantData;
+            return finalTenantData;
           }
           throw new Error('Tenant not found');
-        } catch (error) {
+        } catch (error: any) {
           setStoreError({
             message: error instanceof Error ? error.message : 'Failed to fetch tenant',
-            status: error.response?.status,
+            status: error.response?.status || 500,
           });
           setTenant(null);
           setLoading(false);
@@ -152,6 +173,22 @@ export const useTenantStore = create<TenantStore>()(
 
       fetchTenants: async (filter: TenantFilter = {}) => {
         const { setActiveAction, setLoading, setStoreError, setTenants } = get();
+
+        // Check cache first (only for default filter to avoid cache key complexity)
+        if (!filter.skip && !filter.limit && !filter.search && filter.isActive === undefined) {
+          const cachedTenants = getCachedData<{ tenants: Tenant[]; total: number }>(CACHE_KEYS.TENANTS);
+          if (cachedTenants?.tenants) {
+            setTenants(cachedTenants.tenants);
+            setLoading(false);
+            return {
+              items: cachedTenants.tenants,
+              total: cachedTenants.total || cachedTenants.tenants.length,
+              skip: 0,
+              limit: cachedTenants.tenants.length
+            };
+          }
+        }
+
         try {
           setActiveAction('fetchList');
           setLoading(true);
@@ -163,13 +200,30 @@ export const useTenantStore = create<TenantStore>()(
 
           const response = await apiClient.get<TenantListResponse>(`/tenants/?${params.toString()}`);
           if (response.data) {
-            setTenants(response.data.items);
-            return response.data;
+            // Check if response.data follows the ApiResponse wrapper pattern or the direct TenantListResponse pattern
+            const data = (response.data as any).data || response.data;
+            const items = data.items || [];
+            const total = data.total || 0;
+            const skip = data.skip || 0;
+            const limit = data.limit || items.length;
+
+            setTenants(items);
+
+            // Cache the result (only for default filter)
+            if (!filter.skip && !filter.limit && !filter.search && filter.isActive === undefined) {
+              setCachedData(CACHE_KEYS.TENANTS, {
+                tenants: items,
+                total: total,
+              });
+            }
+
+            return { items, total, skip, limit };
           }
-          setStoreError({ message: 'Failed to fetch tenants' });
-        } catch (error) {
+          throw new Error('Failed to fetch tenants');
+        } catch (error: any) {
           setStoreError({
             message: error instanceof Error ? error.message : 'Failed to fetch tenants',
+            status: error.response?.status || 500,
           });
           throw error;
         } finally {
@@ -185,13 +239,18 @@ export const useTenantStore = create<TenantStore>()(
           setLoading(true);
           const response = await apiClient.post<Tenant>('/tenants/', data);
           if (response.data) {
-            setTenant(response.data);
-            return response.data;
+            const tenantData = (response.data as any).data || response.data;
+            setTenant(tenantData);
+            return tenantData;
           }
-          setStoreError({ message: 'Failed to create tenant' });
-        } catch (error) {
+          setStoreError({ 
+            message: 'Failed to create tenant',
+            status: 500
+          });
+        } catch (error: any) {
           setStoreError({
             message: error instanceof Error ? error.message : 'Failed to create tenant',
+            status: error.response?.status || 500,
           });
           throw error;
         } finally {
@@ -207,13 +266,18 @@ export const useTenantStore = create<TenantStore>()(
           setLoading(true);
           const response = await apiClient.put<Tenant>(`/tenants/${id}`, data);
           if (response.data) {
-            setTenant(response.data);
-            return response.data;
+            const tenantData = (response.data as any).data || response.data;
+            setTenant(tenantData);
+            return tenantData;
           }
-          setStoreError({ message: 'Failed to update tenant' });
-        } catch (error) {
+          setStoreError({ 
+            message: 'Failed to update tenant',
+            status: 500
+          });
+        } catch (error: any) {
           setStoreError({
             message: error instanceof Error ? error.message : 'Failed to update tenant',
+            status: error.response?.status || 500,
           });
           throw error;
         } finally {

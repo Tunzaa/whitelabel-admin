@@ -24,8 +24,9 @@ import type {
   Transaction,
   TransactionStatus,
 } from "@/features/orders/transactions/types";
+import { withAuthorization } from "@/components/auth/with-authorization";
 
-export default function TransactionsPage() {
+function TransactionsPage() {
   const router = useRouter();
   const session = useSession();
   const tenantId = session?.data?.user
@@ -204,3 +205,6 @@ export default function TransactionsPage() {
     </div>
   );
 }
+
+const TransactionsPageWithAuthorization = withAuthorization(TransactionsPage, "orders:read");
+export default TransactionsPageWithAuthorization;

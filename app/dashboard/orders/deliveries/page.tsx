@@ -17,9 +17,10 @@ import { useDeliveryStore } from "@/features/orders/deliveries/store";
 import { Delivery, DeliveryListResponse } from "@/features/orders/deliveries/types";
 import { DeliveryTable } from "@/features/orders/deliveries/components/delivery-table";
 import { useSession } from "next-auth/react";
-import { AlertCircle } from "lucide-react";
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
-export default function DeliveryPage() {
+function DeliveryPage() {
   const router = useRouter();
   const session = useSession();
   const tenantId = session?.data?.user?.tenant_id;
@@ -189,3 +190,6 @@ export default function DeliveryPage() {
     </div>
   );
 }
+
+const DeliveryPageWithAuthorization = withModuleAuthorization(withAuthorization(DeliveryPage, { permission: "orders:read" }), "delivery");
+export default DeliveryPageWithAuthorization;

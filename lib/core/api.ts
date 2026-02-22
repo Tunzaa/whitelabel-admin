@@ -190,6 +190,12 @@ const createApiClient = () => {
     // Add auth token and tenant ID to requests
     client.interceptors.request.use(
       (config) => {
+        // Prevent requests to /tenants/null or /tenants/undefined
+        if (config.url?.includes('/tenants/null') || config.url?.includes('/tenants/undefined')) {
+          console.error('[API] Blocked invalid tenant request:', config.url);
+          return Promise.reject(new Error('Invalid Tenant ID in URL'));
+        }
+
         const token = getToken();
         if (token) config.headers.Authorization = `Bearer ${token}`;
 

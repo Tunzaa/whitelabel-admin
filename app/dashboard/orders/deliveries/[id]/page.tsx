@@ -22,8 +22,10 @@ import { FilePreviewModal } from "@/components/ui/file-preview-modal";
 import { useDeliveryStore } from "@/features/orders/deliveries/store";
 import { useOrderStore } from "@/features/orders/store";
 import { formatDate, formatTime, formatPartnerId } from "@/lib/utils";
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
-export default function DeliveryDetailsPage() {
+function DeliveryDetailsPage() {
   const router = useRouter();
   const params = useParams();
   const session = useSession();
@@ -401,3 +403,6 @@ export default function DeliveryDetailsPage() {
     </div>
   );
 }
+
+const DeliveryDetailsPageWithAuthorization = withModuleAuthorization(withAuthorization(DeliveryDetailsPage, { permission: "orders:read" }), "delivery");
+export default DeliveryDetailsPageWithAuthorization;

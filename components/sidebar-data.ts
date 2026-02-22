@@ -25,6 +25,7 @@ export interface NavItem {
   target?: string;
   requiredPermission?: Permission;
   requiredRole?: Role;
+  requiredModule?: string;
   items?: Omit<NavItem, 'icon' | 'items'>[];
 }
 
@@ -34,10 +35,6 @@ export interface NavigationData {
   navClouds: NavItem[];
 }
 
-// Helper function to check if affiliates module is enabled
-const isAffiliatesEnabled = () => {
-  return process.env.NEXT_PUBLIC_ENABLE_AFFILIATES_MODULE === 'true';
-};
 
 export const navigationData: NavigationData = {
   navMain: [
@@ -65,17 +62,19 @@ export const navigationData: NavigationData = {
       icon: IconPackage,
       requiredPermission: "products:read",
     },
-    ...(isAffiliatesEnabled() ? [{
+    {
       title: "Affiliates (Mawinga)",
       url: "/dashboard/affiliates",
       icon: IconUserCode,
       requiredPermission: "affiliates:read",
-    }] : []),
+      requiredModule: "affiliates",
+    },
     {
       title: "Delivery Partners",
       url: "/dashboard/delivery-partners",
       icon: IconTruck,
       requiredPermission: "delivery-partners:read",
+      requiredModule: "delivery",
     },
     {
       title: "Orders",
@@ -86,6 +85,7 @@ export const navigationData: NavigationData = {
         {
           title: "Deliveries",
           url: "/dashboard/orders/deliveries",
+          requiredModule: "delivery",
         },
         {
           title: "Refunds",
@@ -102,12 +102,14 @@ export const navigationData: NavigationData = {
       url: "/dashboard/rewards",
       icon: IconGift,
       requiredPermission: "rewards:read",
+      requiredModule: "rewards-referals",
     },
     {
       title: "Vendor Loans",
-      url: "/dashboard/vendor-loans/requests",
+      url: "#",
       icon: IconCreditCard,
       requiredPermission: "vendor-loans:read",
+      requiredModule: "vendor-loans",
       items: [
         {
           title: "Providers",

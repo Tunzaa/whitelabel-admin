@@ -60,7 +60,8 @@ const authConfig = {
           }
 
           const apiResponse = await response.json();
-          const userData = apiResponse;
+          // Handle ApiResponse wrapper if present
+          const userData = apiResponse.data || apiResponse;
 
           // Extract roles using the updated function
           const roles = extractUserRoles(userData);
@@ -74,7 +75,7 @@ const authConfig = {
             role: (roles[0] || 'support') as AppRole,
             roles: roles, // Store all roles
             accessToken: userData.access_token,
-            tenant_id: userData.tenant_id || '4c56d0c3-55d9-495b-ae26-0d922d430a42',
+            tenant_id: userData.tenant_id,
           };
 
           return user;

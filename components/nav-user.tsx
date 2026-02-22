@@ -26,8 +26,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { signOut } from "next-auth/react";
-import { NotificationTrigger } from "@/components/notification-trigger";
 import { useSelectedTenantStore } from "@/features/tenants/store";
+import { clearCache } from "@/lib/cache";
 
 interface NavUserProps {
   user: {
@@ -40,11 +40,27 @@ interface NavUserProps {
 
 export function NavUser({ user, onNotificationClick }: NavUserProps) {
   const { isMobile } = useSidebar();
-  const { clearSelectedTenant } = useSelectedTenantStore();
+
+  let clearSelectedTenant;
+  try {
+    const { clearSelectedTenant: clearFn } = useSelectedTenantStore();
+    clearSelectedTenant = clearFn;
+  } catch (error) {
+    console.warn('Error accessing selected tenant store:', error);
+    clearSelectedTenant = () => {};
+  }
 
   const handleSignOut = () => {
-    clearSelectedTenant();
-    signOut();
+    try {
+      clearSelectedTenant();
+      // Clear all cached data on logout for security
+      clearCache();
+      signOut();
+    } catch (error) {
+      console.warn('Error during sign out:', error);
+      // Still try to sign out even if clearing tenant or cache fails
+      signOut();
+    }
   };
 
   return (
@@ -92,25 +108,6 @@ export function NavUser({ user, onNotificationClick }: NavUserProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {/* <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUserCircle />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <NotificationTrigger>
-                  <span className="flex items-center gap-2 me-4">
-                    <IconNotification />
-                    <span>Notifications</span>
-                  </span>
-                </NotificationTrigger>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator /> */}
             <DropdownMenuItem onClick={() => window.location.href = '/dashboard/profile/reset-password'}>
               <IconKey />
               Reset Password

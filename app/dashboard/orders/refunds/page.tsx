@@ -20,8 +20,9 @@ import { OrderTable } from "@/features/orders/components/order-table";
 import { useOrderStore } from "@/features/orders/store";
 import type { Order, OrderStatus, OrderFilter } from "@/features/orders/types";
 import Pagination from "@/components/ui/pagination";
+import { withAuthorization } from "@/components/auth/with-authorization";
 
-export default function OrdersPage() {
+function OrdersPage() {
   const router = useRouter();
   const session = useSession();
   const tenantId = session?.data?.user ? (session.data.user as any).tenant_id : undefined;
@@ -306,3 +307,6 @@ export default function OrdersPage() {
     </div>
   )
 }
+
+const OrdersPageWithAuthorization = withAuthorization(OrdersPage, "orders:read");
+export default OrdersPageWithAuthorization;

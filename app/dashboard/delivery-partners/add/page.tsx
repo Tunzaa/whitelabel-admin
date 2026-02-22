@@ -10,6 +10,7 @@ import { DeliveryPartner } from "@/features/delivery-partners/types"
 import { toast } from "sonner";
 import { DeliveryPartnerFormValues } from "@/features/delivery-partners/schema";
 import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
 const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues): Partial<DeliveryPartner> => {
   const vehicle_metadata = {
@@ -124,4 +125,6 @@ function CreateDeliveryPartnerPage() {
   )
 }
 
-export default withAuthorization(CreateDeliveryPartnerPage, { permission: "delivery-partners:create" });
+export default withModuleAuthorization(withAuthorization(CreateDeliveryPartnerPage, { 
+  permission: "delivery-partners:create" 
+}), "delivery");

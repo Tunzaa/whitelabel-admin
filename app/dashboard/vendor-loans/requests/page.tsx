@@ -16,6 +16,7 @@ import { LoanRequestFilter } from "@/features/loans/requests/types";
 import { RequestTable } from "@/features/loans/requests/components/request-table";
 
 import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 import { Can } from "@/components/auth/can";
 
 function LoanRequestsPage() {
@@ -288,6 +289,6 @@ function LoanRequestsPage() {
   );
 }
 
-export default withAuthorization(LoanRequestsPage, {
+export default withModuleAuthorization(withAuthorization(LoanRequestsPage, {
   permission: "vendor-loans:read",
-});
+}), "vendor-loans");

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ErrorCard } from "@/components/ui/error-card";
 import { TenantForm } from "@/features/tenants/components/tenant-form";
-import { useTenantStore } from "@/features/tenants/store";
+import { useTenantStore, useSelectedTenantStore } from "@/features/tenants/store";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -19,7 +19,12 @@ export default function MarketplacePage() {
   const { data: session } = useSession();
   const userRole = session?.user?.role || "";
   const isSuperOwner = userRole === "super";
-  const tenantId = session?.user?.tenant_id;
+  
+  // Use selectedTenantId from store for super users, fallback to session
+  const { selectedTenantId } = useSelectedTenantStore();
+  const tenantId = isSuperOwner 
+    ? (selectedTenantId || (session?.user as any)?.tenant_id) 
+    : (session?.user as any)?.tenant_id;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -28,15 +33,20 @@ export default function MarketplacePage() {
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
-    // Only fetch once when the component mounts
-    if (!hasFetchedRef.current) {
-      hasFetchedRef.current = true;
+    // Fetch tenant data when tenantId is available and doesn't match current store state
+    if (tenantId) {
+      const isDifferentTenant = tenant && tenant.tenant_id !== tenantId;
+      const isMissingData = !tenant && !loading && !storeError;
 
-      tenantStore.fetchTenant(tenantId).catch((error) => {
-        console.error("Error fetching marketplace tenant:", error);
-      });
+      if (!hasFetchedRef.current || isDifferentTenant || isMissingData) {
+        hasFetchedRef.current = true;
+
+        tenantStore.fetchTenant(tenantId).catch((error) => {
+          console.error("Error fetching marketplace tenant:", error);
+        });
+      }
     }
-  }, [tenantId, tenantStore]);
+  }, [tenantId, tenantStore, tenant, loading, storeError]);
 
   const onSubmit = async (data: Record<string, any>) => {
     console.log("Marketplace form data:", data);

@@ -16,6 +16,7 @@ import {
 import {
   platformModules,
   isModuleEnabled,
+  getModuleIcon,
 } from "@/features/settings/data/modules";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorCard } from "@/components/ui/error-card";
@@ -256,6 +257,7 @@ function TenantPage({ params }: TenantPageProps) {
                             tenant.modules,
                             moduleConfig.name,
                           );
+                          const Icon = getModuleIcon(moduleConfig.icon);
 
                           return (
                             <Card
@@ -268,7 +270,7 @@ function TenantPage({ params }: TenantPageProps) {
                                     <div
                                       className={`p-2 rounded-md ${enabled ? "bg-primary/10" : "bg-muted"}`}
                                     >
-                                      <Settings
+                                      <Icon
                                         className={`h-4 w-4 ${enabled ? "text-primary" : "text-muted-foreground"}`}
                                       />
                                     </div>

@@ -55,7 +55,7 @@ import {
   documentTypes,
   vehicleTypes,
 } from "@/features/settings/data/localization";
-import { platformModules } from "@/features/settings/data/modules";
+import { platformModules, getModuleIcon } from "@/features/settings/data/modules";
 import { tenantFormSchema } from "../schema";
 import { TenantFormValues } from "../types";
 import { saveConfigurations } from './extra-config-fields';
@@ -1207,10 +1207,11 @@ export function TenantForm({
 
   function ModulesTab() {
     return (
-      <TabsContent value="modules" className="space-y-4 mt-4">
+      <TabsContent value="modules" className="space-y-4">
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Module Configuration</h3>
-          {!isSuperOwner && (
+          <h3 className="text-lg font-medium">Modules Configuration</h3>
+          
+          {!isSuperOwner ? (
             <>
               <Alert className="mb-4">
                 <FileText className="h-4 w-4" />
@@ -1223,35 +1224,51 @@ export function TenantForm({
                 Marketplace modules configurations
               </p>
             </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Select which platform modules to enable for this tenant. Each module provides additional functionality to enhance the marketplace experience.
+            </p>
           )}
         </div>
-        <div className="space-y-4">
-          {platformModules.map((module) => (
-            <FormField
-              key={module.name}
-              control={form.control}
-              name={`modules.${module.name}`}
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base font-medium">
-                      {module.label}
-                    </FormLabel>
-                    <FormDescription>
-                      {module.description}
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={!isSuperOwner || !isEditable}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          ))}
+        <Separator className="mb-8" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {platformModules.map((module) => {
+            const Icon = getModuleIcon(module.icon);
+            return (
+              <FormField
+                key={module.name}
+                control={form.control}
+                name={`modules.${module.name}`}
+                render={({ field }) => (
+                  <Card key={module.name} className="relative cursor-pointer" onClick={() => field.onChange(!field.value)}>
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="flex items-center space-x-3">
+                        {Icon && <Icon className="h-6 w-6" />}
+                        <div>
+                          <FormLabel className="text-base font-medium" htmlFor={field.id} onClick={(e) => { field.onChange(!field.value); e.stopPropagation(); }}>
+                            {module.label}
+                          </FormLabel>
+                          <FormDescription>
+                            {module.description}
+                          </FormDescription>
+                        </div>
+                      </div>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            onClick={(e) => e.stopPropagation()}
+                            disabled={!isSuperOwner || !isEditable}
+                          />
+                        </FormControl>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              />
+            );
+          })}
         </div>
       </TabsContent>
     );

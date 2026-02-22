@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { DocumentType, VehicleType } from '@/features/configurations/types';
 import { useConfigurationStore } from '@/features/configurations/store';
+import { useModules } from '@/features/auth/hooks/use-modules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -43,7 +44,7 @@ export const TenantConfiguration = ({
   setActiveTab,
 }: TenantConfigurationProps) => {
     // Check if affiliates module is enabled
-    const isAffiliatesEnabled = process.env.NEXT_PUBLIC_ENABLE_AFFILIATES_MODULE === 'true';
+    const { isModuleEnabled } = useModules();
     const configurationsRef = React.useRef(configurations);
     const vehicleTypesRef = React.useRef(vehicleTypes);
     useEffect(() => { configurationsRef.current = configurations; }, [configurations]);
@@ -206,14 +207,14 @@ export const TenantConfiguration = ({
         <TabsList className="w-full mb-4">
           <TabsTrigger value="delivery">Delivery</TabsTrigger>
           <TabsTrigger value="vendor">Vendor</TabsTrigger>
-          {isAffiliatesEnabled && (
+          {isModuleEnabled('affiliates') && (
             <TabsTrigger value="winga">Winga</TabsTrigger>
           )}
           <TabsTrigger value="vehicles">Vehicle Types</TabsTrigger>
         </TabsList>
 
         {/* Document Types Tabs */}
-        {["delivery", "vendor", ...(isAffiliatesEnabled ? ["winga"] : [])].map(entity => (
+        {["delivery", "vendor", ...(isModuleEnabled('affiliates') ? ["winga"] : [])].map(entity => (
           <TabsContent key={entity} value={entity} className="space-y-6">
             <div className="flex items-center justify-between border-b pb-2 mb-2">
               <div className="font-semibold text-lg">
@@ -441,7 +442,7 @@ async function mapLocalDocsToBackendIds({
   }
   return result;
 }// Save function to be called from parent
-export async function saveConfigurations(tenantId: string, configurations: Record<string, any>, vehicleTypes: any[]) {
+export async function saveConfigurations(tenantId: string, configurations: Record<string, any>, vehicleTypes: any[], isModuleEnabled: (module: string) => boolean) {
   const {
     saveEntityConfiguration,
     createVehicleType,
@@ -519,7 +520,7 @@ export async function saveConfigurations(tenantId: string, configurations: Recor
     for (const [entityName, localConfig] of Object.entries(configurations)) {
       if (!localConfig?.document_types) continue;
       // Skip winga entity if affiliates module is disabled
-      if (entityName === 'winga' && process.env.NEXT_PUBLIC_ENABLE_AFFILIATES_MODULE !== 'true') {
+      if (entityName === 'winga' && !isModuleEnabled('affiliates')) {
         continue;
       }
       entityDocTypeIds[entityName] = [];
@@ -557,7 +558,7 @@ export async function saveConfigurations(tenantId: string, configurations: Recor
     for (const [entityName, localConfig] of Object.entries(configurations)) {
       if (!entityDocTypeIds[entityName]) continue;
       // Skip winga entity if affiliates module is disabled
-      if (entityName === 'winga' && process.env.NEXT_PUBLIC_ENABLE_AFFILIATES_MODULE !== 'true') {
+      if (entityName === 'winga' && !isModuleEnabled('affiliates')) {
         continue;
       }
       const payload = { tenant_id: tenantId, document_types: entityDocTypeIds[entityName] };

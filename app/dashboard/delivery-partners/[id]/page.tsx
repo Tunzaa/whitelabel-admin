@@ -87,6 +87,7 @@ import {
   VerificationActionPayload,
 } from "@/components/ui/verification-document-manager";
 import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 import { Can } from "@/components/auth/can";
 
 interface DeliveryPartnerPageProps {
@@ -968,6 +969,6 @@ function DeliveryPartnerPage({ params }: DeliveryPartnerPageProps) {
   ) : null;
 }
 
-export default withAuthorization(DeliveryPartnerPage, {
+export default withModuleAuthorization(withAuthorization(DeliveryPartnerPage, {
   permission: "delivery-partners:read",
-});
+}), "delivery");

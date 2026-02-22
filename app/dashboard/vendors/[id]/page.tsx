@@ -62,6 +62,7 @@ import { Input } from "@/components/ui/input";
 
 import { useVendorStore } from "@/features/vendors/store";
 import { useCategoryStore } from "@/features/categories/store";
+import { useModules } from "@/features/auth/hooks/use-modules";
 import {
   VerificationDocument,
   Store as VendorStore,
@@ -89,10 +90,9 @@ function VendorPage({ params }: VendorPageProps) {
   const router = useRouter();
   const session = useSession();
   // Extract tenant ID from session if available
-  const tenant_id = session?.data?.user?.tenant_id as string | undefined;
+  const tenant_id = (session?.data?.user as any)?.tenant_id as string | undefined;
 
-  // Check if affiliates module is enabled
-  const isAffiliatesEnabled = process.env.NEXT_PUBLIC_ENABLE_AFFILIATES_MODULE === 'true';
+  const { isModuleEnabled } = useModules();
   const unwrappedParams = use(params);
   const id = unwrappedParams.id;
   const {
@@ -546,7 +546,7 @@ function VendorPage({ params }: VendorPageProps) {
                 <TabsTrigger value="store" className="flex items-center gap-2">
                   <StoreIcon className="h-4 w-4" /> Store Information
                 </TabsTrigger>
-                {isAffiliatesEnabled && (
+                {isModuleEnabled('affiliates') && (
                   <TabsTrigger
                     value="affiliate"
                     className="flex items-center gap-2"
@@ -563,7 +563,7 @@ function VendorPage({ params }: VendorPageProps) {
               <StoreInfoTab />
 
               {/* Affiliates Information Tab */}
-              {isAffiliatesEnabled && (
+              {isModuleEnabled('affiliates') && (
                 <AffiliatesTab vendorId={id} tenantId={tenant_id} />
               )}
             </Tabs>

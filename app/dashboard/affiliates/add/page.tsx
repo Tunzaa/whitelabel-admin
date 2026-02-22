@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useSession } from "next-auth/react";
 import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
 function AddAffiliatePage() {
   const { data: session } = useSession();
@@ -89,6 +90,6 @@ function AddAffiliatePage() {
   );
 }
 
-export default withAuthorization(AddAffiliatePage, {
-  permission: "affiliates:create",
-});
+export default withModuleAuthorization(withAuthorization(AddAffiliatePage, { 
+  permission: "affiliate:create" 
+}), "affiliates");

@@ -11,6 +11,7 @@ import { useAffiliateStore } from "@/features/affiliates/store";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
 interface EditAffiliatePageProps {
   params: { id: string };
@@ -140,4 +141,6 @@ function EditAffiliatePage({ params }: EditAffiliatePageProps) {
   );
 }
 
-export default withAuthorization(EditAffiliatePage, { permission: "affiliate:update" });
+export default withModuleAuthorization(withAuthorization(EditAffiliatePage, { 
+  permission: "affiliate:update" 
+}), "affiliates");

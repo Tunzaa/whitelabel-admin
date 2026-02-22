@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RewardsSettingsForm } from "@/features/rewards/components/settings-form";
 
 import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 import { Can } from "@/components/auth/can";
 
 function RewardsPage() {
@@ -50,4 +51,6 @@ function RewardsPage() {
     </div>
   );
 }
-export default RewardsPage;
+export default withModuleAuthorization(withAuthorization(RewardsPage, {
+  permission: "rewards:read",
+}), "rewards-referals");

@@ -77,6 +77,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import Pagination from "@/components/ui/pagination";
 import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 import { Can } from "@/components/auth/can";
 
 // Memoized VendorsTab component to prevent unnecessary re-renders
@@ -1107,6 +1108,6 @@ function AffiliateDetailPage() {
   }
 }
 
-export default withAuthorization(AffiliateDetailPage, {
+export default withModuleAuthorization(withAuthorization(AffiliateDetailPage, {
   permission: "affiliates:read",
-});
+}), "affiliates");

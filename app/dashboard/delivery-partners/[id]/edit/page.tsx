@@ -13,6 +13,8 @@ import { DeliveryPartnerFormValues, formKycDocumentSchema } from "@/features/del
 import { z } from "zod"; // For inferring FormKycDocumentValues type
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner"
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
 interface DeliveryPartnerEditPageProps {
   params: {
@@ -130,7 +132,7 @@ const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues, 
   return apiPayload;
 };
 
-export default function DeliveryPartnerEditPage(props: DeliveryPartnerEditPageProps) {
+function DeliveryPartnerEditPage(props: DeliveryPartnerEditPageProps) {
   const params = use(props.params) as { id: string };
   const router = useRouter();
   const { data: session } = useSession();
@@ -247,3 +249,7 @@ export default function DeliveryPartnerEditPage(props: DeliveryPartnerEditPagePr
     </div>
   );
 }
+
+export default withModuleAuthorization(withAuthorization(DeliveryPartnerEditPage, { 
+  permission: "delivery-partners:update" 
+}), "delivery");

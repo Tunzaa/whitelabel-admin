@@ -19,6 +19,7 @@ import Pagination from "@/components/ui/pagination";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 import { Can } from "@/components/auth/can";
 
 const getStatusChangeMessage = (status: string) => {
@@ -263,4 +264,4 @@ function DeliveryPartnersPage() {
   );
 }
 
-export default withAuthorization(DeliveryPartnersPage, { permission: "delivery-partners:read" });
+export default withModuleAuthorization(withAuthorization(DeliveryPartnersPage, { permission: "delivery-partners:read" }), "delivery");

@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { useOrderStore } from "@/features/orders/store";
 import { useTransactionStore } from "@/features/orders/transactions/store";
 import { useVendorStore } from "@/features/vendors/store";
+import { useModules } from "@/features/auth/hooks/use-modules";
 import {
   Accordion,
   AccordionContent,
@@ -148,6 +149,7 @@ const OrderPage = () => {
     error: transactionsError,
   } = useTransactionStore();
   const { fetchVendor } = useVendorStore();
+  const { isModuleEnabled } = useModules();
 
   const getTransactionStatusBadgeVariant = (status?: string) => {
     if (!status) return "secondary";
@@ -1559,11 +1561,31 @@ const OrderPage = () => {
                 )}
               </CardContent>
             </Card>
-            <DeliveryManagement
-              order={order}
-              delivery_details={order?.delivery_details}
-              allVendorsAccepted={allVendorsAccepted || false}
-            />
+            {isModuleEnabled('delivery') ? (
+              <DeliveryManagement
+                order={order}
+                delivery_details={order?.delivery_details}
+                allVendorsAccepted={allVendorsAccepted || false}
+              />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Truck className="h-5 w-5" />
+                    Delivery Management
+                  </CardTitle>
+                  <CardDescription>
+                    This feature requires the Delivery module to be enabled.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <AlertCircle className="h-4 w-4" />
+                    <p>Contact your administrator to enable the Delivery module.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </main>

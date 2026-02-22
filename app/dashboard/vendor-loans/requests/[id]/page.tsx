@@ -35,6 +35,9 @@ import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { useVendorStore } from "@/features/vendors/store";
 import { compactCurrency } from "@/lib/utils";
 
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
+
 
 const StatusTimeline = ({ request }: { request: any }) => {
   if (!request) return null;
@@ -1476,3 +1479,7 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
     </div>
   );
 }
+
+export default withModuleAuthorization(withAuthorization(LoanRequestDetailPage, {
+  permission: "vendor-loans:read",
+}), "vendor-loans");
