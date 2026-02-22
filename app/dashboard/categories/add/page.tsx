@@ -49,7 +49,6 @@ const AddCategoryPage = () => {
       toast.success(t("notifications.created_successfully"));
       router.push("/dashboard/categories");
     } catch (error) {
-      console.error(t("notifications.failed_to_create"), error);
       toast.error(t("notifications.failed_to_create"));
     }
   };

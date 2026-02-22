@@ -23,6 +23,7 @@ import {
 } from "@/features/tenants/store";
 import { usePermissions } from "@/features/auth/hooks/use-permissions";
 import useAuthStore from "@/features/auth/store";
+import { getCachedData, CACHE_KEYS } from "@/lib/cache";
 
 export function TenantSwitcher() {
   const router = useRouter();
@@ -30,21 +31,43 @@ export function TenantSwitcher() {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const { hasRole } = usePermissions();
-  const { tenants, fetchTenants, tenant, fetchTenant, loading } = useTenantStore();
+  const { tenants, fetchTenants, tenant, fetchTenant, loading, setTenants } = useTenantStore();
   const { selectedTenantId, setSelectedTenant } = useSelectedTenantStore();
   const user = useAuthStore((state) => state.user);
 
   const isSuperUser = hasRole("super");
   const userTenantId = (user as any)?.tenant_id;
 
+  // Track if we've attempted to load tenants (prevents infinite loop)
+  const tenantsLoadedRef = React.useRef(false);
+
+  // Reset ref on mount (for page refreshes)
   React.useEffect(() => {
-    if (isSuperUser && tenants.length === 0) {
-      fetchTenants();
-    } else if (!isSuperUser && userTenantId && !tenant) {
+    tenantsLoadedRef.current = false;
+  }, []);
+
+  // Load tenants from cache on mount, or fetch if cache is empty
+  React.useEffect(() => {
+    if (!isSuperUser) {
       // For non-super users, fetch their tenant if not already loaded
-      fetchTenant(userTenantId);
+      if (userTenantId && !tenant) {
+        fetchTenant(userTenantId);
+      }
+      return;
     }
-  }, [isSuperUser, tenants.length, fetchTenants, fetchTenant, userTenantId, tenant]);
+
+    // Super user: load tenants once
+    if (tenantsLoadedRef.current) return;
+    tenantsLoadedRef.current = true;
+
+    const cachedTenants = getCachedData<{ tenants: any[] }>(CACHE_KEYS.TENANTS);
+    if (cachedTenants?.tenants && cachedTenants.tenants.length > 0) {
+      setTenants(cachedTenants.tenants);
+    } else {
+      // No cache, fetch from API
+      fetchTenants();
+    }
+  }, [isSuperUser, setTenants, fetchTenants, fetchTenant, userTenantId, tenant]);
 
   const filteredTenants = React.useMemo(() => {
     if (!searchQuery) return tenants;
@@ -56,7 +79,7 @@ export function TenantSwitcher() {
     );
   }, [tenants, searchQuery]);
 
-  const handleTenantSelect = (id: string | null, name?: string | null) => {
+  const handleTenantSelect = async (id: string | null, name?: string | null) => {
     setSelectedTenant(id, name);
     setOpen(false);
 
@@ -64,8 +87,9 @@ export function TenantSwitcher() {
     if (id === null) {
       router.push("/dashboard");
     } else {
-      // Reload current page to refresh data with new X-Tenant-ID
-      window.location.reload();
+      // Fetch tenant data (will use cache if available)
+      await fetchTenant(id);
+      // Page content refreshes automatically via key change in layout
     }
   };
 

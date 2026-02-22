@@ -73,7 +73,7 @@ export function UserForm({ onSubmit, onCancel, initialData }: UserFormProps) {
   useEffect(() => {
     if (status === 'authenticated' && tenantId) {
       const headers = { "X-Tenant-ID": tenantId };
-      fetchRoles({}, headers).catch(console.error);
+      fetchRoles({}, headers).catch(() => {});
     }
   }, [fetchRoles, tenantId, status]);
 

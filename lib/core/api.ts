@@ -1,11 +1,11 @@
 /**
  * Centralized API Client & Token Management
  *
- * This module provides a simple, centralized API client with token management
+ * Provides a simple, centralized API client with token management
  * and automatic token refresh.
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { toast } from 'sonner';
 import { create } from 'zustand';
 
@@ -23,51 +23,17 @@ export interface ApiError {
   code?: string;
 }
 
-// Token Management - Handles both localStorage and session storage methods
+// Token Management
 const getToken = () => {
-  // First check localStorage
   if (typeof window !== 'undefined') {
-    const localToken = localStorage.getItem('token');
-    if (localToken) return localToken;
-
-    // If not in localStorage, try to get from Next.js session
-    // Note: This won't directly access HTTP-only cookies, but the session
-    // data might be available in the window.__NEXT_DATA__ object
-    try {
-      // @ts-ignore - This is a Next.js specific property
-      const nextData = window.__NEXT_DATA__;
-      if (nextData?.props?.pageProps?.session?.accessToken) {
-        // We found a token in the session, let's also save it to localStorage for future use
-        const sessionToken = nextData.props.pageProps.session.accessToken;
-        localStorage.setItem('token', sessionToken);
-        return sessionToken;
-      }
-    } catch (e) {
-      console.error('Error accessing session data:', e);
-    }
+    return localStorage.getItem('token');
   }
   return null;
 };
 
 const getRefreshToken = () => {
-  // Check localStorage first
   if (typeof window !== 'undefined') {
-    const localRefreshToken = localStorage.getItem('refresh_token');
-    if (localRefreshToken) return localRefreshToken;
-
-    // Try to get from Next.js session
-    try {
-      // @ts-ignore - This is a Next.js specific property
-      const nextData = window.__NEXT_DATA__;
-      if (nextData?.props?.pageProps?.session?.user?.token) {
-        // Save to localStorage for future use
-        const sessionRefreshToken = nextData.props.pageProps.session.user.token;
-        localStorage.setItem('refresh_token', sessionRefreshToken);
-        return sessionRefreshToken;
-      }
-    } catch (e) {
-      console.error('Error accessing session refresh token:', e);
-    }
+    return localStorage.getItem('refresh_token');
   }
   return null;
 };
@@ -86,28 +52,6 @@ const clearTokens = () => {
   }
 };
 
-// Function to synchronize tokens from NextAuth session to localStorage
-// Call this from components after login
-const syncTokensFromSession = () => {
-  if (typeof window !== 'undefined') {
-    try {
-      // @ts-ignore - This is a Next.js specific property
-      const nextData = window.__NEXT_DATA__;
-      const session = nextData?.props?.pageProps?.session;
-
-      if (session?.accessToken) {
-        localStorage.setItem('token', session.accessToken);
-      }
-
-      if (session?.user?.token) {
-        localStorage.setItem('refresh_token', session.user.token);
-      }
-    } catch (e) {
-      console.error('Error synchronizing tokens from session:', e);
-    }
-  }
-};
-
 // API Error Store for global error handling
 export const useApiErrorStore = create<{
   error: ApiError | null;
@@ -122,11 +66,6 @@ export const useApiErrorStore = create<{
 // Create the API client
 const createApiClient = () => {
   const baseURL = process.env.NEXT_PUBLIC_API_URL || '';
-  
-  // Debug: Log the base URL to verify it's being read
-  if (typeof window !== 'undefined') {
-    console.log('API Base URL:', baseURL);
-  }
 
   // Main API client with interceptors
   const apiClient = axios.create({
@@ -139,7 +78,6 @@ const createApiClient = () => {
   const fileUploadClient = axios.create({
     baseURL,
     timeout: 30000,
-    // No headers here; Axios will set Content-Type for FormData
   });
 
   // Auth-specific client (without token refresh to avoid circular references)
@@ -149,57 +87,20 @@ const createApiClient = () => {
     headers: { 'Content-Type': 'application/json' },
   });
 
-  // --- Monitoring Interceptor ---
-  const addMonitoringInterceptors = (client: AxiosInstance) => {
-    client.interceptors.request.use((config) => {
-      // @ts-ignore
-      config.metadata = { startTime: new Date() };
-      return config;
-    });
-
-    client.interceptors.response.use(
-      (response) => {
-        // @ts-ignore
-        const startTime = response.config.metadata?.startTime;
-        if (startTime) {
-          const duration = new Date().getTime() - startTime.getTime();
-          if (duration > 5000) {
-            console.warn(`[Slow Request] ${response.config.method?.toUpperCase()} ${response.config.url} took ${duration}ms`);
-          }
-        }
-        return response;
-      },
-      (error) => {
-        // @ts-ignore
-        const startTime = error.config?.metadata?.startTime;
-        if (startTime) {
-          const duration = new Date().getTime() - startTime.getTime();
-          console.error(`[Request Failed] ${error.config?.method?.toUpperCase()} ${error.config?.url} failed after ${duration}ms`);
-        }
-        return Promise.reject(error);
-      }
-    );
-  };
-
-  addMonitoringInterceptors(apiClient);
-  addMonitoringInterceptors(fileUploadClient);
-  addMonitoringInterceptors(authClient);
-
-  // --- Interceptor logic as a reusable function ---
+  // --- Auth Interceptor ---
   function addAuthInterceptors(client: AxiosInstance) {
     // Add auth token and tenant ID to requests
     client.interceptors.request.use(
       (config) => {
         // Prevent requests to /tenants/null or /tenants/undefined
         if (config.url?.includes('/tenants/null') || config.url?.includes('/tenants/undefined')) {
-          console.error('[API] Blocked invalid tenant request:', config.url);
           return Promise.reject(new Error('Invalid Tenant ID in URL'));
         }
 
         const token = getToken();
         if (token) config.headers.Authorization = `Bearer ${token}`;
 
-        // Get tenant ID from localStorage to avoid circular dependency with zustand store
+        // Get tenant ID from localStorage
         if (typeof window !== 'undefined') {
           try {
             const tenantStorage = localStorage.getItem('selected-tenant-storage');
@@ -210,8 +111,8 @@ const createApiClient = () => {
                 config.headers['X-Tenant-ID'] = tenantId;
               }
             }
-          } catch (e) {
-            console.error('Error reading tenant from localStorage:', e);
+          } catch {
+            // Ignore parsing errors
           }
         }
 
@@ -323,61 +224,22 @@ const createApiClient = () => {
   addAuthInterceptors(apiClient);
   addAuthInterceptors(fileUploadClient);
 
-
-  // --- Request Deduplication Logic ---
-  const pendingRequests = new Map<string, Promise<any>>();
-
-  const generateRequestKey = (method: string, url: string, config: AxiosRequestConfig = {}): string => {
-    const { data, params } = config;
-    // A simple but effective way to serialize the request identifying properties.
-    // Sorting keys ensures that {a: 1, b: 2} and {b: 2, a: 1} produce the same key.
-    const sortedData = data && typeof data === 'object' ? JSON.stringify(Object.keys(data).sort().reduce((obj, key) => { (obj as any)[key] = data[key]; return obj; }, {})) : '';
-    const sortedParams = params && typeof params === 'object' ? JSON.stringify(Object.keys(params).sort().reduce((obj, key) => { (obj as any)[key] = params[key]; return obj; }, {})) : '';
-    return `${method.toUpperCase()}:${url}:${sortedData}:${sortedParams}`;
-  };
-
-  const requestWithDeduplication = <T>(
-    method: 'get' | 'post' | 'put' | 'patch' | 'delete',
-    url: string,
-    config: AxiosRequestConfig = {}
-  ) => {
-    const key = generateRequestKey(method, url, config);
-
-    if (pendingRequests.has(key)) {
-      // console.log(`[Deduplication] Found pending request for key: ${key}`);
-      return pendingRequests.get(key)! as Promise<import('axios').AxiosResponse<ApiResponse<T>>>;
-    }
-
-    const promise = apiClient
-      .request<ApiResponse<T>>({
-        method,
-        url,
-        ...config,
-      })
-      .finally(() => {
-        pendingRequests.delete(key);
-      });
-
-    pendingRequests.set(key, promise);
-    return promise;
-  };
-
-  // Simple wrapper functions with deduplication
+  // Simple wrapper functions
   return {
     get: <T>(url: string, params?: any, headers?: Record<string, string>) => {
-      return requestWithDeduplication<T>('get', url, { params, headers });
+      return apiClient.get<ApiResponse<T>>(url, { params, headers });
     },
     post: <T>(url: string, data?: any, headers?: Record<string, string>) => {
-      return requestWithDeduplication<T>('post', url, { data, headers });
+      return apiClient.post<ApiResponse<T>>(url, data, { headers });
     },
     put: <T>(url: string, data?: any, headers?: Record<string, string>) => {
-      return requestWithDeduplication<T>('put', url, { data, headers });
+      return apiClient.put<ApiResponse<T>>(url, data, { headers });
     },
     patch: <T>(url: string, data?: any, headers?: Record<string, string>) => {
-      return requestWithDeduplication<T>('patch', url, { data, headers });
+      return apiClient.patch<ApiResponse<T>>(url, data, { headers });
     },
     delete: <T>(url: string, data?: any, headers?: Record<string, string>) => {
-      return requestWithDeduplication<T>('delete', url, { data, headers });
+      return apiClient.delete<ApiResponse<T>>(url, { data, headers });
     },
     // File upload method using fileUploadClient
     postFile: <T>(url: string, data?: any, headers?: Record<string, string>) => {
@@ -418,7 +280,6 @@ const createApiClient = () => {
       getRefreshToken,
       setTokens,
       clearTokens,
-      syncTokensFromSession
     }
   };
 };

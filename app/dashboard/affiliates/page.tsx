@@ -254,7 +254,6 @@ function AffiliatesPage() {
     rejectionReason?: string,
   ): Promise<void> => {
     if (!tenantId) {
-      console.error("Tenant ID is missing, cannot update status.");
       toast.error("Tenant ID is missing, cannot update status.");
       return;
     }
@@ -288,7 +287,6 @@ function AffiliatesPage() {
         toast.error(`Failed to ${action} affiliate`);
       }
     } catch (error) {
-      console.error("Failed to update affiliate status:", error);
       toast.error(`Failed to ${action} affiliate`);
     } finally {
       setRejectLoading(false);

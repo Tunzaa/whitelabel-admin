@@ -112,7 +112,13 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
     filter: OrderFilter = {},
     headers?: Record<string, string>
   ) => {
-    const { setActiveAction, setLoading, setStoreError, setOrders } = get();
+    const { setActiveAction, setLoading, setStoreError, setOrders, loading } = get();
+    
+    // Prevent concurrent fetches
+    if (loading) {
+      return { items: [], total: 0, skip: 0, limit: 10 };
+    }
+    
     try {
       setActiveAction("fetchOrders");
       setLoading(true);
@@ -128,14 +134,12 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
       if (filter.has_ticket) params.append("has_ticket", "true");
       params.append("include_tickets", "true");
 
-      console.log('[OrderStore] fetchOrders params:', params.toString());
       const response = await apiClient.get<OrderApiResponse>(
         `/orders/?${params.toString()}`,
         undefined,
         headers
       );
 
-      console.log('[OrderStore] raw API response:', response);
       let orderList: OrderListResponse = {
         items: [],
         total: 0,
@@ -154,13 +158,10 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
         };
       }
 
-      console.log('[OrderStore] processed orderList:', orderList);
       setOrders(orderList);
-      console.log('[OrderStore] setOrders called with:', orderList);
       setLoading(false);
       return orderList;
     } catch (error: unknown) {
-      console.error("Error fetching orders:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Failed to fetch orders";
       const errorStatus = (error as any)?.response?.status;
@@ -196,7 +197,6 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
       }
       throw new Error("Order data not found or in unexpected format");
     } catch (error: any) {
-      console.error("Error fetching order:", error);
       const errorMessage = error?.response?.data?.message || error.message || "Failed to fetch order";
       setStoreError({ message: errorMessage, status: error?.response?.status });
       setOrder(null);
@@ -223,7 +223,6 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
       }
       throw new Error("Delivery details not found");
     } catch (error: any) {
-      console.error("Error fetching delivery details:", error);
       const errorMessage = error?.response?.data?.message || error.message || "Failed to fetch delivery details";
       setStoreError({ message: errorMessage, status: error?.response?.status });
       setDeliveryDetails(null);
@@ -289,16 +288,13 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
 
       return updatedOrder;
     } catch (error: any) {
-      console.error("Failed to update order status:", error);
 
       // Revert optimistic update on failure
       set({ order: originalOrder, orders: originalOrdersList, storeError: { message: "Failed to update status. Reverting changes." } });
 
       // Delayed re-fetch to ensure data consistency
       setTimeout(() => {
-        console.log(`Triggering re-fetch for order ${orderId} after failed update.`);
         fetchOrder(orderId, headers).catch(err => {
-          console.error(`Re-fetch for order ${orderId} also failed:`, err);
           set(state => ({ ...state, storeError: { message: "Failed to sync with server. Please refresh." } }))
         });
       }, 3000);
@@ -328,7 +324,6 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
       }
       return null;
     } catch (error: any) {
-      console.error("Error updating payment status:", error);
       throw error;
     }
   },
@@ -354,7 +349,6 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
       }
       return null;
     } catch (error: any) {
-      console.error("Error creating refund:", error);
       throw error;
     }
   },
@@ -372,15 +366,9 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
         setDeliveryDetails(details);
         return details;
       } else {
-        console.log("[assignDeliveryPartner] No delivery details returned");
         return null;
       }
     } catch (error: any) {
-      console.error("[assignDeliveryPartner] Error assigning delivery partner:", {
-        error,
-        message: error?.message,
-        response: error?.response?.data
-      });
       throw error;
     }
   },
@@ -400,7 +388,6 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
       }
       return null;
     } catch (error: any) {
-      console.error("[addDeliveryStage] Error updating delivery stage:", error);
       throw error;
     }
   },

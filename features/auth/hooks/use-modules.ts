@@ -84,7 +84,6 @@ export const useModules = () => {
         // Cache the result
         setCachedModules(modulesData, currentTenantId);
       } catch (error) {
-        console.error('Failed to fetch tenant modules:', error);
         // Set empty modules instead of crashing
         setCurrentTenantModules({});
         // Don't cache empty data to allow retry on next load

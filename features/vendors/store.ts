@@ -82,7 +82,7 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
   vendors: { items: [], total: 0, skip: 0, limit: 10 },
   vendor: null,
   store: null,
-  loading: true,
+  loading: false,
   error: null,
   activeAction: null,
   vendorPerformanceReport: [],
@@ -95,7 +95,13 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
   setStore: (store: Store | null) => set({ store }),
 
   fetchVendor: async (id: string, headers?: Record<string, string>) => {
-    const { setActiveAction, setLoading, setError, setVendor } = get();
+    const { setActiveAction, setLoading, setError, setVendor, loading } = get();
+    
+    // Prevent concurrent fetches
+    if (loading) {
+      return null as any;
+    }
+    
     try {
       setActiveAction("fetchOne");
       setLoading(true);
@@ -105,19 +111,16 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
         headers
       );
 
-      console.log("Vendor API Response:", response);
 
       // Try multiple possible response structures
       let vendorData = null;
 
       // Option 1: response.data.data structure
       if (response.data && response.data.data) {
-        console.log("Found vendor data in response.data.data");
         vendorData = response.data.data;
       }
       // Option 2: response.data structure (direct)
       else if (response.data) {
-        console.log("Using response.data directly as vendor data");
         vendorData = response.data;
       }
 
@@ -126,7 +129,6 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
         vendorData &&
         (vendorData.business_name || vendorData.vendor_id || vendorData._id)
       ) {
-        console.log("Successfully extracted vendor data:", vendorData);
         // Ensure we have vendor_id
         if (!vendorData.vendor_id && vendorData._id) {
           vendorData.vendor_id = vendorData._id;
@@ -146,11 +148,9 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
         return vendorData as Vendor;
       }
 
-      console.error("Vendor data not found or in unexpected format", response);
       setLoading(false);
       throw new Error("Vendor data not found or in unexpected format");
     } catch (error: unknown) {
-      console.error("Error fetching vendor:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Failed to fetch vendor";
       const errorStatus = (error as any)?.response?.status;
@@ -379,7 +379,6 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
         }
       }
 
-      console.log(`Updating vendor ${id} status with payload:`, payload);
       await apiClient.put(
         `/marketplace/vendors/${id}/status`,
         payload,
@@ -414,17 +413,6 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
       setActiveAction("fetchStore");
       setLoading(true);
 
-      // Make API request to fetch stores
-      console.log(
-        "Fetching store for vendor ID:",
-        vendorId,
-        "with limit:",
-        limit
-      );
-
-      // Looking at the api client implementation, we need to pass params as the second parameter and headers as the third
-      // The client method signature is: get<T>(url: string, params?: any, headers?: Record<string, string>)
-
       // Create params object with vendor_id and limit
       const params = {
         vendor_id: vendorId, // Include vendor_id in the request body
@@ -441,7 +429,6 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
         headers
       );
 
-      console.log("Raw Store API response:", response.data);
 
       if (response.status === 200) {
         const responseData = response.data as any; // Cast to any to handle various response structures
@@ -453,13 +440,11 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
           Array.isArray(responseData.items)
         ) {
           const storesData = responseData.items as Store[];
-          console.log("Extracted stores from items array:", storesData);
           return storesData;
         }
 
         // Case 2: Response is already an array of stores
         if (responseData && Array.isArray(responseData)) {
-          console.log("Response is already an array of stores:", responseData);
           return responseData as Store[];
         }
 
@@ -471,35 +456,24 @@ export const useVendorStore = create<VendorStore>()((set, get) => ({
         ) {
           // Check if it has store-like properties
           if ("_id" in responseData || "store_name" in responseData) {
-            console.log(
-              "Response is a single store object, converting to array:",
-              responseData
-            );
             return [responseData as Store];
           }
         }
 
         // Case 4: Unknown structure but has some data - try to use it
         if (responseData) {
-          console.log(
-            "Unknown response structure, attempting to use as is:",
-            responseData
-          );
           return Array.isArray(responseData)
             ? (responseData as Store[])
             : [responseData as Store];
         }
 
         // Default: No valid data found
-        console.log("No stores found for this vendor, returning empty array");
         return [];
       }
 
       // If API call was not successful
-      console.log("API call failed, returning empty array");
       return [];
     } catch (error: any) {
-      console.error("Error fetching store by vendor:", error);
       setError({
         message: error.message || "Failed to fetch store by vendor ID",
         status: error.response?.status,

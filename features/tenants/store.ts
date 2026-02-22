@@ -38,6 +38,15 @@ export const useSelectedTenantStore = create<TenantState>()(
   )
 );
 
+// Helper to get/set cached selected tenant
+const getCachedSelectedTenant = (): Tenant | null => {
+  return getCachedData<Tenant>(CACHE_KEYS.SELECTED_TENANT);
+};
+
+const setCachedSelectedTenant = (tenant: Tenant): void => {
+  setCachedData(CACHE_KEYS.SELECTED_TENANT, tenant);
+};
+
 interface TenantStore {
   tenants: Tenant[];
   tenant: Tenant | null;
@@ -61,7 +70,7 @@ interface TenantStore {
   setTenant: (tenant: Tenant) => void;
   setTenants: (tenants: Tenant[]) => void;
   fetchTenant: (id: string) => Promise<Tenant>;
-  fetchTenants: (filter?: TenantFilter) => Promise<TenantListResponse>;
+  fetchTenants: (filter?: TenantFilter, skipCache?: boolean) => Promise<TenantListResponse>;
   fetchBillingDashboardMetrics: () => Promise<void>;
   fetchBillingConfig: (tenantId: string) => Promise<void>;
   fetchInvoices: (params: {
@@ -88,7 +97,7 @@ export const useTenantStore = create<TenantStore>()(
       invoicesTotal: 0,
       selectedInvoice: null,
       loadingSelectedInvoice: false,
-      loading: true,
+      loading: false,
       loadingBillingConfig: false,
       loadingInvoices: false,
       isUpdating: false,
@@ -103,20 +112,21 @@ export const useTenantStore = create<TenantStore>()(
       setTenant: (tenant) => set({ tenant }),
       setTenants: (tenants) => set({ tenants }),
 
-      fetchTenant: async (id: string) => {
+      fetchTenant: async (id: string, skipCache = false) => {
         if (!id || id === 'null' || id === 'undefined') {
-          console.warn('fetchTenant called with invalid ID:', id);
           return null as any;
         }
 
         const { setActiveAction, setLoading, setStoreError, setTenant } = get();
 
-        // Check cache first for individual tenant
-        const cachedTenant = getCachedData<Tenant>(CACHE_KEYS.TENANTS, id);
-        if (cachedTenant) {
-          setTenant(cachedTenant);
-          setLoading(false);
-          return cachedTenant;
+        // Check cache first (unless skipped)
+        if (!skipCache) {
+          const cachedTenant = getCachedSelectedTenant();
+          if (cachedTenant && cachedTenant.tenant_id === id) {
+            setTenant(cachedTenant);
+            setLoading(false);
+            return cachedTenant;
+          }
         }
 
         try {
@@ -144,15 +154,14 @@ export const useTenantStore = create<TenantStore>()(
                   admin_phone: userData.phone_number
                 };
               } catch (userError) {
-                console.error('Failed to fetch user data:', userError);
                 // Continue with tenant data even if user fetch fails
               }
             }
             
             setTenant(finalTenantData);
 
-            // Cache the result using centralized system
-            setCachedData(CACHE_KEYS.TENANTS, finalTenantData, id);
+            // Cache as selected tenant
+            setCachedSelectedTenant(finalTenantData);
 
             setLoading(false);
             return finalTenantData;
@@ -171,11 +180,11 @@ export const useTenantStore = create<TenantStore>()(
         }
       },
 
-      fetchTenants: async (filter: TenantFilter = {}) => {
+      fetchTenants: async (filter: TenantFilter = {}, skipCache = false) => {
         const { setActiveAction, setLoading, setStoreError, setTenants } = get();
 
-        // Check cache first (only for default filter to avoid cache key complexity)
-        if (!filter.skip && !filter.limit && !filter.search && filter.isActive === undefined) {
+        // Check cache first (only for default filter and if not skipped)
+        if (!skipCache && !filter.skip && !filter.limit && !filter.search && filter.isActive === undefined) {
           const cachedTenants = getCachedData<{ tenants: Tenant[]; total: number }>(CACHE_KEYS.TENANTS);
           if (cachedTenants?.tenants) {
             setTenants(cachedTenants.tenants);
@@ -209,12 +218,21 @@ export const useTenantStore = create<TenantStore>()(
 
             setTenants(items);
 
-            // Cache the result (only for default filter)
+            // Cache the tenant list (only for default filter)
             if (!filter.skip && !filter.limit && !filter.search && filter.isActive === undefined) {
               setCachedData(CACHE_KEYS.TENANTS, {
                 tenants: items,
                 total: total,
               });
+            }
+
+            // Update selected tenant cache if it's in the list
+            const { selectedTenantId } = useSelectedTenantStore.getState();
+            if (selectedTenantId) {
+              const selectedTenant = items.find(t => t.tenant_id === selectedTenantId);
+              if (selectedTenant) {
+                setCachedSelectedTenant(selectedTenant);
+              }
             }
 
             return { items, total, skip, limit };
@@ -268,6 +286,13 @@ export const useTenantStore = create<TenantStore>()(
           if (response.data) {
             const tenantData = (response.data as any).data || response.data;
             setTenant(tenantData);
+            
+            // Update cache if this is the selected tenant
+            const { selectedTenantId } = useSelectedTenantStore.getState();
+            if (selectedTenantId === id) {
+              setCachedSelectedTenant(tenantData);
+            }
+            
             return tenantData;
           }
           setStoreError({ 

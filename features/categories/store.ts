@@ -35,7 +35,7 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
   categories: [],
   total: 0,
   category: null,
-  loading: true,
+  loading: false,
   storeError: null,
   activeAction: null,
 
@@ -46,7 +46,13 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
   setCategories: (categories: Category[]) => set({ categories }),
 
   fetchCategory: async (id: string, headers?: Record<string, string>) => {
-    const { setActiveAction, setLoading, setStoreError, setCategory } = get();
+    const { setActiveAction, setLoading, setStoreError, setCategory, loading } = get();
+    
+    // Prevent concurrent fetches
+    if (loading) {
+      return null;
+    }
+    
     try {
       setActiveAction('fetchOne');
       setLoading(true);
@@ -79,12 +85,10 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
       }
       
       // Error occurred
-      console.error('Category data not found or in unexpected format', response);
       setLoading(false);
       throw new Error('Category data not found or in unexpected format');
     } catch (error: unknown) {
       // Error occurred
-      console.error('Error fetching category:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch category';
       const errorStatus = (error as any)?.response?.status;
       setStoreError({
@@ -100,7 +104,13 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
   },
 
   fetchCategories: async (filter: CategoryFilter = {}, headers?: Record<string, string>) => {
-    const { setActiveAction, setLoading, setStoreError, setCategories } = get();
+    const { setActiveAction, setLoading, setStoreError, setCategories, loading } = get();
+    
+    // Prevent concurrent fetches
+    if (loading) {
+      return { items: [], total: 0, skip: 0, limit: 10 };
+    }
+    
     try {
       setActiveAction('fetchList');
       setLoading(true);
@@ -144,7 +154,6 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
       return emptyResult;
     } catch (error: unknown) {
       // Error occurred
-      console.error('Error fetching categories:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch categories';
       const errorStatus = (error as any)?.response?.status;
       setStoreError({
@@ -197,7 +206,6 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
       return categoryData;
     } catch (error: unknown) {
       // Error occurred
-      console.error('Error creating category:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create category';
       const errorStatus = (error as any)?.response?.status;
       setStoreError({
@@ -255,7 +263,6 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
       return categoryData;
     } catch (error: unknown) {
       // Error occurred
-      console.error('Error updating category:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update category';
       const errorStatus = (error as any)?.response?.status;
       setStoreError({
@@ -309,7 +316,6 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
       return categoryData;
     } catch (error: unknown) {
       // Error occurred
-      console.error('Error updating category status:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update category status';
       const errorStatus = (error as any)?.response?.status;
       setStoreError({
@@ -341,7 +347,6 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
       return true;
     } catch (error: unknown) {
       // Error occurred
-      console.error('Error deleting category:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete category';
       const errorStatus = (error as any)?.response?.status;
       setStoreError({

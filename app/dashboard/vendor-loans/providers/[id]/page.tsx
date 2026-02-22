@@ -93,7 +93,6 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
     if (!fetchAttempted && providerId) {
       setFetchAttempted(true);
       loanProviderStore.fetchProvider(providerId, tenantHeaders).catch((error) => {
-        console.error("Error fetching provider:", error);
       });
     }
   }, [providerId, loanProviderStore, fetchAttempted, tenantHeaders]);
@@ -101,7 +100,6 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
   useEffect(() => {
     if (activeTab === "products" && provider) {
       loanProductStore.fetchProducts({ provider_id: providerId }, tenantHeaders).catch((error) => {
-        console.error("Failed to fetch products:", error);
       });
     }
   }, [activeTab, loanProductStore, providerId, provider, tenantHeaders]);
@@ -134,7 +132,6 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
       return Promise.resolve();
     } catch (error) {
       toast.error("Failed to approve document");
-      console.error(error);
       return Promise.reject(error);
     }
   };
@@ -153,7 +150,6 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
       return Promise.resolve();
     } catch (error) {
       toast.error("Failed to reject document");
-      console.error(error);
       return Promise.reject(error);
     }
   };
@@ -164,7 +160,6 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
       await loanProviderStore.updateProviderStatus(providerId, isActive, tenantHeaders);
       toast.success(`Provider ${isActive ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
-      console.error("Failed to update status:", error);
       toast.error("Failed to update provider status");
     } finally {
       setIsSubmitting(false);

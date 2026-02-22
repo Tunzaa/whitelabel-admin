@@ -32,16 +32,15 @@ export function TenantContent() {
   // Track if data has been loaded at least once
   const [dataEverLoaded, setDataEverLoaded] = useState(false);
   
-  // Fetch tenants only once when component mounts
+  // Fetch tenants only once when component mounts (skip cache for fresh data)
   useEffect(() => {
     // Only fetch if data has never been loaded
     if (!dataEverLoaded && tenants.length === 0) {
       const loadTenants = async () => {
         try {
-          await fetchTenants();
+          await fetchTenants({}, true); // skipCache=true for fresh data
           setDataEverLoaded(true);
         } catch (error) {
-          console.error('Failed to fetch tenants:', error);
         }
       };
       

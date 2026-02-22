@@ -122,7 +122,6 @@ export const useRoleStore = create<RoleStore>()(
   },
 
   fetchAvailablePermissions: async (headers?: Record<string, string>) => {
-    console.log(headers);
     const { setActiveAction, setLoading, setStoreError, setPermissions } = get();
     try {
       setActiveAction('fetchMany');

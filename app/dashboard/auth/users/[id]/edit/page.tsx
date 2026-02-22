@@ -44,7 +44,6 @@ export default function EditUserPage({ params }: EditUserPageProps) {
             }
           })
       } catch (err) {
-        console.error('Error fetching user:', err)
         setError('Failed to load user data')
         toast.error("Failed to load user data")
       } finally {
@@ -69,7 +68,6 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       toast.success("User updated successfully")
       router.push("/dashboard/auth/users")
     } catch (error) {
-      console.error('Error updating user:', error)
       toast.error("Failed to update user")
     }
   }

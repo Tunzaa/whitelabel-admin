@@ -1,44 +1,17 @@
 import { Permission } from '../features/auth/types';
 
 /**
- * Cache utility for storing sensitive data with encoding to prevent tampering
+ * Cache utility for storing data in sessionStorage
  */
 
 const CACHE_PREFIX = 'whitelabel_admin_cache_';
-const CACHE_VERSION = 'v1';
-const APP_SALT = process.env.NEXT_PUBLIC_APP_SALT || 'default_salt_change_in_prod';
-
-// Simple encoding using base64 with salt
-const encodeData = (data: any): string => {
-  const jsonString = JSON.stringify(data);
-  const saltedData = `${APP_SALT}:${jsonString}:${CACHE_VERSION}`;
-  return btoa(saltedData);
-};
-
-const decodeData = (encodedData: string): any => {
-  try {
-    const decodedString = atob(encodedData);
-    const parts = decodedString.split(':');
-    if (parts.length < 3 || parts[parts.length - 1] !== CACHE_VERSION) {
-      throw new Error('Invalid cache format or version');
-    }
-    const salt = parts[0];
-    if (salt !== APP_SALT) {
-      throw new Error('Invalid salt');
-    }
-    const jsonString = parts.slice(1, -1).join(':');
-    return JSON.parse(jsonString);
-  } catch (error) {
-    console.warn('Failed to decode cached data:', error);
-    return null;
-  }
-};
 
 // Cache keys
 export const CACHE_KEYS = {
   PERMISSIONS: 'permissions',
   MODULES: 'modules',
   TENANTS: 'tenants',
+  SELECTED_TENANT: 'selected_tenant',
 } as const;
 
 type CacheKey = typeof CACHE_KEYS[keyof typeof CACHE_KEYS];
@@ -67,10 +40,9 @@ export const setCachedData = <T>(
       tenantId,
       userId,
     };
-    const encoded = encodeData(cacheEntry);
-    sessionStorage.setItem(getCacheKey(key, tenantId, userId), encoded);
-  } catch (error) {
-    console.warn('Failed to cache data:', error);
+    sessionStorage.setItem(getCacheKey(key, tenantId, userId), JSON.stringify(cacheEntry));
+  } catch {
+    // Ignore storage errors
   }
 };
 
@@ -82,10 +54,10 @@ export const getCachedData = <T>(
 ): T | null => {
   try {
     const cacheKey = getCacheKey(key, tenantId, userId);
-    const encoded = sessionStorage.getItem(cacheKey);
-    if (!encoded) return null;
+    const stored = sessionStorage.getItem(cacheKey);
+    if (!stored) return null;
 
-    const cacheEntry: CacheEntry<T> = decodeData(encoded);
+    const cacheEntry: CacheEntry<T> = JSON.parse(stored);
     if (!cacheEntry || !cacheEntry.data) return null;
 
     // Check if cache is expired
@@ -95,8 +67,7 @@ export const getCachedData = <T>(
     }
 
     return cacheEntry.data;
-  } catch (error) {
-    console.warn('Failed to retrieve cached data:', error);
+  } catch {
     return null;
   }
 };

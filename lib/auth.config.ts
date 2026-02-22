@@ -36,7 +36,6 @@ const authConfig = {
           const creds = credentials as { email?: string; password?: string } | undefined;
 
           if (!creds?.email || !creds?.password) {
-            console.error('NextAuth: No credentials provided');
             return null;
           }
 
@@ -80,7 +79,6 @@ const authConfig = {
 
           return user;
         } catch (error) {
-          console.error('NextAuth: Authentication error:', error);
           return null;
         }
       },

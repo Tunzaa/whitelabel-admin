@@ -60,7 +60,6 @@ function TenantPage({ params }: TenantPageProps) {
     if (!fetchAttempted && tenantId) {
       setFetchAttempted(true);
       tenantStore.fetchTenant(tenantId).catch((error) => {
-        console.error("Error fetching tenant:", error);
       });
     }
   }, [tenantId, tenantStore, fetchAttempted]);

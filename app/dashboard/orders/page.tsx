@@ -89,7 +89,6 @@ function OrdersPage() {
         setOrders({ items: [], total: 0, skip: 0, limit: pageSize });
       }
     } catch (error) {
-      console.error("Error loading orders:", error);
       // Always set empty orders array for 404 errors (no orders found)
       if (
         error instanceof Error &&
@@ -146,7 +145,6 @@ function OrdersPage() {
         await loadOrders();
       } else {
         toast.error("Failed to update order status");
-        console.error("Failed to update order status:", error);
       }
     }
   };

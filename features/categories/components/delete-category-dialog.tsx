@@ -42,7 +42,6 @@ export function DeleteCategoryDialog({ category, tenantId, onClose }: DeleteCate
       onClose();
     } catch (error) {
       toast.error(t('notifications.failed_to_delete', { name: category.name }));
-      console.error(error);
     }
   };
 

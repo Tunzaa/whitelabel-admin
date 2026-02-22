@@ -144,7 +144,6 @@ function VendorPage({ params }: VendorPageProps) {
       // Use the categories store to fetch all categories
       await fetchStoreCategories({}, tenantHeaders as Record<string, string>);
     } catch (error) {
-      console.error("Error fetching categories:", error);
     } finally {
       setCategoriesLoading(false);
     }
@@ -194,7 +193,6 @@ function VendorPage({ params }: VendorPageProps) {
           return fetchCategories();
         })
         .catch((error) => {
-          console.error("Error fetching vendor or store data:", error);
         })
         .finally(() => {
           setStoreLoading(false);
@@ -364,7 +362,6 @@ function VendorPage({ params }: VendorPageProps) {
       fetchVendor(id, tenantHeaders);
     } catch (error) {
       toast.error("Failed to update vendor status");
-      console.error(error);
     } finally {
       setIsUpdating(false);
     }
@@ -373,12 +370,10 @@ function VendorPage({ params }: VendorPageProps) {
   // Handle document verification
   const handleDocumentVerification = useCallback(async (payload: VerificationActionPayload) => {
     if (!vendor) {
-      console.error("[VendorPage] Verification failed: vendor object is missing.", { vendor });
       toast.error("Verification failed: Vendor data not available.");
       return;
     }
     if (!tenant_id) {
-      console.error("[VendorPage] Verification failed: tenant_id is missing.", { session });
       toast.error("Verification failed: User session is invalid.");
       return;
     }
@@ -434,7 +429,6 @@ function VendorPage({ params }: VendorPageProps) {
       router.push("/dashboard/vendors");
     } catch (error) {
       toast.error("Failed to delete vendor");
-      console.error(error);
     } finally {
       setIsDeleting(false);
       setConfirmDelete(false);

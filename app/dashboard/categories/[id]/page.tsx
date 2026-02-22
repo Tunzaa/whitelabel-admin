@@ -92,11 +92,10 @@ function CategoryPage({ params }: CategoryPageProps) {
             );
             setParentCategory(parentData);
           } catch (parentError) {
-            console.error(t("page.error_fetching_parent"), parentError);
+            // Ignore parent fetch errors
           }
         }
       } catch (err) {
-        console.error(t("page.error_fetching"), err);
         setCategoryError(t("page.errorLoading"));
       } finally {
         setCategoryLoading(false);
@@ -110,7 +109,6 @@ function CategoryPage({ params }: CategoryPageProps) {
         const productsResponse = await fetchProducts(filter, tenantHeaders);
         setProducts(productsResponse.items || []);
       } catch (err) {
-        console.error(t("products_card.error_fetching"), err);
         setProductsError(
           t("products_card.error_fetching", "Could not load products."),
         );

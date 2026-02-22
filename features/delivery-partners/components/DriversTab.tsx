@@ -43,7 +43,6 @@ export const DriversTab: React.FC<DriversTabProps> = ({ partnerId, tenantId }) =
     // Placeholder: fetch drivers associated with partnerId
     // const fetchedDrivers = await store.fetchDriversForPartner(partnerId, { "X-Tenant-ID": tenantId });
     // setDrivers(fetchedDrivers);
-    console.log(`Fetching drivers for partner: ${partnerId}, tenant: ${tenantId}`);
     // Example drivers:
     // setDrivers([
     //   { id: 'driver1', name: 'John Doe', phone: '1234567890', licenseNumber: 'LIC123' },
@@ -72,11 +71,9 @@ export const DriversTab: React.FC<DriversTabProps> = ({ partnerId, tenantId }) =
     const driverData = { ...formData, partnerId };
     try {
       if (editingDriver) {
-        console.log('Updating driver:', editingDriver.id, driverData);
         // await store.updateDriver(editingDriver.id, driverData, { "X-Tenant-ID": tenantId });
         toast.success('Driver updated successfully (placeholder).');
       } else {
-        console.log('Adding new driver:', driverData);
         // await store.addDriver(driverData, { "X-Tenant-ID": tenantId });
         toast.success('Driver added successfully (placeholder).');
       }
@@ -84,13 +81,11 @@ export const DriversTab: React.FC<DriversTabProps> = ({ partnerId, tenantId }) =
       setIsModalOpen(false);
     } catch (error) {
       toast.error('Failed to save driver (placeholder).');
-      console.error('Failed to save driver:', error);
     }
   };
   
   const handleDeleteDriver = async (driverId: string) => {
     // TODO: Implement delete logic
-    console.log('Deleting driver:', driverId);
     // await store.deleteDriver(driverId, { "X-Tenant-ID": tenantId });
     toast.success('Driver deleted successfully (placeholder).');
     // Refetch drivers or update local state

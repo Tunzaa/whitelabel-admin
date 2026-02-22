@@ -34,7 +34,6 @@ function AddProductPage() {
       toast.success("Product created successfully");
       router.push("/dashboard/products");
     } catch (error) {
-      console.error("Error creating product:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to create product",
       );

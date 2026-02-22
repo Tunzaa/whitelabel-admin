@@ -51,7 +51,6 @@ export function SystemSettingsForm() {
 
   const onSubmit = (data: SystemSettingsFormValues) => {
     // TODO: Implement actual save functionality
-    console.log(data);
     toast.success("Settings saved successfully");
   };
 

@@ -262,7 +262,6 @@ export const VendorForm: React.FC<VendorFormProps> = ({
   const handleUploadComplete = (doc: DocumentWithMeta) => {
     if (!doc.document_url) {
       toast.error("Upload failed: document URL is missing.");
-      console.error("Upload complete callback missing document_url", doc);
       return;
     }
     const newDocument: VendorVerificationDocument = {
@@ -283,7 +282,6 @@ export const VendorForm: React.FC<VendorFormProps> = ({
   //     toast.success("Store updated successfully.");
   //   } catch (error) {
   //     toast.error("Failed to update store.");
-  //     console.error("Error updating store:", error);
   //   }
   // };
 
@@ -320,7 +318,6 @@ export const VendorForm: React.FC<VendorFormProps> = ({
   };
 
   const handleFormError = (errors: any) => {
-    console.log("Validation errors:", errors);
 
     // Find the first error field and determine which tab it belongs to
     const findTabForField = (fieldPath: string): Tab | null => {
@@ -1002,28 +999,12 @@ export const VendorForm: React.FC<VendorFormProps> = ({
     // Log when documents change in form state
     useEffect(() => {
       if (activeTab === "documents") {
-        console.log("Current documents in form state:", formDocuments);
       }
     }, [formDocuments, activeTab]);
 
     // Ultra simple document handling - pass through exactly as is
     const handleDocumentsChange = useCallback(
       (documents: DocumentWithMeta[]) => {
-        console.log("Documents received from upload component:", documents);
-
-        // Make sure all fields are preserved in the form state
-        console.log(
-          "Document fields being set in form:",
-          documents.map((doc) => Object.keys(doc))
-        );
-
-        // IMPORTANT: Log document_type fields to ensure they're present
-        documents.forEach((doc, i) => {
-          console.log(
-            `Document ${i} type=${doc.document_type}, expires_at=${doc.expires_at}`
-          );
-        });
-
         // Use documents exactly as provided with zero transformation
         form.setValue("verification_documents", documents, {
           shouldValidate: false,

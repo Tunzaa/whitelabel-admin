@@ -58,7 +58,6 @@ const EditCategoryPage = () => {
       toast.success(t("notifications.updated_successfully"));
       router.push(`/dashboard/categories/${categoryId}`);
     } catch (error) {
-      console.error(t("notifications.failed_to_update"), error);
       toast.error(t("notifications.failed_to_update"));
     } finally {
       setIsSubmitting(false);

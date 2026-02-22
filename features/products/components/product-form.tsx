@@ -338,14 +338,9 @@ export function ProductForm({
         attributes: attributesObj,
       };
       delete finalVariantData._tempAttributesArray;
-      
-      // console.log("--- Saving Variant ---", JSON.stringify(finalVariantData, null, 2));
+
       const validationResult = variantSchema.safeParse(finalVariantData);
       if (!validationResult.success) {
-        console.error(
-          "Variant validation error:",
-          validationResult.error.flatten().fieldErrors
-        );
         toast.error("Failed to save variant. Please check the data.", {
           description: Object.values(
             validationResult.error.flatten().fieldErrors
@@ -460,17 +455,12 @@ export function ProductForm({
 
   // Handle form submission
   const handleFormSubmit = async (data: ProductFormValues) => {
-    console.log("--- Form Submission Payload ---", JSON.stringify(data, null, 2));
-    console.log("Form submission started");
-    console.log("Raw form data:", data);
-
     try {
       setFormError(null);
       setInternalIsSubmitting(true);
 
       // Generate slug from name if not provided
       const slug = data.slug || generateSlug(data.name);
-      console.log("Generated slug:", slug);
 
       // Ensure images don't have File objects when sending to API and format variants
       const cleanedData = {
@@ -493,43 +483,24 @@ export function ProductForm({
           })) || [],
       };
 
-      console.log("Cleaned data before submission:", cleanedData);
 
       await onSubmit(cleanedData);
-      console.log("Form submission completed successfully");
-      // Success is handled by the calling component
     } catch (error) {
-      console.log("Form submission error:", error);
-      console.log("Error type:", typeof error);
-      console.log(
-        "Error message:",
-        error instanceof Error ? error.message : error
-      );
       setFormError(
         error instanceof Error ? error.message : "Failed to save product"
       );
     } finally {
-      console.log("Form submission ended");
       setInternalIsSubmitting(false);
     }
   };
 
   // Handle form errors
   const handleFormError = (errors: any) => {
-    console.log("Form validation errors detected");
-    console.log("Error details:", errors);
-
     // Find which tab has errors
     for (const [tabName, fieldNames] of Object.entries(tabValidationMap)) {
       for (const fieldName of fieldNames) {
         const fieldHasError = errors[fieldName as keyof ProductFormValues];
         if (fieldHasError) {
-          console.log(
-            "Validation error in tab:",
-            tabName,
-            "for field:",
-            fieldName
-          );
           setActiveTab(tabName);
           return; // Exit after setting the first tab with errors
         }

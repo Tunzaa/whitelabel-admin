@@ -79,7 +79,6 @@ export function MultiImageUpload({
             onChange(currentImages);
 
         } catch (err) {
-            console.error("Image upload error:", err);
             // Optionally mark the image as failed and stop its loading state
             currentImages = currentImages.map(img =>
                 img.url === imageToUpload.url

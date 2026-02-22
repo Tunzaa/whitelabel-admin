@@ -37,7 +37,6 @@ export default function AddLoanProviderPage() {
 
       router.push("/dashboard/vendor-loans/providers");
     } catch (error: any) {
-      console.error("Failed to create provider:", error);
       toast({
         title: "Error",
         description: error?.message || "Failed to create loan provider",

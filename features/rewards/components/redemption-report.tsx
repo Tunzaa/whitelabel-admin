@@ -17,7 +17,6 @@ export function RedemptionReport() {
       setIsInitialized(true);
       fetchRedemptions()
         .catch(err => {
-          console.error('Failed to load redemption data:', err);
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

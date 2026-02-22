@@ -57,7 +57,6 @@ async function reverseGeocode(lat: number, lng: number) {
     }
     return null;
   } catch (error) {
-    console.error('Error during reverse geocoding:', error);
     return null;
   }
 }
@@ -253,7 +252,6 @@ function PlacesAutocomplete({
       mapRef.current?.panTo(googleLatLng);
       mapRef.current?.setZoom(15);
     } catch (error) {
-      console.error('Error: ', error);
     }
   };
 

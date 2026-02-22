@@ -41,7 +41,7 @@ export const useProductStore = create<ProductStore>()(
   (set, get) => ({
     products: [],
     product: null,
-    loading: true,
+    loading: false,
     storeError: null,
     activeAction: null,
 
@@ -52,44 +52,42 @@ export const useProductStore = create<ProductStore>()(
     setProducts: (products: Product[]) => set({ products }),
 
     fetchProduct: async (id: string, headers?: Record<string, string>) => {
-      const { setActiveAction, setLoading, setStoreError, setProduct } = get();
+      const { setActiveAction, setLoading, setStoreError, setProduct, loading } = get();
+      
+      // Prevent concurrent fetches
+      if (loading) {
+        return null;
+      }
+      
       try {
         setActiveAction('fetchOne');
         setLoading(true);
-        console.log('Fetching product with ID:', id);
-        console.log('Using headers:', headers);
 
         const response = await apiClient.get<any>(`/products/${id}`, undefined, headers);
-        console.log('API Response:', response);
 
         // Try multiple possible response structures
         let productData = null;
 
         // Option 1: response.data.data structure
         if (response.data && response.data.data) {
-          console.log('Found product data in response.data.data', response.data.data);
           productData = response.data.data;
         }
         // Option 2: response.data structure (direct)
         else if (response.data) {
-          console.log('Found product data directly in response.data', response.data);
           productData = response.data;
         }
 
         // Check if we found product data
         if (productData) {
-          console.log('Setting product data:', productData);
           // Use data as-is
           setProduct(productData);
           setLoading(false);
           return productData;
         }
 
-        console.log('No product data found in response');
         setLoading(false);
         throw new Error('Product data not found or in unexpected format');
       } catch (error: unknown) {
-        console.error('Error fetching product:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch product';
         const errorStatus = (error as any)?.response?.status;
         setStoreError({
@@ -105,7 +103,13 @@ export const useProductStore = create<ProductStore>()(
     },
 
     fetchProducts: async (filter: ProductFilter = {}, headers?: Record<string, string>) => {
-      const { setActiveAction, setLoading, setStoreError, setProducts } = get();
+      const { setActiveAction, setLoading, setStoreError, setProducts, loading } = get();
+      
+      // Prevent concurrent fetches
+      if (loading) {
+        return { items: [], total: 0, skip: 0, limit: 10 };
+      }
+      
       try {
         setActiveAction('fetchList');
         setLoading(true);

@@ -241,7 +241,6 @@ const OrderPage = () => {
         hour12: true,
       });
     } catch (e) {
-      console.error("Error formatting date:", e);
       return "Invalid date";
     }
   };
@@ -310,7 +309,6 @@ const OrderPage = () => {
           setCurrentTransaction(transaction);
           setLoadingTransactionId(null);
         } catch (error) {
-          console.error("Error fetching transaction:", error);
           toast.error("Failed to load transaction details");
           setLoadingTransactionId(null);
         }
@@ -349,7 +347,6 @@ const OrderPage = () => {
             [item.vendor_id]: { vendor, loading: false },
           }));
         } catch (error) {
-          console.error("Error fetching vendor:", error);
           setVendorData((prev) => ({
             ...prev,
             [item.vendor_id]: { vendor: null, loading: false },
@@ -388,7 +385,6 @@ const OrderPage = () => {
       // Set refresh flag for orders list
       localStorage.setItem("ordersNeedRefresh", "true");
     } catch (error: any) {
-      console.error("Error processing refund:", error);
 
       // Handle specific API error messages
       if (error?.response?.status === 400 && error?.response?.data?.detail) {
@@ -423,7 +419,6 @@ const OrderPage = () => {
       // Set refresh flag for orders list
       localStorage.setItem("ordersNeedRefresh", "true");
     } catch (error: any) {
-      console.error("Error completing refund:", error);
       const errorMessage =
         error?.response?.data?.message ||
         error?.message ||
@@ -552,7 +547,6 @@ const OrderPage = () => {
                             "X-Tenant-ID": session.user?.tenant_id,
                           });
                         } catch (error) {
-                          console.error("Error cancelling order:", error);
                           toast.error("Failed to cancel order");
                         }
                       }}

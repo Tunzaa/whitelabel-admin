@@ -85,7 +85,6 @@ export function PasswordResetDialog({
 
             handleClose();
         } catch (error) {
-            console.error("Password reset request error:", error);
             toast.error("Failed to send reset code. Please try again.");
             setIsSubmitting(false);
         }

@@ -53,6 +53,9 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
   const userFromStore = useAuthStore((state) => state.user);
   const { selectedTenantId } = useSelectedTenantStore();
 
+  // Determine super user status at component level
+  const isSuperUser = hasRole("super");
+
   const user = userFromStore
     ? {
         name: userFromStore.name,
@@ -68,7 +71,6 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
   const filterByPermissionAndRole = (item: NavItem) => {
     try {
       // If user is super and no tenant is selected, hide tenant-specific items
-      const isSuperUser = hasRole("super");
       const tenantSpecificUrls = [
         "/dashboard/categories",
         "/dashboard/vendors",
@@ -81,11 +83,15 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
         "/dashboard/tenants/marketplace",
       ];
 
-      if (
-        isSuperUser &&
-        !selectedTenantId &&
-        tenantSpecificUrls.some((url) => item.url.startsWith(url))
-      ) {
+      // Check if item URL or any sub-item URL matches tenant-specific paths
+      const isTenantSpecific = (url: string) =>
+        tenantSpecificUrls.some((tsUrl) => url.startsWith(tsUrl));
+
+      const hasTenantSpecificUrl =
+        isTenantSpecific(item.url) ||
+        (item.items && item.items.some(subItem => isTenantSpecific(subItem.url)));
+
+      if (isSuperUser && !selectedTenantId && hasTenantSpecificUrl) {
         return false;
       }
 
@@ -96,21 +102,22 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
       // Check role requirement
       const hasRequiredRole = !item.requiredRole || hasRole(item.requiredRole);
 
-      // Check module requirement
-      const hasRequiredModule = !item.requiredModule || isModuleEnabled(item.requiredModule);
+      // Check module requirement (skip for super users to keep sidebar stable)
+      const hasRequiredModule =
+        isSuperUser || !item.requiredModule || isModuleEnabled(item.requiredModule);
 
       // All conditions must be met
       return hasRequiredPermission && hasRequiredRole && hasRequiredModule;
     } catch (error) {
       // If filtering fails, default to showing the item
-      console.warn('Error filtering navigation item:', item.title, error);
       return true;
     }
   };
 
   const filteredNavMain = React.useMemo(() => {
-    // Don't show any navigation items until permissions and modules are loaded
-    if (!permissionsLoaded || modulesLoading) return [];
+    // Don't show any navigation items until permissions are loaded
+    // For super users, skip modules loading check to keep sidebar stable
+    if (!permissionsLoaded || (!isSuperUser && modulesLoading)) return [];
 
     return data.navMain
       .filter(filterByPermissionAndRole)
@@ -126,14 +133,14 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
               // Check role requirement for sub-item
               const hasRequiredRole = !subItem.requiredRole || hasRole(subItem.requiredRole);
 
-              // Check module requirement for sub-item
-              const hasRequiredModule = !subItem.requiredModule || isModuleEnabled(subItem.requiredModule);
+              // Check module requirement for sub-item (skip for super users)
+              const hasRequiredModule =
+                isSuperUser || !subItem.requiredModule || isModuleEnabled(subItem.requiredModule);
 
               // All conditions must be met
               return hasRequiredPermission && hasRequiredRole && hasRequiredModule;
             } catch (error) {
               // If filtering fails, default to showing the sub-item
-              console.warn('Error filtering sub-item:', subItem.title, error);
               return true;
             }
           });
@@ -146,13 +153,14 @@ export function AppSidebar({ onNotificationClick, ...props }: AppSidebarProps) {
         return item;
       })
       .filter(Boolean); // Remove null items
-  }, [filterByPermissionAndRole, permissionsLoaded, modulesLoading]);
+  }, [filterByPermissionAndRole, permissionsLoaded, modulesLoading, isSuperUser]);
 
   const filteredNavSecondary = React.useMemo(() => {
-    // Don't show any navigation items until permissions and modules are loaded
-    if (!permissionsLoaded || modulesLoading) return [];
+    // Don't show any navigation items until permissions are loaded
+    // For super users, skip modules loading check to keep sidebar stable
+    if (!permissionsLoaded || (!isSuperUser && modulesLoading)) return [];
     return data.navSecondary.filter(filterByPermissionAndRole);
-  }, [filterByPermissionAndRole, permissionsLoaded, modulesLoading]);
+  }, [filterByPermissionAndRole, permissionsLoaded, modulesLoading, isSuperUser]);
 
   // Skeleton component for loading navigation items
   const NavigationSkeleton = () => (

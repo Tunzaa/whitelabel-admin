@@ -36,7 +36,6 @@ function TenantAddPage() {
         router.push(`/dashboard/tenants/${newTenant.tenant_id}`);
       }
     } catch (error) {
-      console.error("Error creating tenant:", error);
       toast.error("Failed to create tenant. Please try again.");
     } finally {
       setIsSubmitting(false);

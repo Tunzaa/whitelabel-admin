@@ -42,24 +42,20 @@ export default function MarketplacePage() {
         hasFetchedRef.current = true;
 
         tenantStore.fetchTenant(tenantId).catch((error) => {
-          console.error("Error fetching marketplace tenant:", error);
         });
       }
     }
   }, [tenantId, tenantStore, tenant, loading, storeError]);
 
   const onSubmit = async (data: Record<string, any>) => {
-    console.log("Marketplace form data:", data);
     setIsSubmitting(true);
     try {
       await tenantStore.updateTenant(tenantId, data);
       toast.success("Marketplace settings updated successfully");
       setIsEditing(false);
       const result = { id: tenantId };
-      console.log('[MarketplacePage] Returning result to TenantForm:', result);
       return result; // <-- Return the correct tenantId
     } catch (error) {
-      console.error("Error updating marketplace settings:", error);
       toast.error("Failed to update marketplace settings. Please try again.");
     } finally {
       setIsSubmitting(false);

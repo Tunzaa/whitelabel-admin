@@ -86,7 +86,6 @@ export function OrderTable({
       }
       return format(date, "MMM dd, yyyy");
     } catch (error) {
-      console.error("Error formatting date:", error);
       return "Invalid date";
     }
   };

@@ -37,7 +37,6 @@ export const uploadFile = async (
 
         return await response.json();
     } catch (error) {
-        console.error('File upload error:', error);
         throw error;
     }
 };

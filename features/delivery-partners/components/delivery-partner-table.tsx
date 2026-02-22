@@ -86,7 +86,6 @@ export function DeliveryPartnerTable({
     try {
       await onStatusChange(partnerId, payload);
     } catch (error) {
-      console.error(`Error changing partner status to ${action}:`, error);
     } finally {
       setProcessingId(null);
     }
@@ -120,7 +119,6 @@ export function DeliveryPartnerTable({
     try {
       await onStatusChange(rejectPartnerId, payload);
     } catch (error) {
-      console.error("Error rejecting partner:", error);
     } finally {
       setProcessingId(null);
       setRejectPartnerId(null);

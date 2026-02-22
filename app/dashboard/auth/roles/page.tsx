@@ -54,7 +54,6 @@ function RolesPage() {
           }
           await fetchRoles(filter, tenantHeaders);
         } catch (error) {
-          console.error("Failed to load roles:", error);
         }
       }
     };
@@ -89,7 +88,6 @@ function RolesPage() {
       await deleteRole(id, tenantHeaders);
       toast.success("Role deleted successfully");
     } catch (error) {
-      console.error("Failed to delete role:", error);
       toast.error("Failed to delete role");
     }
   };

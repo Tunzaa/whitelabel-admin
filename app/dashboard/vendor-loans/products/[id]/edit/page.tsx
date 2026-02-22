@@ -55,7 +55,6 @@ export default function EditLoanProductPage(props: EditLoanProductPageProps) {
           fetchProviders({ is_active: true }, tenantHeaders)
         ]);
       } catch (error) {
-        console.error("Failed to fetch data:", error);
         toast.error("Failed to load required data");
       }
     };
@@ -90,7 +89,6 @@ export default function EditLoanProductPage(props: EditLoanProductPageProps) {
 
       router.push(`/dashboard/vendor-loans/products/${id}`);
     } catch (error: any) {
-      console.error("Failed to update product:", error);
       toast.error(error?.message || "Failed to update loan product");
     } finally {
       setSubmitting(false);

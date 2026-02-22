@@ -46,7 +46,6 @@ export function NavUser({ user, onNotificationClick }: NavUserProps) {
     const { clearSelectedTenant: clearFn } = useSelectedTenantStore();
     clearSelectedTenant = clearFn;
   } catch (error) {
-    console.warn('Error accessing selected tenant store:', error);
     clearSelectedTenant = () => {};
   }
 
@@ -57,7 +56,6 @@ export function NavUser({ user, onNotificationClick }: NavUserProps) {
       clearCache();
       signOut();
     } catch (error) {
-      console.warn('Error during sign out:', error);
       // Still try to sign out even if clearing tenant or cache fails
       signOut();
     }

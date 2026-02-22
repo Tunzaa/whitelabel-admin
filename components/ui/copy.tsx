@@ -26,7 +26,6 @@ export function Copy({ text, size = 16, className, ...props }: CopyProps) {
       setCopied(true);
       toast.success("Copied!");
     } catch (error) {
-      console.error("Failed to copy text:", error);
       toast.error("Failed to copy text");
     }
   };

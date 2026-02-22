@@ -30,7 +30,6 @@ function TenantEditPage({ params }: TenantEditPageProps) {
     if (!fetchAttempted && tenantId) {
       setFetchAttempted(true);
       tenantStore.fetchTenant(tenantId).catch((error) => {
-        console.error("Error fetching tenant:", error);
       });
     }
   }, [tenantId, tenantStore, fetchAttempted]);
@@ -41,7 +40,6 @@ function TenantEditPage({ params }: TenantEditPageProps) {
       await tenantStore.updateTenant(tenantId, data);
       toast.success("Tenant updated successfully");
       const result = { id: tenantId };
-      console.log("[TenantEditPage] Returning result to TenantForm:", result);
       return result; // <-- Return the correct tenantId
     } catch (error) {
       toast.error("Failed to update tenant. Please try again.");

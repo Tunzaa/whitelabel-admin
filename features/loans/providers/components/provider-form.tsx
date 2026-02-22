@@ -103,7 +103,6 @@ export function ProviderForm({
     try {
       await onSubmit(data);
     } catch (error) {
-      console.error("Error submitting form:", error);
       setFormError(typeof error === 'string' ? error : 'Failed to save loan provider. Please try again.');
       toast.error("Failed to save loan provider");
     } finally {

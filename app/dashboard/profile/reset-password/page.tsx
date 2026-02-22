@@ -73,7 +73,6 @@ export default function SelfResetPasswordPage() {
             toast.success("Reset code sent to your email!");
             setStep("confirm");
         } catch (error) {
-            console.error("Password reset request error:", error);
             toast.error("Failed to send reset code. Please try again.");
         } finally {
             setIsSubmitting(false);
@@ -100,7 +99,6 @@ export default function SelfResetPasswordPage() {
             toast.success("Password reset successfully! Please log in with your new password.");
             router.push("/dashboard");
         } catch (error) {
-            console.error("Password reset confirm error:", error);
             toast.error("Failed to reset password. Please check the OTP and try again.");
         } finally {
             setIsSubmitting(false);

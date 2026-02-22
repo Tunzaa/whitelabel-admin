@@ -49,8 +49,6 @@ export function DashboardStatCards() {
     const loadingGmvData = useDashboardStore((state) => state.loadingGmvData);
     const loadingActiveUsersData = useDashboardStore((state) => state.loadingActiveUsersData);
 
-    console.log('[DashboardStatCards] gmvData:', gmvData);
-    console.log('[DashboardStatCards] activeUsersData:', activeUsersData);
 
     const totalRevenue = gmvData?.['orders.total_revenue'] ?? 0;
     const totalOrders = gmvData?.['orders.count'] ?? 0;

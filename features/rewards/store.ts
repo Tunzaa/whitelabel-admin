@@ -21,7 +21,6 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
   ...initialState,
 
   fetchConfig: async (tenantId: string) => {
-    console.log('Fetching rewards config...');
     set({ loading: true, error: null });
 
     try {
@@ -29,10 +28,8 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
         throw new Error('No tenant ID provided');
       }
 
-      console.log('Making API request to /rewards/config with tenant ID:', tenantId);
       const response = await apiClient.get<RewardsConfigResponse>('/rewards/config', undefined, { 'X-Tenant-ID': tenantId });
 
-      console.log('API Response:', response.data);
 
       if (!response.data) {
         throw new Error('No data received from server');
@@ -47,10 +44,8 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
         is_active: response.data.is_active,
       };
 
-      console.log('Parsed config:', config);
       set({ config, loading: false });
     } catch (error) {
-      console.error('Failed to fetch rewards config:', error);
       set({
         error: error instanceof Error ? error : new Error('Failed to load rewards configuration'),
         loading: false
@@ -60,7 +55,6 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
   },
 
   updateConfig: async (updates: Partial<RewardsConfig>, tenantId: string) => {
-    console.log('Updating rewards config with:', updates);
     const currentConfig = get().config;
 
     if (!currentConfig) {
@@ -84,10 +78,8 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
         is_active: updatedConfig.is_active,
       };
 
-      console.log('Sending update to API with payload:', payload);
       const response = await apiClient.put<RewardsConfigResponse>('/rewards/config', payload, { 'X-Tenant-ID': tenantId });
 
-      console.log('Update API response:', response.data);
 
       const config: RewardsConfig = {
         id: response.data.id,
@@ -100,7 +92,6 @@ export const useRewardsStore = create<RewardsStore>((set, get) => ({
 
       set({ config, loading: false });
     } catch (error) {
-      console.error('Failed to update rewards config:', error);
       set({
         error: error instanceof Error ? error : new Error('Failed to update rewards configuration'),
         loading: false

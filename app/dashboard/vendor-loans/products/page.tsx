@@ -77,7 +77,6 @@ function LoanProductsPage() {
         const filters = getFilters();
         await fetchProducts(filters, tenantHeaders);
       } catch (error) {
-        console.error("Error fetching loan products:", error);
       } finally {
         setIsTabLoading(false);
       }
@@ -100,7 +99,6 @@ function LoanProductsPage() {
       const filters = getFilters();
       fetchProducts(filters, tenantHeaders);
     } catch (error) {
-      console.error("Failed to update product status:", error);
     }
   };
 

@@ -74,7 +74,6 @@ function OrdersPage() {
         dateTo: dateRange?.to?.toISOString(),
       }, tenantHeaders);
     } catch (error: any) {
-      console.error("Error loading orders:", error);
       
       const isNoOrdersFound = 
         (error?.response?.status === 404) || 
@@ -128,7 +127,6 @@ function OrdersPage() {
         await loadOrders();
       } else {
         toast.error("Failed to update order status");
-        console.error("Failed to update order status:", error);
       }
     }
   };

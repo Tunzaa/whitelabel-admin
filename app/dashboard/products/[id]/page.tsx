@@ -221,7 +221,6 @@ function ProductPage({ params }: ProductPageProps) {
         await fetchProduct(id, tenantHeaders);
       } catch (err) {
         // The error will be handled by toast.promise
-        console.error("Update failed:", err);
         throw err;
       }
     };
@@ -258,7 +257,6 @@ function ProductPage({ params }: ProductPageProps) {
       router.push("/dashboard/products");
     } catch (err) {
       toast.error("Failed to delete the product.");
-      console.error("Deletion failed:", err);
     } finally {
       setIsDeleting(false);
       setConfirmDelete(false);

@@ -93,7 +93,6 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
             toast.success("Password reset successfully!");
             router.push(`/dashboard/auth/users/${params.id}`);
         } catch (error) {
-            console.error("Password reset confirm error:", error);
             toast.error("Failed to reset password. Please check the OTP and try again.");
         } finally {
             setIsSubmitting(false);

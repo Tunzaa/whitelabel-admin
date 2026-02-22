@@ -155,7 +155,6 @@ function DeliveryPartnerEditPage(props: DeliveryPartnerEditPageProps) {
         const partnerData = await fetchDeliveryPartner(id, headers);
         setPartner(partnerData);
       } catch (err: any) {
-        console.error('Error fetching delivery partner:', err);
         toast.error(err.message || 'Failed to load delivery partner details. Please try again.');
         setError('Failed to load delivery partner details.'); // Set page level error if needed
       } finally {
@@ -180,7 +179,6 @@ function DeliveryPartnerEditPage(props: DeliveryPartnerEditPageProps) {
       toast.success("Delivery Partner updated successfully");
       router.push("/dashboard/delivery-partners");
     } catch (err: any) {
-      console.error('Error updating delivery partner:', err);
       toast.error(err.message || 'Failed to update delivery partner. Please try again.');
     } finally {
       setLoading(false);

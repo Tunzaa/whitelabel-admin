@@ -37,7 +37,6 @@ export default function AddLoanProductPage() {
       try {
         await fetchProviders({ is_active: true }, tenantHeaders);
       } catch (error) {
-        console.error("Failed to fetch providers:", error);
         toast({
           title: "Error",
           description: "Failed to load loan providers",
@@ -67,7 +66,6 @@ export default function AddLoanProductPage() {
         router.push("/dashboard/vendor-loans/products");
       }
     } catch (error: any) {
-      console.error("Failed to create product:", error);
       toast({
         title: "Error",
         description: error?.message || "Failed to create loan product",

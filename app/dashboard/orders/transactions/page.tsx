@@ -79,7 +79,6 @@ function TransactionsPage() {
           tenantHeaders
         );
       } catch (error) {
-        console.error("Error loading transactions:", error);
       }
     },
     [activeTab, dateRange, currentPage, pageSize, tenantId, fetchTransactions]

@@ -73,7 +73,6 @@ function VendorEditPage({ params }: VendorEditPageProps) {
             await new Promise((resolve) => setTimeout(resolve, 3000));
             router.push(`/dashboard/vendors/${vendorId}`);
           } catch (storeError) {
-            console.error("Store update failed after vendor update:", storeError);
             toast.warning("Vendor details were updated, but the store update failed.");
           }
         } else {
@@ -85,7 +84,6 @@ function VendorEditPage({ params }: VendorEditPageProps) {
     } catch (apiError) {
       const errorMessage = apiError instanceof Error ? apiError.message : "An unknown error occurred";
       toast.error(`Failed to update vendor: ${errorMessage}`);
-      console.error("Update vendor error:", apiError);
     } finally {
       setIsSubmitting(false);
     }

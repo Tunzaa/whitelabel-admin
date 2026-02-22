@@ -60,7 +60,6 @@ export function TenantTable({
     try {
       return format(new Date(dateString), "MM/dd/yyyy");
     } catch (error) {
-      console.error("Invalid date format:", dateString);
       return "Invalid Date";
     }
   };

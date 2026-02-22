@@ -70,7 +70,6 @@ function VendorAddPage() {
         },
       };
 
-      console.log("Creating vendor with unified payload:", payload);
 
       const newVendor = await vendorStore.createVendor(payload, headers);
 
@@ -81,7 +80,6 @@ function VendorAddPage() {
         toast.error("Failed to create vendor. Please try again.");
       }
     } catch (error) {
-      console.error("Error creating vendor:", error);
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred";
       toast.error(`Failed to create vendor: ${errorMessage}`);

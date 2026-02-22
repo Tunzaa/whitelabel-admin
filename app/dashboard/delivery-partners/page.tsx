@@ -104,7 +104,6 @@ function DeliveryPartnersPage() {
           setCurrentPartnersData(data);
         }
       } catch (error) {
-        console.error("Error fetching delivery partners:", error);
       } finally {
         setIsTabLoading(false);
       }
@@ -132,7 +131,6 @@ function DeliveryPartnersPage() {
         setCurrentPartnersData(data);
       }
     } catch (error) {
-      console.error("Failed to update partner status:", error);
       toast.error("Failed to update partner status");
     }
   };

@@ -235,7 +235,6 @@ const VendorsTab = React.memo(function VendorsTab({
       // Show success message
       // You can add a toast notification here if needed
     } catch (error) {
-      console.error("Failed to update request status:", error);
       setError({
         message: "Failed to update request status",
         status: 500,
@@ -538,7 +537,6 @@ function AffiliateDetailPage() {
   }
 
   if (!affiliate && storeError) {
-    console.log("Render case: Affiliate not found");
     return (
       <ErrorCard
         title="Affiliate Not Found"

@@ -38,8 +38,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    const { permissionsLoaded } = get();
+    const { permissionsLoaded, isLoading } = get();
     const tenantId = headers?.['X-Tenant-ID'] || 'unknown';
+
+    // Prevent concurrent fetches
+    if (isLoading) {
+      return;
+    }
 
     // Check persistent cache first
     const cachedPermissions = getCachedPermissions(tenantId, userId);
@@ -48,8 +53,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    // Don't fetch if already loaded and no cache miss
-    if (permissionsLoaded && !cachedPermissions) {
+    // Don't fetch if already loaded
+    if (permissionsLoaded) {
       return;
     }
 
@@ -73,7 +78,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ permissions: permissionsData, isLoading: false, permissionsLoaded: true });
     } catch (error) {
-      console.error("Failed to fetch permissions:", error);
       set({ permissions: [], isLoading: false, permissionsLoaded: true, error: error instanceof Error ? error.message : 'Failed to fetch permissions' });
     }
   },

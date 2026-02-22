@@ -211,7 +211,6 @@ export function DocumentUpload({
       }
       setIsAddingDocument(false);
     } catch (error) {
-      console.error("Error uploading document:", error);
       setError("Failed to upload document. Please try again.");
     } finally {
       setIsUploading(false);
@@ -224,20 +223,10 @@ export function DocumentUpload({
 
   const handleOpenChange = (isOpen: boolean) => {
     setIsAddingDocument(isOpen);
-    console.log("Dialog open state changed:", isOpen);
 
     // Fetch configuration only when dialog is opened and data is not already available
     if (isOpen && entityName && tenantId && !configurations[entityName]) {
-      console.log(
-        `Fetching configuration for entity: ${entityName}, tenant: ${tenantId}`,
-      );
       fetchEntityConfiguration(entityName, tenantId);
-    } else if (isOpen) {
-      console.log("Did not fetch. Conditions:", {
-        entityName: !!entityName,
-        tenantId: !!tenantId,
-        configExists: !!configurations[entityName],
-      });
     }
   };
 

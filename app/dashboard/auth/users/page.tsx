@@ -59,7 +59,6 @@ function UsersPage() {
         }
         await fetchUsers(statusFilter, tenantHeaders);
       } catch (error) {
-        console.error("Failed to load users:", error);
       }
     };
     loadUsers();
@@ -90,7 +89,6 @@ function UsersPage() {
     try {
       await changeUserStatus(id, "active");
     } catch (error) {
-      console.error("Failed to activate user:", error);
     }
   };
 
@@ -98,7 +96,6 @@ function UsersPage() {
     try {
       await changeUserStatus(id, "inactive");
     } catch (error) {
-      console.error("Failed to deactivate user:", error);
     }
   };
 

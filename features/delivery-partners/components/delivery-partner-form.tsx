@@ -145,7 +145,6 @@ export function DeliveryPartnerForm({
 
   // Debug: log initialData and computed defaultValues
   useEffect(() => {
-    console.log('DeliveryPartnerForm initialData:', initialData);
     let computedDefaults = defaultValues;
     if (initialData) {
       computedDefaults = {
@@ -159,7 +158,6 @@ export function DeliveryPartnerForm({
         vehicleColor: initialData.vehicleColor ?? (initialData.vehicle_info && initialData.vehicle_info.metadata?.color ? String(initialData.vehicle_info.metadata.color) : ""),
       };
     }
-    console.log('DeliveryPartnerForm computed defaultValues:', computedDefaults);
   }, [initialData]);
 
   // When setting defaultValues for edit, ensure vehicle_type_id is set if initialData is provided
@@ -210,7 +208,6 @@ export function DeliveryPartnerForm({
   }, [(session?.user as any)?.tenant_id, fetchVehicleTypes]);
 
   useEffect(() => {
-    console.log('vehicleTypes from store:', vehicleTypes);
   }, [vehicleTypes]);
 
   // Reset verification states and set active tab to basic when form type changes
@@ -247,11 +244,9 @@ export function DeliveryPartnerForm({
 
   const handleUploadComplete = useCallback(
     (doc: DocumentWithMeta) => {
-      console.log("Document received from upload component:", doc);
 
       if (!doc.document_url) {
         toast.error("Upload failed: Document URL is missing.");
-        console.error("Upload complete callback missing document_url", doc);
         return;
       }
 
@@ -335,7 +330,6 @@ export function DeliveryPartnerForm({
       toast.success("Vehicle details verified successfully");
     } catch (error) {
       toast.error("Failed to verify vehicle details");
-      console.error("Error verifying vehicle:", error);
     } finally {
       setIsVerifying(false);
     }
@@ -417,11 +411,9 @@ export function DeliveryPartnerForm({
         drivers: [],
       };
 
-      console.log("Submitting packaged data:", packagedData);
       // Pass packaged data to parent onSubmit
       onSubmit(packagedData);
     } catch (error) {
-      console.error("Form submission error:", error);
       toast.error("Failed to package the form data. Please try again.");
     } finally {
       setInternalIsSubmitting(false);
@@ -429,7 +421,6 @@ export function DeliveryPartnerForm({
   };
 
   const handleFormError = (error: any) => {
-    console.error("Form error:", error);
     toast.error("Form validation failed. Please check the form fields.");
   };
 

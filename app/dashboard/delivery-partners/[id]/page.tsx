@@ -314,7 +314,6 @@ function DeliveryPartnerPage({ params }: DeliveryPartnerPageProps) {
       toast.success("Partner status updated successfully.", { id: toastId });
     } catch (error) {
       toast.error("Failed to update partner status.", { id: toastId });
-      console.error(`Error changing partner status to ${action}:`, error);
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -349,7 +348,6 @@ function DeliveryPartnerPage({ params }: DeliveryPartnerPageProps) {
       toast.success("Partner has been rejected.", { id: toastId });
     } catch (error) {
       toast.error("Failed to reject partner.", { id: toastId });
-      console.error("Error rejecting partner:", error);
     } finally {
       setIsUpdatingStatus(false);
     }

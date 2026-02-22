@@ -34,7 +34,6 @@ export function RewardsSettingsForm() {
       try {
         await fetchConfig(tenantId);
       } catch (err) {
-        console.error("Failed to load config:", err);
         toast.error("Failed to load rewards configuration");
       }
     };
@@ -87,7 +86,6 @@ export function RewardsSettingsForm() {
         description: "Rewards configuration has been updated successfully",
       });
     } catch (error) {
-      console.error("Update error:", error);
       toast.error("Error", {
         description:
           error instanceof Error

@@ -147,7 +147,7 @@ interface LoanRequestDetailPageProps {
   }>;
 }
 
-export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
+function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   const unwrappedParams = use(params);
   const id = unwrappedParams.id;
   const router = useRouter();
@@ -232,7 +232,6 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
       setLoading(true);
       await fetchRequest(id, tenantHeaders);
     } catch (error) {
-      console.error("Failed to fetch request:", error);
     } finally {
       setLoading(false);
     }
@@ -251,16 +250,14 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
   // Separate effect for product fetching with minimal dependencies
   useEffect(() => {
     if (productId) {
-      fetchProduct(productId, tenantHeaders)
-        .catch(error => console.error("Failed to fetch product data:", error));
+      fetchProduct(productId, tenantHeaders).catch(() => {});
     }
   }, [productId, fetchProduct, tenantHeaders]);
 
   // Separate effect for vendor fetching with minimal dependencies
   useEffect(() => {
     if (vendorId) {
-      fetchVendor(vendorId, tenantHeaders)
-        .catch(error => console.error("Failed to fetch vendor data:", error));
+      fetchVendor(vendorId, tenantHeaders).catch(() => {});
     }
   }, [vendorId, fetchVendor, tenantHeaders]);
 
@@ -280,7 +277,6 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
         try {
           await fetchProvider(product.provider_id, tenantHeaders);
         } catch (error) {
-          console.error("Failed to fetch provider data:", error);
         }
       }
     };
@@ -432,7 +428,6 @@ export default function LoanRequestDetailPage({ params }: LoanRequestDetailPageP
 
       toast.success(`Loan request status updated to ${status}`);
     } catch (error) {
-      console.error("Failed to update status:", error);
       toast.error(error instanceof Error ? error.message : "Failed to update status");
     } finally {
       setUpdating(false);

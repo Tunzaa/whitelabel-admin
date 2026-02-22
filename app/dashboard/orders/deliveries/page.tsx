@@ -67,7 +67,6 @@ function DeliveryPage() {
         const filters = getFilters();
         await fetchDeliveries(filters, tenantHeaders);
       } catch (error) {
-        console.error("Error fetching deliveries:", error);
       } finally {
         setIsTabLoading(false);
       }

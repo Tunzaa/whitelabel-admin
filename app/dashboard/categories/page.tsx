@@ -84,7 +84,6 @@ function CategoriesPage() {
         const filters = getFilters();
         await fetchCategories(filters, tenantHeaders);
       } catch (error) {
-        console.error(t("page.error.loading"), error);
       } finally {
         setIsTabLoading(false);
       }

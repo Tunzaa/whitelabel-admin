@@ -43,7 +43,6 @@ export function TransactionTable({
       if (isNaN(date.getTime())) return "Invalid date";
       return format(date, "MMM dd, yyyy HH:mm");
     } catch (error) {
-      console.error("Error formatting date:", error);
       return "Invalid date";
     }
   };

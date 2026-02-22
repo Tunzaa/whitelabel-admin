@@ -131,7 +131,6 @@ export function BannerEditor({
           await onDeleteBanner(resourceId, bannerId);
           toast.success("Banner removed successfully");
         } catch (error) {
-          console.error("Error removing banner:", error);
           toast.error("Failed to remove banner");
           return; // Exit early without removing from local state
         } finally {
@@ -152,7 +151,6 @@ export function BannerEditor({
       onChange(updatedBanners);
       toast.success("Banner removed");
     } catch (error) {
-      console.error("Error in removeBanner:", error);
       toast.error("An error occurred while removing the banner");
       setIsDeleting(null);
     }
@@ -211,7 +209,6 @@ export function BannerEditor({
     onChange(updatedBanners);
     
     // Log for debugging
-    console.log(`Updated banner ${index}, field: ${field}, value:`, value);
   };
 
   // Handle drag end event for reordering

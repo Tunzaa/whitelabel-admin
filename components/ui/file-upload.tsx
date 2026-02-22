@@ -101,7 +101,6 @@ export function FileUpload({
         // Pass the server URL and file object to the parent component
         onChange(serverUrl, selectedFile);
       } catch (error) {
-        console.error("File upload error:", error);
         setError(error instanceof Error ? error.message : "Failed to upload file. Please try again.");
         
         // Keep the local preview but indicate error

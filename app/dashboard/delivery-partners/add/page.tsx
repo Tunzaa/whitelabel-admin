@@ -90,7 +90,6 @@ function CreateDeliveryPartnerPage() {
       toast.success("Delivery Partner created successfully");
       router.push("/dashboard/delivery-partners");
     } catch (error) {
-      console.error("Error creating delivery partner:", error);
       toast.error("Failed to create delivery partner. Please try again.");
     }
   }

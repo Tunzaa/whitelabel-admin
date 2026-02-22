@@ -63,7 +63,6 @@ export default function UserAuthForm() {
     if (session) {
       const token = localStorage.getItem("token");
       if (!token) {
-        console.log("Session detected, checking for tokens");
         // @ts-ignore - NextAuth custom session type includes accessToken
         const accessToken = session.accessToken;
         // @ts-ignore - Our custom user type includes token for refresh token
@@ -71,12 +70,10 @@ export default function UserAuthForm() {
 
         if (accessToken) {
           localStorage.setItem("token", accessToken);
-          console.log("Token set from session");
         }
 
         if (refreshToken) {
           localStorage.setItem("refresh_token", refreshToken);
-          console.log("Refresh token set from session");
         }
       }
     }

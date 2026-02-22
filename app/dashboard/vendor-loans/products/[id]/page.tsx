@@ -67,7 +67,6 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
 
   // Super simple data loading approach
   useEffect(() => {
-    console.log('[DEBUG] Starting data load process, id:', id);
 
     // Immediately set loading to true
     setLoading(true);
@@ -75,14 +74,11 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
     // Hardcoded timeout to ensure we can debug the issue
     setTimeout(() => {
       try {
-        console.log('[DEBUG] Mock data load timer triggered');
 
         // Use mock data directly
         const mockProducts = generateMockLoanProducts();
-        console.log('[DEBUG] Mock products:', mockProducts.length);
 
         const foundProduct = mockProducts.find(p => p.product_id === id);
-        console.log('[DEBUG] Found product?', !!foundProduct);
 
         if (foundProduct) {
           setProduct(foundProduct);
@@ -102,21 +98,18 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
           });
         }
       } catch (error) {
-        console.error('[DEBUG] Error in timeout handler:', error);
         setProductError({
           message: 'Failed to load loan product data',
           status: 'error'
         });
       } finally {
         // ALWAYS set loading to false, no matter what happened
-        console.log('[DEBUG] Setting loading to false');
         setLoading(false);
       }
     }, 500); // Small timeout to ensure component is fully mounted
 
     // Cleanup function
     return () => {
-      console.log('[DEBUG] Component unmounting');
     };
   }, [id]); // Only depend on the ID
 

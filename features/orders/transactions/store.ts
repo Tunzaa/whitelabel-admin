@@ -62,7 +62,6 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
         loading: false,
       });
     } catch (error) {
-      console.error('Error fetching transactions:', error);
       set({
         error: error instanceof Error ? error : new Error('Failed to fetch transactions'),
         loading: false,
@@ -83,7 +82,6 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       set({ currentTransaction: transaction, loading: false });
       return transaction;
     } catch (error) {
-      console.error(`Error fetching transaction ${transactionId}:`, error);
       set({
         error: error instanceof Error ? error : new Error(`Failed to fetch transaction ${transactionId}`),
         loading: false,
@@ -120,7 +118,6 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       
       return responseData.data;
     } catch (error) {
-      console.error(`Error fetching transactions for order ${orderReference}:`, error);
       set({
         error: error instanceof Error ? error : new Error(`Failed to fetch transactions for order ${orderReference}`),
         loading: false,

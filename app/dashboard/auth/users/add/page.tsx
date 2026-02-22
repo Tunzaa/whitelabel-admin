@@ -64,7 +64,6 @@ export default function AddUserPage() {
       }
     } catch (error) {
       toast.error("Failed to create user")
-      console.error("Error creating user:", error)
     } finally {
       setIsSubmitting(false)
     }

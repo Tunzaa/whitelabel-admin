@@ -133,7 +133,6 @@ export function VendorTable({
 
       await onStatusChange(vendorId, status);
     } catch (error) {
-      console.error("Error changing vendor status:", error);
     } finally {
       setProcessingId(null);
     }
@@ -151,7 +150,6 @@ export function VendorTable({
 
     const reason = type === "other" ? customReason : type;
     if (!reason) {
-      console.error("Rejection reason is missing.");
       return;
     }
 

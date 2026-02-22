@@ -54,12 +54,6 @@ function ProductsPage() {
 
   const { vendors, loading: vendorsLoading, fetchVendors } = useVendorStore();
 
-  console.log("DEBUG: Data from product store:", {
-    productData,
-    loading,
-    error,
-  });
-
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("all");
@@ -122,7 +116,6 @@ function ProductsPage() {
           setTotalProducts(response.total);
         }
       } catch (err) {
-        console.error("Failed to fetch products:", err);
       } finally {
         setIsTabLoading(false);
       }
@@ -165,7 +158,6 @@ function ProductsPage() {
       fetchProducts(filters, tenantHeaders);
     } catch (err) {
       toast.error("Failed to update product.");
-      console.error("Update error:", err);
     }
   };
 
@@ -196,7 +188,6 @@ function ProductsPage() {
       fetchProducts(filters, tenantHeaders);
     } catch (err) {
       toast.error("Failed to delete product.");
-      console.error("Delete error:", err);
       setProductToDelete(null);
     }
   };

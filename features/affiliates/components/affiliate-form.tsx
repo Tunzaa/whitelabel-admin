@@ -133,7 +133,6 @@ export function AffiliateForm({ initialData, onSubmit, isSubmitting = false, for
   const handleUploadComplete = (doc: DocumentWithMeta) => {
     if (!doc.document_url) {
       toast.error("Upload failed: document URL is missing.");
-      console.error("Upload complete callback missing document_url", doc);
       return;
     }
     // Map to the expected affiliate document type structure if needed
@@ -199,7 +198,6 @@ export function AffiliateForm({ initialData, onSubmit, isSubmitting = false, for
 
   // Handle form validation errors and set the correct tab
   const handleFormError = (errors: any) => {
-    console.log("errors", errors);
     // Find the first error field
     const firstErrorField = Object.keys(errors)[0];
     if (firstErrorField) {
@@ -434,7 +432,6 @@ export function AffiliateForm({ initialData, onSubmit, isSubmitting = false, for
     // Log when documents change in form state (optional, for debugging)
     useEffect(() => {
       if (activeTab === "documents") {
-        console.log("Current documents in form state:", formDocuments);
       }
     }, [formDocuments, activeTab]);
 

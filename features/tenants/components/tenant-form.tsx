@@ -285,15 +285,12 @@ export function TenantForm({
               await createBillingConfig(billingPayload);
             }
           } catch (billingError) {
-            console.error('Failed to save billing configuration:', billingError);
             // Don't throw here to allow the rest to continue
             toast.error('Tenant saved but billing configuration failed to save');
           }
         }
 
         // 4. On submit, call saveConfigurations with parent's state
-        // console.log('[TenantForm] Submitting configurations:', configurations);
-        // console.log('[TenantForm] Submitting vehicleTypes:', vehicleTypes);
         await saveConfigurations(tenantId, configurations, vehicleTypes);
 
         toast.success(`Tenant ${id ? 'updated' : 'created'} successfully!`);
@@ -388,7 +385,6 @@ export function TenantForm({
         setActiveTab(tab);
       }
     }
-    // console.log('[TenantForm] Form error:', errors);
     toast.error("Please fix the validation errors before submitting");
   };
 

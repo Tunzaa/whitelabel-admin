@@ -508,7 +508,6 @@ export async function saveConfigurations(tenantId: string, configurations: Recor
       }
     }
     if (vehicleCreates === 0 && vehicleUpdates === 0 && vehicleDeletes === 0) {
-      // console.log('[saveConfigurations] No vehicle type create/update/delete actions performed.');
     }
 
     // --- DOCUMENT TYPES ---
@@ -569,13 +568,12 @@ export async function saveConfigurations(tenantId: string, configurations: Recor
       try {
         await saveEntityConfiguration(entityName, tenantId, payload, mode);
       } catch (err) {
-        console.error(`[saveConfigurations] Failed to save entity configuration for ${entityName} (mode: ${mode}):`, err);
+        // Continue saving other configurations even if one fails
       }
     }
     toast.success('All configurations saved successfully!');
   } catch (e) {
     const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
     toast.error(`Failed to save configurations: ${errorMessage}`);
-    console.error('[saveConfigurations] Failed:', e);
   }
 }

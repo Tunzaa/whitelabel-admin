@@ -100,7 +100,6 @@ export function AffiliateTable({
     try {
       return format(new Date(dateString), "PPpp"); // e.g., Sep 28, 2023, 12:00:00 PM
     } catch (e) {
-      console.error("Error formatting date:", e);
       return "Invalid Date";
     }
   };

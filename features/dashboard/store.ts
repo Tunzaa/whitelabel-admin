@@ -85,11 +85,6 @@ const createReportFetcher = <T>(set: any, endpoint: string, dataKey: keyof Dashb
 
         set({ [dataKey]: dataToSet, [loadingKey]: false });
     } catch (error: any) {
-        if (endpoint === 'gmv/tenant' || endpoint === 'active-users') {
-            console.log(`[Dashboard Store] Response for ${endpoint}:`, response.data.data);
-        }
-
-        console.error(`Failed to fetch ${String(dataKey)}:`, error);
         set({ error: error.message || `Failed to fetch ${String(dataKey)}`, [loadingKey]: false });
     }
 };

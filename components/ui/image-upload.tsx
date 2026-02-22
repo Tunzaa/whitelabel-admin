@@ -77,7 +77,6 @@ export function ImageUpload({
         onFileChange(file);
       }
     } catch (err) {
-      console.error("Image upload error:", err);
       setError(err instanceof Error ? err.message : "Failed to upload image");
       
       // Keep the local preview but indicate error

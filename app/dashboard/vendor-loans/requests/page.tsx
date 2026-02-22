@@ -90,7 +90,6 @@ function LoanRequestsPage() {
         const filters = getFilters();
         await fetchRequests(filters, tenantHeaders);
       } catch (error) {
-        console.error("Error fetching loan requests:", error);
       } finally {
         setIsTabLoading(false);
       }
@@ -113,7 +112,6 @@ function LoanRequestsPage() {
       const filters = getFilters();
       fetchRequests(filters, tenantHeaders);
     } catch (error) {
-      console.error("Failed to update request status:", error);
     }
   };
 

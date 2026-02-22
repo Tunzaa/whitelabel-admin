@@ -96,7 +96,6 @@ const DeliveryManagement: React.FC<DeliveryManagementProps> = ({
           setDeliveryDetails(details);
         })
         .catch((error) => {
-          console.error("Error fetching delivery details:", error);
           // Only show error if it's not a 404 (not found)
           const status = error?.response?.status;
           if (status !== 404) {
@@ -146,7 +145,6 @@ const DeliveryManagement: React.FC<DeliveryManagementProps> = ({
       await fetchDeliveryPartners(filter, { "X-Tenant-ID": user.tenant_id });
     } catch (error) {
       toast.error("Failed to load delivery partners.");
-      console.error(error);
     }
   };
 

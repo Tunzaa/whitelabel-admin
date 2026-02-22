@@ -60,7 +60,6 @@ export default function TransactionDialog({
       setReason('');
       onOpenChange(false);
     } catch (error) {
-      console.error('Error in transaction action:', error);
     } finally {
       setIsSubmitting(false);
     }

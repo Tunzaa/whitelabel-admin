@@ -118,7 +118,6 @@ export const OrderDetailsView = () => {
           [item.vendor_id]: vendorData
         }));
       } catch (error) {
-        console.error('Error fetching vendor:', error);
       }
     }
   };

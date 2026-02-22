@@ -40,7 +40,6 @@ function EditProductPage() {
         const productData = await fetchProduct(productId, headers);
         setProduct(productData);
       } catch (err) {
-        console.error("Error fetching product:", err);
         setError(err instanceof Error ? err.message : "Failed to load product");
       } finally {
         setLoading(false);
@@ -73,7 +72,6 @@ function EditProductPage() {
       toast.success("Product updated successfully");
       router.push(`/dashboard/products/${product.product_id}`);
     } catch (err) {
-      console.error("Error updating product:", err);
       setError(err instanceof Error ? err.message : "Failed to update product");
       toast.error("Failed to update product");
     } finally {

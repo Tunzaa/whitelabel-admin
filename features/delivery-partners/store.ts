@@ -65,7 +65,6 @@ export const useDeliveryPartnerStore = create<DeliveryPartnerStore>()((set, get)
 
       const response = await apiClient.get<any>(`/partners/?${params.toString()}`, undefined, headers);
       
-      console.log('API Response:', response);
 
       let partnerData: DeliveryPartnerListResponse | null = null;
       const payload: any = response.data;
@@ -73,12 +72,10 @@ export const useDeliveryPartnerStore = create<DeliveryPartnerStore>()((set, get)
       // The API can return data directly or nested within a 'data' property.
       // This handles the case where payload is DeliveryPartnerListResponse.
       if (payload && Array.isArray(payload.items)) {
-        console.log('Treating payload directly as DeliveryPartnerListResponse');
         partnerData = payload as DeliveryPartnerListResponse;
       } 
       // This handles the case where payload is { data: DeliveryPartnerListResponse }.
       else if (payload && payload.data && Array.isArray(payload.data.items)) {
-        console.log('Treating payload as nested object');
         partnerData = payload.data as DeliveryPartnerListResponse;
       }
 
@@ -87,7 +84,6 @@ export const useDeliveryPartnerStore = create<DeliveryPartnerStore>()((set, get)
         return partnerData;
       }
       
-      console.warn('API response did not contain expected data structure:', response.data);
       setPartners([]);
       return {
         items: [],
@@ -98,7 +94,6 @@ export const useDeliveryPartnerStore = create<DeliveryPartnerStore>()((set, get)
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch delivery partners';
       const errorStatus = error.response?.status;
-      console.error('Error fetching delivery partners:', errorMessage, 'Status:', errorStatus);
       setError({
         message: errorMessage,
         status: errorStatus,
@@ -118,7 +113,6 @@ export const useDeliveryPartnerStore = create<DeliveryPartnerStore>()((set, get)
     setError(null);
     try {
       const response = await apiClient.get<any>(`/partners/${id}`, undefined, headers);
-      console.log('Received API response for partner:', response.data);
 
       let partnerData: DeliveryPartner | null = null;
       // Check if data is nested under a 'data' property
@@ -131,11 +125,9 @@ export const useDeliveryPartnerStore = create<DeliveryPartnerStore>()((set, get)
       }
 
       if (partnerData) {
-        console.log('Setting partner state with:', partnerData);
         setPartner(partnerData);
         return partnerData;
       } else {
-        console.error('Partner data not found in response or in unexpected format:', response.data);
         throw new Error('Partner data not found in response');
       }
     } catch (error: any) {

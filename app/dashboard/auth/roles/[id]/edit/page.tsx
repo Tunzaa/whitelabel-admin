@@ -34,11 +34,9 @@ const EditRolePage = () => {
     if (tenantId) {
       if (roles.length === 0) {
         fetchRoles(undefined, headers).catch(err => {
-          console.error('Failed to fetch roles:', err);
         });
       }
       fetchAvailablePermissions(headers).catch(err => {
-        console.error('Failed to fetch permissions:', err);
       });
     }
   }, [tenantId, roles.length, fetchRoles, fetchAvailablePermissions]);
@@ -49,7 +47,6 @@ const EditRolePage = () => {
   }, [roles, decodedId]);
 
   const handleSubmit = async (data: RoleFormValues) => {
-    console.log(data)
     if (!tenantId || !roleToEdit?.role) return;
     const headers = { 'X-Tenant-ID': tenantId };
     

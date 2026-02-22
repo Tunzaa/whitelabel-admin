@@ -16,7 +16,6 @@ export function ReferralsOverview() {
       setIsInitialized(true);
       fetchReferralStats()
         .catch(err => {
-          console.error('Failed to load referral stats:', err);
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -107,7 +107,6 @@ export function PasswordResetForm() {
       setResetStep("confirm");
       setIsSubmitting(false);
     } catch (error: any) {
-      console.error("Password reset request error:", error);
       const errorMessage =
         error?.response?.data?.message ||
         error?.message ||
@@ -142,7 +141,6 @@ export function PasswordResetForm() {
         router.push("/signin");
       }, 2000);
     } catch (error: any) {
-      console.error("Password reset confirmation error:", error);
       const errorMessage =
         error?.response?.data?.message ||
         error?.message ||

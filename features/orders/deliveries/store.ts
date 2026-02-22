@@ -113,7 +113,6 @@ export const useDeliveryStore = create<DeliveryStore>()((set, get) => ({
       setDeliveries(list);
       return list;
     } catch (error: any) {
-      console.error('Error fetching deliveries:', error);
       setStoreError({ message: error.message || 'Failed to fetch deliveries', status: error.response?.status });
       throw error;
     } finally {
@@ -124,7 +123,6 @@ export const useDeliveryStore = create<DeliveryStore>()((set, get) => ({
 
   // Fetch single delivery by id
   fetchDelivery: async (id, headers) => {
-    console.log(headers);
     const { setActiveAction, setLoading, setStoreError, setDelivery } = get();
     try {
       setActiveAction('fetchDelivery');
@@ -134,7 +132,6 @@ export const useDeliveryStore = create<DeliveryStore>()((set, get) => ({
       setDelivery(delivery);
       return delivery;
     } catch (error: any) {
-      console.error('Error fetching delivery:', error);
       setStoreError({ message: error.message || 'Failed to fetch delivery', status: error.response?.status });
       throw error;
     } finally {
@@ -156,7 +153,6 @@ export const useDeliveryStore = create<DeliveryStore>()((set, get) => ({
       if (updated) setDelivery(updated);
       return updated;
     } catch (error: any) {
-      console.error('Error adding stage:', error);
       throw error;
     }
   },
@@ -174,7 +170,6 @@ export const useDeliveryStore = create<DeliveryStore>()((set, get) => ({
       if (updated) setDelivery(updated);
       return updated;
     } catch (error: any) {
-      console.error('Error adding pickup point:', error);
       throw error;
     }
   },

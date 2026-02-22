@@ -88,7 +88,6 @@ function VendorsPage() {
         const filters = getFilters();
         await fetchVendors(filters, tenantHeaders);
       } catch (error) {
-        console.error("Error fetching vendors:", error);
       } finally {
         setIsTabLoading(false);
       }
@@ -119,7 +118,6 @@ function VendorsPage() {
       const filters = getFilters();
       fetchVendors(filters, tenantHeaders);
     } catch (error) {
-      console.error("Failed to update vendor status:", error);
     }
   };
 

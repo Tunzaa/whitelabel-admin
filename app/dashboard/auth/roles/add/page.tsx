@@ -41,7 +41,6 @@ export default function AddRolePage() {
       fetchAvailablePermissions({ 'X-Tenant-ID': tenantId }).catch(error => {
         // The store already handles setting the error state.
         // We just need to prevent an unhandled rejection crash.
-        console.error("Failed to fetch permissions:", error);
       });
     }
   }, [tenantId, availablePermissions.length, fetchAvailablePermissions, storeLoading]);
