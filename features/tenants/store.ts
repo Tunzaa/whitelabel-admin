@@ -117,7 +117,12 @@ export const useTenantStore = create<TenantStore>()(
           return null as any;
         }
 
-        const { setActiveAction, setLoading, setStoreError, setTenant } = get();
+        const { setActiveAction, setLoading, setStoreError, setTenant, loading } = get();
+
+        // Prevent concurrent fetches
+        if (loading) {
+          return null;
+        }
 
         // Check cache first (unless skipped)
         if (!skipCache) {
@@ -136,35 +141,14 @@ export const useTenantStore = create<TenantStore>()(
           if (response.data) {
             // Handle ApiResponse wrapper if present
             const tenantData = (response.data as any).data || response.data;
-            let finalTenantData = tenantData;
             
-            // Fetch user data if user object is missing first_name and last_name
-            if (finalTenantData.user_id && (!finalTenantData.first_name || !finalTenantData.last_name)) {
-              try {
-                // Get the fetchUser method from user store
-                const userStore = useUserStore.getState();
-                const userData = await userStore.fetchUser(finalTenantData.user_id, {'X-Tenant-ID': finalTenantData.tenant_id});
-                
-                // Inject first_name and last_name into tenant data
-                finalTenantData = {
-                  ...finalTenantData,
-                  first_name: userData.first_name,
-                  last_name: userData.last_name,
-                  admin_email: userData.email,
-                  admin_phone: userData.phone_number
-                };
-              } catch (userError) {
-                // Continue with tenant data even if user fetch fails
-              }
-            }
-            
-            setTenant(finalTenantData);
+            setTenant(tenantData);
 
             // Cache as selected tenant
-            setCachedSelectedTenant(finalTenantData);
+            setCachedSelectedTenant(tenantData);
 
             setLoading(false);
-            return finalTenantData;
+            return tenantData;
           }
           throw new Error('Tenant not found');
         } catch (error: any) {
@@ -181,7 +165,12 @@ export const useTenantStore = create<TenantStore>()(
       },
 
       fetchTenants: async (filter: TenantFilter = {}, skipCache = false) => {
-        const { setActiveAction, setLoading, setStoreError, setTenants } = get();
+        const { setActiveAction, setLoading, setStoreError, setTenants, loading } = get();
+
+        // Prevent concurrent fetches
+        if (loading) {
+          return null as any;
+        }
 
         // Check cache first (only for default filter and if not skipped)
         if (!skipCache && !filter.skip && !filter.limit && !filter.search && filter.isActive === undefined) {
@@ -332,7 +321,13 @@ export const useTenantStore = create<TenantStore>()(
 
       // Tenant Billing APIs
       fetchBillingDashboardMetrics: async () => {
-        const { setLoading, setStoreError } = get();
+        const { setLoading, setStoreError, loading } = get();
+        
+        // Prevent concurrent fetches
+        if (loading) {
+          return;
+        }
+        
         try {
           setLoading(true);
           const response = await apiClient.get<BillingDashboardMetrics>('/billing/dashboard');

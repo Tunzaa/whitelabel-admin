@@ -177,7 +177,13 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
   },
 
   fetchOrder: async (id: string, headers?: Record<string, string>) => {
-    const { setLoading, setStoreError, setOrder } = get();
+    const { setLoading, setStoreError, setOrder, loading } = get();
+    
+    // Prevent concurrent fetches
+    if (loading) {
+      return;
+    }
+    
     setLoading(true);
     setStoreError(null);
     try {

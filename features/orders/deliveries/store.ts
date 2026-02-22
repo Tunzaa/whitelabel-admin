@@ -123,7 +123,13 @@ export const useDeliveryStore = create<DeliveryStore>()((set, get) => ({
 
   // Fetch single delivery by id
   fetchDelivery: async (id, headers) => {
-    const { setActiveAction, setLoading, setStoreError, setDelivery } = get();
+    const { setActiveAction, setLoading, setStoreError, setDelivery, loading } = get();
+    
+    // Prevent concurrent fetches
+    if (loading) {
+      return;
+    }
+    
     try {
       setActiveAction('fetchDelivery');
       setLoading(true);

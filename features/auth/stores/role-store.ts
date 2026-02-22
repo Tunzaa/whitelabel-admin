@@ -70,10 +70,15 @@ export const useRoleStore = create<RoleStore>()(
   
   // API methods
   fetchRoles: async (filter: RoleFilter = {}, headers?: Record<string, string>) => {
-    const { setActiveAction, setLoading, setStoreError, setRoles } = get();
-    try {
-      setActiveAction('fetchMany');
-      setLoading(true);
+    const { setActiveAction, setLoading, setStoreError, setRoles, loading } = get();
+    
+    // Prevent concurrent fetches
+    if (loading) {
+      return;
+    }
+    
+    setActiveAction('fetchMany');
+    setLoading(true);
       
       // Build query parameters from filter
       const queryParams: Record<string, any> = { ...filter };
