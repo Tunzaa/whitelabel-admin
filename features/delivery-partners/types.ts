@@ -39,7 +39,7 @@ export interface DeliveryPartner {
     partner_id?: string; // From API
     user_id?: string; // From API, but seems missing in the example
     tenant_id?: string; // From API
-    user_details: {
+    user: {
         first_name: string;
         last_name: string;
         email: string;
@@ -56,6 +56,7 @@ export interface DeliveryPartner {
     status?: 'pending' | 'active' | 'rejected' | 'suspended'; // Keep for potential use, but make optional
     cost_per_km?: number;
     flat_fee?: number;
+    commission_percent?: number;
     description?: string;
     tax_id?: string;
     drivers?: string[];

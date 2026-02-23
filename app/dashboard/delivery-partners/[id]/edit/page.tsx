@@ -98,8 +98,8 @@ const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues, 
   }));
   const apiPayload: Partial<DeliveryPartner> = {
     type: formValues.type,
-    name: formValues.name,
-    user_details: {
+    name: formValues.name || `${formValues.user.first_name} ${formValues.user.last_name}`.trim(),
+    user: {
       first_name: formValues.user.first_name,
       last_name: formValues.user.last_name,
       email: formValues.user.email,
@@ -108,6 +108,7 @@ const transformFormValuesToApiPayload = (formValues: DeliveryPartnerFormValues, 
     profile_picture: formValues.profile_picture || undefined,
     description: formValues.description || undefined,
     tax_id: formValues.tax_id,
+    commission_percent: 10,
     vehicle_info: {
       ...vehicle_info,
       plate_number: formValues.vehiclePlate || "",
