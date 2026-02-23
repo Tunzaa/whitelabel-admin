@@ -51,6 +51,8 @@ import { useDeliveryPartnerStore } from "../store";
 import { useRouter } from "next/navigation";
 import { useConfigurationStore } from "@/features/configurations/store";
 import { useSession } from "next-auth/react";
+import { useSelectedTenantStore } from "@/features/tenants/store";
+import { usePermissions } from "@/features/auth/hooks/use-permissions";
 
 type DeliveryPartnerFormValues = z.infer<typeof deliveryPartnerFormSchema>;
 
@@ -200,12 +202,19 @@ export function DeliveryPartnerForm({
   // Fetch vehicle types from store and use items property
   const { vehicleTypes, fetchVehicleTypes } = useConfigurationStore();
   const { data: session } = useSession();
+  const { selectedTenantId } = useSelectedTenantStore();
+  const { hasRole } = usePermissions();
+
+  // Use selected tenant for super users, otherwise use session tenant
+  const tenantId = hasRole("super")
+    ? selectedTenantId
+    : (session?.user as any)?.tenant_id;
 
   useEffect(() => {
-    if ((session?.user as any)?.tenant_id) {
-      fetchVehicleTypes((session?.user as any).tenant_id);
+    if (tenantId) {
+      fetchVehicleTypes(tenantId);
     }
-  }, [(session?.user as any)?.tenant_id, fetchVehicleTypes]);
+  }, [tenantId, fetchVehicleTypes]);
 
   useEffect(() => {
   }, [vehicleTypes]);
