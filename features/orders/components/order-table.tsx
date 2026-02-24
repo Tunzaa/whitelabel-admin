@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { 
-  MoreHorizontal, 
-  Edit, 
-  Eye, 
-  Trash2, 
-  CheckCircle, 
-  TruckIcon, 
-  PackageIcon, 
+import {
+  MoreHorizontal,
+  Edit,
+  Eye,
+  Trash2,
+  CheckCircle,
+  TruckIcon,
+  PackageIcon,
   ShieldX,
   RefreshCcw,
   Clock,
@@ -103,7 +103,7 @@ export function OrderTable({
       "refunded": <RefreshCcw className="h-4 w-4 mr-1" />,
       "partially_refunded": <RefreshCcw className="h-4 w-4 mr-1" />,
     };
-    
+
     return statusIcons[status] || <ShieldX className="h-4 w-4 mr-1" />;
   };
 
@@ -120,10 +120,10 @@ export function OrderTable({
       "refunded": "warning",
       "partially_refunded": "warning",
     };
-    
+
     return variantMap[status] || "secondary";
   };
-  
+
   // Process the actual status change
   const processStatusChange = (order: Order, newStatus: OrderStatus) => {
     if (onStatusChange) {
@@ -224,12 +224,22 @@ export function OrderTable({
                 </Badge>
               </TableCell>
               <TableCell>
-                <Badge
-                  variant={order.payment_status === "paid" ? "default" : "secondary"}
-                  className="capitalize"
-                >
-                  {order.payment_status}
-                </Badge>
+                <div className="flex flex-col gap-1 items-start">
+                  <Badge
+                    variant={order.payment_status === "paid" ? "default" : "secondary"}
+                    className="capitalize"
+                  >
+                    {order.payment_status}
+                  </Badge>
+                  {(order as any).plan && (
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap font-medium">
+                      {Math.round(
+                        ((typeof (order as any).plan.paid_amount === 'string' ? parseFloat((order as any).plan.paid_amount) : ((order as any).plan.paid_amount || 0)) /
+                          (typeof (order as any).plan.total_amount === 'string' ? parseFloat((order as any).plan.total_amount) : ((order as any).plan.total_amount || 1))) * 100
+                      )}% Paid
+                    </span>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 {formatCurrency(order.totals.total, order.currency)}
@@ -243,14 +253,14 @@ export function OrderTable({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    
+
                     {onViewDetails && (
                       <DropdownMenuItem onClick={() => onViewDetails(order)}>
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
                       </DropdownMenuItem>
                     )}
-                    
+
                     {/* Order Status Actions */}
                     {/* {getAvailableActions(order).length > 0 && (
                       <>
@@ -302,7 +312,7 @@ export function OrderTable({
             <DialogDescription>
               {selectedOrder && (
                 <>
-                  Are you sure you want to issue a refund for order #{selectedOrder.order_number}? 
+                  Are you sure you want to issue a refund for order #{selectedOrder.order_number}?
                   This action cannot be undone.
                   <div className="mt-2 p-2 border rounded bg-muted">
                     <p>Order Total: {formatCurrency(selectedOrder.totals.total, selectedOrder.currency)}</p>
@@ -334,7 +344,7 @@ export function OrderTable({
             <DialogDescription>
               {selectedOrder && (
                 <>
-                  Are you sure you want to cancel order #{selectedOrder.order_number}? 
+                  Are you sure you want to cancel order #{selectedOrder.order_number}?
                   This action cannot be undone.
                   <div className="mt-2 p-2 border rounded bg-muted">
                     <p>Order Total: {formatCurrency(selectedOrder.totals.total, selectedOrder.currency)}</p>

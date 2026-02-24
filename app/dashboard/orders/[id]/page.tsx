@@ -788,7 +788,7 @@ const OrderPage = () => {
                                   vendorId={item.vendor_id}
                                   response={
                                     order.vendor_responses?.[
-                                      item.vendor_id
+                                    item.vendor_id
                                     ] || {
                                       status: "pending",
                                       responded_at: undefined,
@@ -954,7 +954,7 @@ const OrderPage = () => {
                                   {format(
                                     new Date(
                                       transaction.payment_date ||
-                                        transaction.created_at,
+                                      transaction.created_at,
                                     ),
                                     "MMM d, yyyy h:mm a",
                                   )}
@@ -985,7 +985,7 @@ const OrderPage = () => {
                           <AccordionContent className="pb-0 pt-2">
                             <div className="px-4 pb-4">
                               {loadingTransactionId ===
-                              transaction.transaction_id ? (
+                                transaction.transaction_id ? (
                                 <div className="py-8">
                                   <Spinner />
                                 </div>
@@ -1089,30 +1089,30 @@ const OrderPage = () => {
                                         </div>
                                         {currentTransaction.raw_request
                                           ?.customer_msisdn && (
-                                          <div className="space-y-1">
-                                            <p className="text-sm text-muted-foreground">
-                                              Customer Phone
-                                            </p>
-                                            <div className="flex items-center gap-2">
-                                              <a
-                                                href={`tel:${currentTransaction.raw_request.customer_msisdn}`}
-                                                className="text-sm hover:underline hover:text-primary transition-colors"
-                                              >
-                                                {
-                                                  currentTransaction.raw_request
-                                                    .customer_msisdn
-                                                }
-                                              </a>
-                                              <Copy
-                                                text={
-                                                  currentTransaction.raw_request
-                                                    .customer_msisdn
-                                                }
-                                                className="text-muted-foreground hover:text-foreground transition-colors"
-                                              />
+                                            <div className="space-y-1">
+                                              <p className="text-sm text-muted-foreground">
+                                                Customer Phone
+                                              </p>
+                                              <div className="flex items-center gap-2">
+                                                <a
+                                                  href={`tel:${currentTransaction.raw_request.customer_msisdn}`}
+                                                  className="text-sm hover:underline hover:text-primary transition-colors"
+                                                >
+                                                  {
+                                                    currentTransaction.raw_request
+                                                      .customer_msisdn
+                                                  }
+                                                </a>
+                                                <Copy
+                                                  text={
+                                                    currentTransaction.raw_request
+                                                      .customer_msisdn
+                                                  }
+                                                  className="text-muted-foreground hover:text-foreground transition-colors"
+                                                />
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
+                                          )}
                                         <div className="space-y-1">
                                           <p className="text-sm text-muted-foreground">
                                             {currentTransaction.payment_date
@@ -1122,7 +1122,7 @@ const OrderPage = () => {
                                           <p className="text-sm">
                                             {formatTransactionDate(
                                               currentTransaction.payment_date ||
-                                                currentTransaction.created_at,
+                                              currentTransaction.created_at,
                                             )}
                                           </p>
                                         </div>
@@ -1151,11 +1151,11 @@ const OrderPage = () => {
                                                   currentTransaction.raw_response,
                                                   (key, value) =>
                                                     typeof value === "string" &&
-                                                    value.length > 100
+                                                      value.length > 100
                                                       ? `${value.substring(
-                                                          0,
-                                                          100,
-                                                        )}...`
+                                                        0,
+                                                        100,
+                                                      )}...`
                                                       : value,
                                                   2,
                                                 )}
@@ -1188,7 +1188,7 @@ const OrderPage = () => {
                           </CardTitle>
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="px-2.5">
-                              {order.payment_details?.paid_installments || 0}/
+                              {order.plan.installments?.filter((i: any) => i.status === 'PAID' || i.status === 'COMPLETED').length || 0}/
                               {order.plan.installments?.length || 0} Paid
                             </Badge>
                           </div>
@@ -1215,30 +1215,29 @@ const OrderPage = () => {
 
                           {/* Progress Bar */}
                           <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">
+                            <div className="flex flex-row justify-between text-sm">
+                              <span className="text-muted-foreground mt-1">
                                 Payment Progress
                               </span>
-                              <span className="font-medium">
-                                {Math.round(
-                                  ((order.payment_details?.paid_installments ||
-                                    0) /
-                                    (order.plan.installments?.length || 1)) *
-                                    100,
-                                )}
-                                %
+                              <span className="font-medium text-right">
+                                {formatPrice(order.plan.paid_amount, order.currency)} / {formatPrice(order.plan.total_amount, order.currency)}
+                                <span className="block text-xs text-muted-foreground mt-0.5">
+                                  {Math.round(
+                                    ((typeof order.plan.paid_amount === 'string' ? parseFloat(order.plan.paid_amount) : (order.plan.paid_amount || 0)) /
+                                      (typeof order.plan.total_amount === 'string' ? parseFloat(order.plan.total_amount) : (order.plan.total_amount || 1))) *
+                                    100
+                                  )}% Paid
+                                </span>
                               </span>
                             </div>
                             <div className="h-2 bg-muted rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-primary"
                                 style={{
-                                  width: `${
-                                    ((order.payment_details
-                                      ?.paid_installments || 0) /
-                                      (order.plan.installments?.length || 1)) *
+                                  width: `${((typeof order.plan.paid_amount === 'string' ? parseFloat(order.plan.paid_amount) : (order.plan.paid_amount || 0)) /
+                                    (typeof order.plan.total_amount === 'string' ? parseFloat(order.plan.total_amount) : (order.plan.total_amount || 1))) *
                                     100
-                                  }%`,
+                                    }%`,
                                   transition: "width 0.3s ease-in-out",
                                 }}
                               />
@@ -1260,15 +1259,12 @@ const OrderPage = () => {
                                 <AccordionContent className="px-4 pb-4 pt-1">
                                   <div className="space-y-3 mt-2">
                                     {order.plan.installments?.map(
-                                      (installment, index) => {
-                                        const isPaid =
-                                          index <
-                                          (order.payment_details
-                                            ?.paid_installments || 0);
-                                        const isCurrent =
-                                          index ===
-                                          (order.payment_details
-                                            ?.paid_installments || 0);
+                                      (installment: any, index: number, arr: any[]) => {
+                                        const isPaid = installment.status === 'PAID' || installment.status === 'COMPLETED';
+
+                                        const firstUnpaidIndex = arr.findIndex((i: any) => i.status !== 'PAID' && i.status !== 'COMPLETED');
+                                        const isCurrent = index === firstUnpaidIndex;
+
                                         const dueDate = new Date(
                                           installment.due_date,
                                         );
@@ -1280,26 +1276,24 @@ const OrderPage = () => {
                                         return (
                                           <div
                                             key={index}
-                                            className={`p-3 rounded-md border ${
-                                              isOverdue
-                                                ? "border-red-200 bg-red-50"
-                                                : isCurrent
-                                                  ? "border-primary/50 bg-primary/5"
-                                                  : "border-border"
-                                            }`}
+                                            className={`p-3 rounded-md border ${isOverdue
+                                              ? "border-red-200 bg-red-50"
+                                              : isCurrent
+                                                ? "border-primary/50 bg-primary/5"
+                                                : "border-border"
+                                              }`}
                                           >
                                             <div className="flex justify-between items-center">
                                               <div className="flex items-center gap-3">
                                                 <div
-                                                  className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                                                    isPaid
-                                                      ? "bg-green-100 text-green-600"
-                                                      : isOverdue
-                                                        ? "bg-red-100 text-red-600"
-                                                        : isCurrent
-                                                          ? "bg-blue-100 text-blue-600"
-                                                          : "bg-muted"
-                                                  }`}
+                                                  className={`h-8 w-8 rounded-full flex items-center justify-center ${isPaid
+                                                    ? "bg-green-100 text-green-600"
+                                                    : isOverdue
+                                                      ? "bg-red-100 text-red-600"
+                                                      : isCurrent
+                                                        ? "bg-blue-100 text-blue-600"
+                                                        : "bg-muted"
+                                                    }`}
                                                 >
                                                   {isPaid ? (
                                                     <Check className="h-4 w-4" />
@@ -1315,11 +1309,10 @@ const OrderPage = () => {
                                                 </div>
                                                 <div>
                                                   <p
-                                                    className={`text-sm font-medium ${
-                                                      isOverdue
-                                                        ? "text-red-700"
-                                                        : ""
-                                                    }`}
+                                                    className={`text-sm font-medium ${isOverdue
+                                                      ? "text-red-700"
+                                                      : ""
+                                                      }`}
                                                   >
                                                     Installment {index + 1}
                                                     {isOverdue && (
@@ -1329,11 +1322,10 @@ const OrderPage = () => {
                                                     )}
                                                   </p>
                                                   <p
-                                                    className={`text-xs ${
-                                                      isOverdue
-                                                        ? "text-red-500"
-                                                        : "text-muted-foreground"
-                                                    }`}
+                                                    className={`text-xs ${isOverdue
+                                                      ? "text-red-500"
+                                                      : "text-muted-foreground"
+                                                      }`}
                                                   >
                                                     Due{" "}
                                                     {dueDate.toLocaleDateString()}
@@ -1342,11 +1334,10 @@ const OrderPage = () => {
                                               </div>
                                               <div className="text-right">
                                                 <p
-                                                  className={`font-medium ${
-                                                    isOverdue
-                                                      ? "text-red-700"
-                                                      : ""
-                                                  }`}
+                                                  className={`font-medium ${isOverdue
+                                                    ? "text-red-700"
+                                                    : ""
+                                                    }`}
                                                 >
                                                   {formatPrice(
                                                     installment.amount,
@@ -1358,15 +1349,14 @@ const OrderPage = () => {
                                                   )}
                                                 </p>
                                                 <p
-                                                  className={`text-xs ${
-                                                    isPaid
-                                                      ? "text-green-600"
-                                                      : isOverdue
-                                                        ? "text-red-600 font-medium"
-                                                        : isCurrent
-                                                          ? "text-blue-600 font-medium"
-                                                          : "text-muted-foreground"
-                                                  }`}
+                                                  className={`text-xs ${isPaid
+                                                    ? "text-green-600"
+                                                    : isOverdue
+                                                      ? "text-red-600 font-medium"
+                                                      : isCurrent
+                                                        ? "text-blue-600 font-medium"
+                                                        : "text-muted-foreground"
+                                                    }`}
                                                 >
                                                   {isPaid
                                                     ? "Paid"
