@@ -26,35 +26,7 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      type: 'order',
-      title: 'New Order Received',
-      message: 'A new order #1234 has been placed',
-      link: '/dashboard/orders',
-      read: false,
-      createdAt: new Date(),
-    },
-    {
-      id: '2',
-      type: 'support',
-      title: 'New Support Ticket',
-      message: 'Customer has opened a new support ticket',
-      link: '/dashboard/support',
-      read: false,
-      createdAt: new Date(),
-    },
-    {
-      id: '3',
-      type: 'system',
-      title: 'System Update',
-      message: 'New features have been added to the dashboard',
-      link: '/dashboard/settings',
-      read: false,
-      createdAt: new Date(),
-    },
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

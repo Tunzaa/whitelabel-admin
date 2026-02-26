@@ -53,4 +53,4 @@ function RewardsPage() {
 }
 export default withModuleAuthorization(withAuthorization(RewardsPage, {
   permission: "rewards:read",
-}), "rewards-referals");
+}), "rewards_referals");

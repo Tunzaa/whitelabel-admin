@@ -289,4 +289,4 @@ function LoanRequestsPage() {
 
 export default withModuleAuthorization(withAuthorization(LoanRequestsPage, {
   permission: "vendor-loans:read",
-}), "vendor-loans");
+}), "vendor_loans");

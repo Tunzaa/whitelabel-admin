@@ -102,14 +102,14 @@ export const navigationData: NavigationData = {
       url: "/dashboard/rewards",
       icon: IconGift,
       requiredPermission: "rewards:read",
-      requiredModule: "rewards-referals",
+      requiredModule: "rewards_referals",
     },
     {
       title: "Vendor Loans",
       url: "#",
       icon: IconCreditCard,
       requiredPermission: "vendor-loans:read",
-      requiredModule: "vendor-loans",
+      requiredModule: "vendor_loans",
       items: [
         {
           title: "Providers",

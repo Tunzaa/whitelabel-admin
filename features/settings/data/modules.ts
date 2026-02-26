@@ -19,31 +19,31 @@ export interface ModuleConfig {
 export const platformModules: ModuleConfig[] = [
   {
     name: "payments",
-    label: "Payments Module",
+    label: "Payments",
     description: "Enables payment processing and transaction management",
     icon: "CreditCard"
   },
   {
     name: "delivery",
-    label: "Delivery Module",
+    label: "Delivery",
     description: "Enables delivery functionality",
     icon: "Truck"
   },
   {
-    name: "vendor-loans",
-    label: "Vendor Loans Module",
+    name: "vendor_loans",
+    label: "Vendor Loans",
     description: "Enables vendor loans functionality",
     icon: "DollarSign"
   },
   {
     name: "affiliates",
-    label: "Affiliates(Mawinga) Module",
+    label: "Affiliates (Mawinga)",
     description: "Enables affiliate program",
     icon: "IconUserCode"
   },
   {
-    name: "rewards-referals",
-    label: "Rewards & Referrals Module",
+    name: "rewards_referals",
+    label: "Rewards & Referrals",
     description: "Enables rewards and referrals program",
     icon: "Gift"
   }

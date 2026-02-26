@@ -1477,4 +1477,4 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
 
 export default withModuleAuthorization(withAuthorization(LoanRequestDetailPage, {
   permission: "vendor-loans:read",
-}), "vendor-loans");
+}), "vendor_loans");
