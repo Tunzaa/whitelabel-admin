@@ -77,16 +77,19 @@ export const useLoanProductStore = create<LoanProductStore>()(
         }
         
         const response = await apiClient.get<LoanProduct[]>(url, filter, headers);
-        const productList = response.data.data;
+        
+        // Handle both direct array and wrapped response formats
+        const rawData = response.data as any;
+        const productsList = Array.isArray(rawData) ? rawData : (rawData.data || []);
         
         const productResponse: LoanProductListResponse = {
-          items: productList,
-          total: productList.length,
-          skip: filter.skip || 0,
-          limit: filter.limit || 10
+          items: productsList,
+          total: rawData.total || productsList.length,
+          skip: rawData.skip || filter.skip || 0,
+          limit: rawData.limit || filter.limit || 10
         };
         
-        setProducts(productList);
+        setProducts(productsList);
         setLoading(false);
         return productResponse;
       } catch (error: unknown) {
@@ -118,7 +121,8 @@ export const useLoanProductStore = create<LoanProductStore>()(
         };
         
         const response = await apiClient.post<LoanProduct>('/loans/products/', payload, headers);
-        const newProduct = response.data.data;
+        // Handle both direct and wrapped responses
+        const newProduct = (response.data as any).data || response.data;
         
         setLoading(false);
         return newProduct;
@@ -143,7 +147,8 @@ export const useLoanProductStore = create<LoanProductStore>()(
         setLoading(true);
         
         const response = await apiClient.put<LoanProduct>(`/loans/products/${id}`, data, headers);
-        const updatedProduct = response.data.data;
+        // Handle both direct and wrapped responses
+        const updatedProduct = (response.data as any).data || response.data;
         
         const updatedProducts = products.map(p => p.product_id === id ? updatedProduct : p);
         setProducts(updatedProducts);

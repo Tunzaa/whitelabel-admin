@@ -64,7 +64,8 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
         setLoading(true);
 
         const response = await apiClient.get<LoanRequest>(`/loans/requests/${id}`, undefined, headers);
-        const request = response.data.data;
+        // Handle both direct and wrapped responses
+        const request = (response.data as any).data || response.data;
 
         setRequest(request);
         setLoading(false);
@@ -90,17 +91,20 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
         setActiveAction('fetchByVendor');
         setLoading(true);
 
-        const response = await apiClient.get<LoanRequest[]>(`/loans/borrower/${vendorId}`, undefined, headers);
-        const vendorRequests = response.data.data;
-
+        const response = await apiClient.get<LoanRequest[]>(`/loans/vendors/${vendorId}/requests`, undefined, headers);
+        
+        // Handle both direct array and wrapped response formats
+        const rawData = response.data as any;
+        const requestList = Array.isArray(rawData) ? rawData : (rawData.data || []);
+        
         const requestResponse: LoanRequestListResponse = {
-          items: vendorRequests,
-          total: vendorRequests.length,
-          skip: 0,
-          limit: vendorRequests.length
+          items: requestList,
+          total: rawData.total || requestList.length,
+          skip: rawData.skip || 0,
+          limit: rawData.limit || 10
         };
 
-        setRequests(vendorRequests);
+        setRequests(requestList);
         setLoading(false);
         return requestResponse;
       } catch (error: unknown) {
@@ -124,13 +128,16 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
         setLoading(true);
 
         const response = await apiClient.get<LoanRequest[]>('/loans/requests', filter, headers);
-        const requestList = response.data.data;
-
+        
+        // Handle both direct array and wrapped response formats
+        const rawData = response.data as any;
+        const requestList = Array.isArray(rawData) ? rawData : (rawData.data || []);
+        
         const requestResponse: LoanRequestListResponse = {
           items: requestList,
-          total: requestList.length,
-          skip: filter.skip || 0,
-          limit: filter.limit || 10
+          total: rawData.total || requestList.length,
+          skip: rawData.skip || filter.skip || 0,
+          limit: rawData.limit || filter.limit || 10
         };
 
         setRequests(requestList);
@@ -164,7 +171,7 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
           response = await apiClient.patch<LoanRequest>(`/loans/requests/${id}/status`, { status, rejection_reason: rejectionReason }, headers);
         }
         
-        const updatedRequest = response.data.data;
+        const updatedRequest = (response.data as any).data || response.data;
 
         const updatedRequests = requests.map(r => r.request_id === id ? updatedRequest : r);
         setRequests(updatedRequests);

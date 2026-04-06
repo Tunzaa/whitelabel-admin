@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +16,8 @@ import { LoanProvider } from '../types';
 
 export function LoanProvidersContent() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const tenantId = (session?.user as any)?.tenant_id || "";
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentProvider, setCurrentProvider] = useState<LoanProvider | null>(null);
@@ -29,8 +32,8 @@ export function LoanProvidersContent() {
   } = useLoanProviderStore();
 
   React.useEffect(() => {
-    fetchProviders();
-  }, [fetchProviders]);
+    fetchProviders(undefined, { "X-Tenant-ID": (session?.user as any)?.tenant_id || "" });
+  }, [fetchProviders, session]);
 
   const handleAddProvider = async (values: any) => {
     await createProvider(values);
@@ -39,7 +42,7 @@ export function LoanProvidersContent() {
 
   const handleEditProvider = async (values: any) => {
     if (currentProvider) {
-      await updateProvider(currentProvider.id, values);
+      await updateProvider(currentProvider.provider_id, values);
       setIsEditDialogOpen(false);
       setCurrentProvider(null);
     }
@@ -79,9 +82,7 @@ export function LoanProvidersContent() {
         <CardContent>
           <ProviderTable 
             providers={providers} 
-            isLoading={loading} 
             onEdit={handleEditClick}
-            onDelete={handleDeleteProvider}
           />
         </CardContent>
       </Card>
@@ -91,12 +92,10 @@ export function LoanProvidersContent() {
         <DialogContent className="max-w-2xl">
           <h2 className="text-xl font-bold mb-4">Add New Provider</h2>
           <ProviderForm 
-            initialValues={{
-              tenant_id: '',
-              name: '',
+            initialData={{
+              tenant_id: tenantId,
+              business_name: '',
               description: '',
-              logo_url: '',
-              contact_person: '',
               contact_email: '',
               contact_phone: '',
               is_active: true,
@@ -105,7 +104,6 @@ export function LoanProvidersContent() {
             }}
             onSubmit={handleAddProvider}
             isSubmitting={loading}
-            submitLabel="Create Provider"
           />
         </DialogContent>
       </Dialog>
@@ -116,10 +114,9 @@ export function LoanProvidersContent() {
           <h2 className="text-xl font-bold mb-4">Edit Provider</h2>
           {currentProvider && (
             <ProviderForm 
-              initialValues={currentProvider}
+              initialData={currentProvider}
               onSubmit={handleEditProvider}
               isSubmitting={loading}
-              submitLabel="Update Provider"
             />
           )}
         </DialogContent>

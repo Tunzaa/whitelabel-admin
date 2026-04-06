@@ -2,8 +2,7 @@
 export type LoanProviderFormValues = {
   tenant_id: string;
   user_id?: string;
-  business_name?: string;
-  name: string;
+  business_name: string;
   description: string;
   contact_email: string;
   contact_phone: string;

@@ -41,7 +41,7 @@ import { useLoanProviderStore } from "../store";
 // Form validation schema
 const providerFormSchema = z.object({
   tenant_id: z.string().min(1, "Tenant ID is required"),
-  name: z.string().min(1, "Provider name is required"),
+  business_name: z.string().min(1, "Business name is required"),
   description: z.string().min(1, "Description is required"),
   contact_email: z.string().email("Invalid email address"),
   contact_phone: z.string().min(1, "Contact phone is required"),
@@ -83,7 +83,7 @@ export function ProviderForm({
     mode: "onSubmit",
     defaultValues: initialData || {
       tenant_id: tenantId,
-      name: "",
+      business_name: "",
       description: "",
       contact_email: "",
       contact_phone: "",
@@ -140,14 +140,14 @@ export function ProviderForm({
               <CardContent className="pt-6">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="business_name"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Provider Name <RequiredField />
+                        Business Name <RequiredField />
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter provider name" {...field} />
+                        <Input placeholder="Enter business name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

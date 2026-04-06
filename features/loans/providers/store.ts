@@ -22,6 +22,7 @@ interface LoanProviderStore {
   createProvider: (data: LoanProviderFormValues, headers?: Record<string, string>) => Promise<LoanProvider>;
   updateProvider: (id: string, data: Partial<LoanProviderFormValues>, headers?: Record<string, string>) => Promise<LoanProvider>;
   updateProviderStatus: (id: string, isActive: boolean, headers?: Record<string, string>) => Promise<void>;
+  deleteProvider: (id: string, headers?: Record<string, string>) => Promise<void>;
 }
 
 export const useLoanProviderStore = create<LoanProviderStore>()(
@@ -44,8 +45,9 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         setActiveAction('fetchOne');
         setLoading(true);
         
-        const response = await apiClient.get<LoanProvider>(`/loans/${id}`, undefined, headers);
-        const provider = response.data.data;
+        const response = await apiClient.get<LoanProvider>(`/loans/providers/${id}`, undefined, headers);
+        // Handle both direct and wrapped responses
+        const provider = (response.data as any).data || response.data;
         
         setProvider(provider);
         setLoading(false);
@@ -73,13 +75,16 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         
         // Postman: GET /v1/loans/providers/
         const response = await apiClient.get<LoanProvider[]>('/loans/providers/', filter, headers);
-        const providerList = response.data.data;
+        
+        // Handle both direct array and wrapped response formats
+        const rawData = response.data as any;
+        const providerList = Array.isArray(rawData) ? rawData : (rawData.data || []);
         
         const providerResponse: LoanProviderListResponse = {
           items: providerList,
-          total: providerList.length,
-          skip: filter.skip || 0,
-          limit: filter.limit || 10
+          total: rawData.total || providerList.length,
+          skip: rawData.skip || filter.skip || 0,
+          limit: rawData.limit || filter.limit || 10
         };
         
         setProviders(providerList);
@@ -105,14 +110,14 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         setActiveAction('create');
         setLoading(true);
         
-        // Map form values to API payload if necessary. Postman uses business_name.
+        // Map form values to API payload
         const payload = {
           ...data,
-          business_name: data.business_name || data.name
         };
         
         const response = await apiClient.post<LoanProvider>('/loans/providers/', payload, headers);
-        const newProvider = response.data.data;
+        // Handle both direct and wrapped responses
+        const newProvider = (response.data as any).data || response.data;
         
         setLoading(false);
         return newProvider;
@@ -137,7 +142,8 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         setLoading(true);
         
         const response = await apiClient.put<LoanProvider>(`/loans/providers/${id}`, data, headers);
-        const updatedProvider = response.data.data;
+        // Handle both direct and wrapped responses
+        const updatedProvider = (response.data as any).data || response.data;
         
         // Update local state
         const updatedProviders = providers.map(p => p.provider_id === id ? updatedProvider : p);
@@ -186,6 +192,29 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         throw error;
       } finally {
         setActiveAction(null);
+      }
+    },
+    
+    deleteProvider: async (id: string, headers?: Record<string, string>) => {
+      const { setLoading, setStoreError, providers, setProviders } = get();
+      try {
+        setLoading(true);
+        await apiClient.delete(`/loans/providers/${id}`, undefined, headers);
+        
+        // Update local state
+        const updatedProviders = providers.filter(p => p.provider_id !== id);
+        setProviders(updatedProviders);
+        
+        setLoading(false);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to delete loan provider';
+        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
+        setStoreError({
+          message: errorMessage,
+          status: errorStatus,
+        });
+        setLoading(false);
+        throw error;
       }
     }
   })

@@ -91,7 +91,7 @@ export function ProviderTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Name</TableHead>
+              <TableHead className="w-[250px]">Business Name</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead className="hidden md:table-cell">
                 Description
@@ -118,7 +118,7 @@ export function ProviderTable({
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleRowClick(provider)}
                 >
-                  <TableCell className="font-medium">{provider.name}</TableCell>
+                  <TableCell className="font-medium">{provider.business_name || provider.name}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">
                       <span>{provider.contact_email}</span>
