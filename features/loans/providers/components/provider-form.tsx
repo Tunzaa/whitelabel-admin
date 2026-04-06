@@ -37,6 +37,7 @@ import {
 
 import { LoanProviderFormValues } from "../types";
 import { useLoanProviderStore } from "../store";
+import { useSelectedTenantStore } from "@/features/tenants/store";
 
 // Form validation schema
 const providerFormSchema = z.object({
@@ -69,7 +70,8 @@ export function ProviderForm({
   isSubmitting: externalIsSubmitting,
 }: ProviderFormProps) {
   const { data: session } = useSession();
-  const tenantId = (session?.user as any)?.tenant_id || "";
+  const { selectedTenantId } = useSelectedTenantStore();
+  const tenantId = selectedTenantId || (session?.user as any)?.tenant_id || "";
   const userId = (session?.user as any)?.id || (session?.user as any)?.user_id || "";
   const [activeTab, setActiveTab] = useState("basic");
   const [internalIsSubmitting, setInternalIsSubmitting] = useState(false);

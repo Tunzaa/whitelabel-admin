@@ -12,12 +12,14 @@ import { PlusIcon } from 'lucide-react';
 import { ProviderTable } from './provider-table';
 import { ProviderForm } from './provider-form';
 import { useLoanProviderStore } from '../store';
+import { useSelectedTenantStore } from '@/features/tenants/store';
 import { LoanProvider } from '../types';
 
 export function LoanProvidersContent() {
   const router = useRouter();
   const { data: session } = useSession();
-  const tenantId = (session?.user as any)?.tenant_id || "";
+  const { selectedTenantId } = useSelectedTenantStore();
+  const tenantId = selectedTenantId || (session?.user as any)?.tenant_id || "";
   const userId = (session?.user as any)?.id || (session?.user as any)?.user_id || "";
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -33,8 +35,8 @@ export function LoanProvidersContent() {
   } = useLoanProviderStore();
 
   React.useEffect(() => {
-    fetchProviders(undefined, { "X-Tenant-ID": (session?.user as any)?.tenant_id || "" });
-  }, [fetchProviders, session]);
+    fetchProviders(undefined, { "X-Tenant-ID": tenantId });
+  }, [fetchProviders, tenantId]);
 
   const handleAddProvider = async (values: any) => {
     await createProvider(values);
