@@ -19,6 +19,8 @@ import { ErrorCard } from "@/components/ui/error-card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
 import { useLoanProductStore } from "@/features/loans/products/store";
 import { useLoanProviderStore } from "@/features/loans/providers/store";
@@ -39,7 +41,7 @@ interface LoanProductDetailPageProps {
   }>;
 }
 
-export default function LoanProductDetailPage(props: LoanProductDetailPageProps) {
+function LoanProductDetailPage(props: LoanProductDetailPageProps) {
   const params = use(props.params) as { id: string };
   const { id } = params;
   const router = useRouter();
@@ -99,16 +101,22 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
   };
 
   // Calculate monthly payment for a loan
-  const calculateMonthlyPayment = (principal: string | number, interestRate: string | number, termMonths: number) => {
-    const p = parseFloat(principal.toString());
-    const r = parseFloat(interestRate.toString()) / 100 / 12; // Monthly interest rate
-    const n = termMonths;
+  const calculateMonthlyPayment = (principal: string | number | undefined | null, interestRate: string | number | undefined | null, termMonths: number | undefined | null) => {
+    if (!principal || !interestRate || !termMonths) return 0;
+    
+    try {
+      const p = typeof principal === 'number' ? principal : parseFloat(principal.toString());
+      const r = (typeof interestRate === 'number' ? interestRate : parseFloat(interestRate.toString())) / 100 / 12; // Monthly interest rate
+      const n = termMonths;
 
-    // Monthly payment formula: P * (r * (1 + r)^n) / ((1 + r)^n - 1)
-    if (r === 0) return p / n; // If interest rate is 0, just divide principal by term
+      // Monthly payment formula: P * (r * (1 + r)^n) / ((1 + r)^n - 1)
+      if (r === 0) return p / n; // If interest rate is 0, just divide principal by term
 
-    const monthlyPayment = p * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-    return monthlyPayment;
+      const monthlyPayment = p * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      return isNaN(monthlyPayment) ? 0 : monthlyPayment;
+    } catch (e) {
+      return 0;
+    }
   };
 
   // Calculate total interest paid over the life of the loan
@@ -571,3 +579,8 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
     </div>
   );
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default withModuleAuthorization(withAuthorization(LoanProductDetailPage as any, {
+  permission: "vendor-loans:read",
+}), "vendor_loans");

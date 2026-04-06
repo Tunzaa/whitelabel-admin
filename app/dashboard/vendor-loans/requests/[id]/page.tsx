@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 import { useLoanRequestStore } from "@/features/loans/requests/store";
+import { LoanRequest, PaymentSchedule } from "@/features/loans/requests/types";
 import { useLoanProductStore } from "@/features/loans/products/store";
 import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { useVendorStore } from "@/features/vendors/store";
@@ -39,8 +40,10 @@ import { withAuthorization } from "@/components/auth/with-authorization";
 import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
 
-const StatusTimeline = ({ request }: { request: any }) => {
+const StatusTimeline = ({ request }: { request: LoanRequest }) => {
   if (!request) return null;
+
+  const currentStatus = request.status.toLowerCase();
 
   const steps = [
     {
@@ -54,21 +57,29 @@ const StatusTimeline = ({ request }: { request: any }) => {
       id: 'approved',
       label: 'Approved',
       date: request.approved_at,
-      state: request.status === 'rejected' ? 'error' : (request.approved_at ? 'completed' : (request.status === 'pending' ? 'current' : 'pending')),
+      state: currentStatus === 'rejected'
+        ? 'error'
+        : (request.approved_at || ['approved', 'active', 'disbursed', 'paid', 'completed'].includes(currentStatus)
+          ? 'completed'
+          : (currentStatus === 'pending' ? 'current' : 'pending')),
       icon: CheckCircle
     },
     {
       id: 'disbursed',
       label: 'Disbursed',
       date: request.disbursed_at,
-      state: request.disbursed_at ? 'completed' : (request.status === 'approved' ? 'current' : 'pending'),
+      state: request.disbursed_at || ['active', 'disbursed', 'paid', 'completed'].includes(currentStatus)
+        ? 'completed'
+        : (currentStatus === 'approved' ? 'current' : 'pending'),
       icon: Wallet
     },
     {
       id: 'paid',
       label: 'Repaid',
       date: request.paid_at,
-      state: request.paid_at ? 'completed' : (request.status === 'disbursed' ? 'current' : 'pending'),
+      state: request.paid_at || ['paid', 'completed'].includes(currentStatus)
+        ? 'completed'
+        : (['active', 'disbursed'].includes(currentStatus) ? 'current' : 'pending'),
       icon: Banknote
     }
   ];
@@ -152,7 +163,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   const id = unwrappedParams.id;
   const router = useRouter();
   const session = useSession();
-  const tenantId = session?.data?.user?.tenant_id || '';
+  const tenantId = (session?.data?.user as any)?.tenant_id || '';
 
   const {
     request,
@@ -160,7 +171,10 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     storeError: requestError,
     fetchRequest,
     updateRequestStatus,
-    addPenalty
+    addPenalty,
+    detailedLoan,
+    detailedLoanLoading,
+    fetchDetailedLoan
   } = useLoanRequestStore();
 
   const [penaltyOpen, setPenaltyOpen] = useState(false);
@@ -213,11 +227,20 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  // Mock payment schedule and transaction data
-  const [paymentSchedule, setPaymentSchedule] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [vendorLoans, setVendorLoans] = useState<any[]>([]);
-  const [revenueData, setRevenueData] = useState<any>(null);
+  const [vendorLoans, setVendorLoans] = useState<{
+    id: string;
+    date: string;
+    amount: number;
+    term: number;
+    status: string;
+    product_name: string;
+  }[]>([]);
+  const [revenueData, setRevenueData] = useState<{
+    monthly_average: number;
+    annual_revenue: number;
+    growth_rate: number;
+    recent_months: { month: string; amount: number }[];
+  } | null>(null);
 
   // Memoize tenant headers to prevent recreation on each render
   const tenantHeaders = useMemo(() => ({
@@ -243,32 +266,36 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   }, [fetchLoanRequestData]);
 
   // Extract stable references to IDs to use in dependency arrays
-  const requestId = request?.id;
+  const requestId = request?.request_id || request?.id;
   const productId = request?.product_id;
   const vendorId = request?.vendor_id;
 
   // Separate effect for product fetching with minimal dependencies
   useEffect(() => {
     if (productId) {
-      fetchProduct(productId, tenantHeaders).catch(() => {});
+      fetchProduct(productId, tenantHeaders).catch(() => { });
     }
   }, [productId, fetchProduct, tenantHeaders]);
 
   // Separate effect for vendor fetching with minimal dependencies
   useEffect(() => {
     if (vendorId) {
-      fetchVendor(vendorId, tenantHeaders).catch(() => {});
+      fetchVendor(vendorId, tenantHeaders).catch(() => { });
     }
   }, [vendorId, fetchVendor, tenantHeaders]);
 
-  // Separate effect for mock data generation with minimal dependencies
+  // Fetch detailed loan data once request is loaded (any non-pending status)
   useEffect(() => {
-    if (requestId) {
-      generateMockTransactions();
-      generateMockVendorLoans();
-      generateMockRevenueData();
+    if (request && requestId) {
+      const status = request.status?.toLowerCase();
+      // Skip only for pending/rejected — all others may have loan data
+      if (status !== 'pending' && status !== 'rejected') {
+        fetchDetailedLoan(id, tenantHeaders).catch((err) => {
+          console.warn('No detailed loan data available:', err);
+        });
+      }
     }
-  }, [requestId]);
+  }, [requestId, request?.status, fetchDetailedLoan, id, tenantHeaders]);
 
   // Separate effect for provider fetching
   useEffect(() => {
@@ -284,77 +311,13 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     fetchProviderData();
   }, [product?.provider_id, fetchProvider, tenantHeaders]);
 
-  // Separate effect for payment schedule generation
+  // Separate effect for vendor history generation
   useEffect(() => {
-    if (request?.loan_amount && request?.term_length && product?.interest_rate) {
-      generateMockPaymentSchedule(request.loan_amount, request.term_length, product.interest_rate);
+    if (requestId) {
+      generateMockVendorLoans();
+      generateMockRevenueData();
     }
-  }, [request?.loan_amount, request?.term_length, product?.interest_rate]);
-
-  // Generate mock payment schedule based on loan details
-  const generateMockPaymentSchedule = (amount: number, termMonths: number, interestRate: number) => {
-    const monthlyInterestRate = interestRate / 100 / 12;
-    const monthlyPayment = calculateMonthlyPayment(amount, interestRate, termMonths);
-
-    const schedule = [];
-    let remainingBalance = amount;
-    const today = new Date();
-
-    for (let i = 1; i <= termMonths; i++) {
-      const dueDate = new Date(today);
-      dueDate.setMonth(dueDate.getMonth() + i);
-
-      const interestPayment = remainingBalance * monthlyInterestRate;
-      const principalPayment = monthlyPayment - interestPayment;
-      remainingBalance -= principalPayment;
-
-      const paymentStatus = i === 1 ? 'pending' : (i > 1 ? 'upcoming' : 'paid');
-
-      schedule.push({
-        payment_number: i,
-        due_date: dueDate.toISOString(),
-        payment_amount: monthlyPayment,
-        principal_amount: principalPayment,
-        interest_amount: interestPayment,
-        remaining_balance: Math.max(0, remainingBalance),
-        status: paymentStatus
-      });
-    }
-
-    setPaymentSchedule(schedule);
-  };
-
-  // Generate mock transactions for this loan
-  const generateMockTransactions = () => {
-    const mockTransactions = [
-      {
-        id: 'txn1',
-        date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        type: 'disbursement',
-        amount: request?.loan_amount || 0,
-        description: 'Loan disbursement',
-        status: 'completed'
-      },
-      {
-        id: 'txn2',
-        date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        type: 'payment',
-        amount: (request?.loan_amount || 0) * 0.1,
-        description: 'First payment',
-        status: 'completed'
-      },
-      {
-        id: 'txn3',
-        date: new Date().toISOString(),
-        type: 'payment',
-        amount: (request?.loan_amount || 0) * 0.1,
-        description: 'Monthly payment',
-        status: 'pending'
-      }
-    ];
-
-    setTransactions(mockTransactions);
-  };
+  }, [requestId]);
 
   // Generate mock vendor loans history
   const generateMockVendorLoans = () => {
@@ -408,16 +371,22 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   };
 
   // Calculate monthly payment for a loan
-  const calculateMonthlyPayment = (principal: string | number, interestRate: string | number, termMonths: number) => {
-    const p = parseFloat(principal.toString());
-    const r = parseFloat(interestRate.toString()) / 100 / 12; // Monthly interest rate
-    const n = termMonths;
+  const calculateMonthlyPayment = (principal: string | number | undefined | null, interestRate: string | number | undefined | null, termMonths: number | undefined | null) => {
+    if (!principal || !interestRate || !termMonths) return 0;
 
-    // Monthly payment formula: P * (r * (1 + r)^n) / ((1 + r)^n - 1)
-    if (r === 0) return p / n; // If interest rate is 0, just divide principal by term
+    try {
+      const p = typeof principal === 'number' ? principal : parseFloat(principal.toString());
+      const r = (typeof interestRate === 'number' ? interestRate : parseFloat(interestRate.toString())) / 100 / 12; // Monthly interest rate
+      const n = termMonths;
 
-    const monthlyPayment = p * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-    return monthlyPayment;
+      // Monthly payment formula: P * (r * (1 + r)^n) / ((1 + r)^n - 1)
+      if (r === 0) return p / n; // If interest rate is 0, just divide principal by term
+
+      const monthlyPayment = p * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      return isNaN(monthlyPayment) ? 0 : monthlyPayment;
+    } catch (e) {
+      return 0;
+    }
   };
 
   const handleStatusChange = async (status: string) => {
@@ -760,10 +729,6 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                     <div className="space-y-6">
                       {/* Loan Summary Stats */}
                       <div>
-                        <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-primary" />
-                          Key Financial Details
-                        </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
                             <CardContent className="p-4">
@@ -791,15 +756,13 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                     <div className="bg-primary/10 p-2 rounded-full">
                                       <Wallet className="h-4 w-4 text-primary" />
                                     </div>
-                                    <p className="text-sm font-medium">Total Repayment</p>
+                                    <p className="text-sm font-medium">Outstanding Balance</p>
                                   </div>
                                 </div>
                                 <p className="text-3xl font-bold text-primary">
-                                  {product && request ?
-                                    compactCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length)) :
-                                    'N/A'}
+                                  {detailedLoan ? compactCurrency(detailedLoan.outstanding_balance) : (request?.loan_amount ? compactCurrency(request.loan_amount) : '0')}
                                 </p>
-                                <p className="text-xs text-muted-foreground">Total amount to be repaid</p>
+                                <p className="text-xs text-muted-foreground">Remaining loan balance</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -816,11 +779,14 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                   </div>
                                 </div>
                                 <p className="text-3xl font-bold text-primary">
-                                  {product && request ?
-                                    compactCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length) - request.loan_amount) :
-                                    'N/A'}
+                                  {detailedLoan ?
+                                    compactCurrency(detailedLoan.total_expected_interest) :
+                                    (product && request ?
+                                      compactCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length) - request.loan_amount) :
+                                      'N/A')
+                                  }
                                 </p>
-                                <p className="text-xs text-muted-foreground">Total interest payable</p>
+                                <p className="text-xs text-muted-foreground">Total interest on this loan</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -868,13 +834,15 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                       </div>
 
                       {/* Status Timeline */}
-                      <div className="pt-4 border-t mt-4">
-                        <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-primary" />
-                          Loan Status Timeline
-                        </h3>
-                        <StatusTimeline request={request} />
-                      </div>
+                      {request && (
+                        <div className="pt-4 border-t mt-4">
+                          <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-primary" />
+                            Loan Status Timeline
+                          </h3>
+                          <StatusTimeline request={request} />
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -901,25 +869,40 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paymentSchedule.map((payment) => (
-                          <TableRow key={payment.payment_number}>
-                            <TableCell>{payment.payment_number}</TableCell>
-                            <TableCell>{formatDateDisplay(payment.due_date)}</TableCell>
-                            <TableCell>{compactCurrency(payment.payment_amount)}</TableCell>
-                            <TableCell>{compactCurrency(payment.principal_amount)}</TableCell>
-                            <TableCell>{compactCurrency(payment.interest_amount)}</TableCell>
-                            <TableCell>{compactCurrency(payment.remaining_balance)}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={
-                                payment.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' :
-                                  payment.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' :
-                                    payment.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : ''
-                              }>
-                                {payment.status}
-                              </Badge>
+                        {detailedLoanLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={7} className="h-24 text-center">
+                              <Spinner className="h-6 w-6 mx-auto" />
+                              <p className="mt-2 text-sm text-muted-foreground">Loading payment schedule...</p>
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : detailedLoan?.schedules && detailedLoan.schedules.length > 0 ? (
+                          detailedLoan.schedules.map((schedule) => (
+                            <TableRow key={schedule.schedule_id}>
+                              <TableCell>{schedule.installment_number}</TableCell>
+                              <TableCell>{formatDateDisplay(schedule.due_date)}</TableCell>
+                              <TableCell>{compactCurrency(schedule.amount_due)}</TableCell>
+                              <TableCell>{compactCurrency(schedule.principal_due)}</TableCell>
+                              <TableCell>{compactCurrency(schedule.interest_due)}</TableCell>
+                              <TableCell>{compactCurrency(schedule.amount_due)}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={
+                                  schedule.status === 'PAID' ? 'bg-green-50 text-green-700 border-green-200' :
+                                    schedule.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                      schedule.status === 'OVERDUE' ? 'bg-red-50 text-red-700 border-red-200' : ''
+                                }>
+                                  {schedule.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                              No payment schedule available yet.
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </CardContent>
@@ -1003,23 +986,39 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions.map((txn) => (
-                          <TableRow key={txn.id}>
-                            <TableCell>{formatDateDisplay(txn.date)}</TableCell>
-                            <TableCell className="capitalize">{txn.type}</TableCell>
-                            <TableCell>{txn.description}</TableCell>
-                            <TableCell
-                              className={txn.type === 'payment' ? 'text-green-600' : 'text-blue-600'}
-                            >
-                              {txn.type === 'payment' ? '+' : '-'}{compactCurrency(txn.amount)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="capitalize">
-                                {txn.status}
-                              </Badge>
+                        {detailedLoanLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="h-24 text-center">
+                              <Spinner className="h-6 w-6 mx-auto" />
+                              <p className="mt-2 text-sm text-muted-foreground">Loading transactions...</p>
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : detailedLoan?.repayments && detailedLoan.repayments.length > 0 ? (
+                          detailedLoan.repayments.map((repayment) => (
+                            <TableRow key={repayment.repayment_id}>
+                              <TableCell>{formatDateDisplay(repayment.payment_date)}</TableCell>
+                              <TableCell className="capitalize">Repayment</TableCell>
+                              <TableCell>{repayment.payment_method} {repayment.reference_number ? `(${repayment.reference_number})` : ''}</TableCell>
+                              <TableCell className="text-green-600">
+                                +{compactCurrency(repayment.amount)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`capitalize ${repayment.status === 'SUCCESS' || repayment.status === 'COMPLETED' ? 'bg-green-50 text-green-700 border-green-200' :
+                                    repayment.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                      'bg-red-50 text-red-700 border-red-200'
+                                  }`}>
+                                  {repayment.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                              No transactions recorded yet.
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </CardContent>
@@ -1475,6 +1474,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   );
 }
 
-export default withModuleAuthorization(withAuthorization(LoanRequestDetailPage, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default withModuleAuthorization(withAuthorization(LoanRequestDetailPage as any, {
   permission: "vendor-loans:read",
 }), "vendor_loans");

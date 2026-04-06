@@ -98,11 +98,12 @@ export const useLoanProductStore = create<LoanProductStore>()(
         }));
         
         const isWrapped = !Array.isArray(rawData);
+        const metadata = (isWrapped ? rawData : {}) as { total?: number; skip?: number; limit?: number };
         const productResponse: LoanProductListResponse = {
           items: productsList,
-          total: (isWrapped ? (rawData as any).total : productsList.length) || productsList.length,
-          skip: (isWrapped ? (rawData as any).skip : filter.skip) || 0,
-          limit: (isWrapped ? (rawData as any).limit : filter.limit) || 10
+          total: metadata.total ?? productsList.length,
+          skip: metadata.skip ?? (filter.skip || 0),
+          limit: metadata.limit ?? (filter.limit || 10)
         };
         
         setProducts(productsList);

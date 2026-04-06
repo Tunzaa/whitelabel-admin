@@ -105,25 +105,11 @@ export const navigationData: NavigationData = {
       requiredModule: "rewards_referals",
     },
     {
-      title: "Vendor Loans",
-      url: "#",
+      title: "Loan",
+      url: "/dashboard/vendor-loans/providers",
       icon: IconCreditCard,
       requiredPermission: "vendor-loans:read",
       requiredModule: "vendor_loans",
-      items: [
-        {
-          title: "Providers",
-          url: "/dashboard/vendor-loans/providers",
-        },
-        {
-          title: "Products",
-          url: "/dashboard/vendor-loans/products",
-        },
-        {
-          title: "Loan Requests",
-          url: "/dashboard/vendor-loans/requests",
-        }
-      ],
     },
     {
       title: "Support Tickets",

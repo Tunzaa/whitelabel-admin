@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Search, RefreshCw } from "lucide-react";
 
@@ -17,10 +17,13 @@ import { RequestTable } from "@/features/loans/requests/components/request-table
 import { withAuthorization } from "@/components/auth/with-authorization";
 import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
-function LoanRequestsPage() {
+function LoanRequestsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const session = useSession();
   const tenantId = (session?.data?.user as { tenant_id?: string })?.tenant_id || "";
+
+  const providerId = searchParams.get("provider_id");
 
   const { requests, loading, storeError, fetchRequests, updateRequestStatus } =
     useLoanRequestStore();
@@ -42,6 +45,10 @@ function LoanRequestsPage() {
       skip: (currentPage - 1) * pageSize,
       limit: pageSize,
     };
+
+    if (providerId) {
+      baseFilter.provider_id = providerId;
+    }
 
     // Add search filter if available
     if (searchQuery) {
@@ -96,7 +103,7 @@ function LoanRequestsPage() {
     if (tenantId) {
       fetchRequestData();
     }
-  }, [fetchRequests, activeTab, currentPage, searchQuery, tenantId]);
+  }, [fetchRequests, activeTab, currentPage, searchQuery, tenantId, providerId]);
 
   const handleRequestClick = (request: LoanRequest) => {
     router.push(`/dashboard/vendor-loans/requests/${request.request_id}`);
@@ -282,6 +289,18 @@ function LoanRequestsPage() {
         </Tabs>
       </div>
     </div>
+  );
+}
+
+function LoanRequestsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-full">
+        <Spinner />
+      </div>
+    }>
+      <LoanRequestsContent />
+    </Suspense>
   );
 }
 

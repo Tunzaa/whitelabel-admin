@@ -28,11 +28,13 @@ export interface ApiResponse<T> {
 // Payment Schedule Type
 export type PaymentSchedule = {
   payment_id: string;
+  payment_number?: number;
   due_date: string;
   amount: number;
   principal: number;
   interest: number;
-  status: 'pending' | 'paid' | 'overdue' | 'partial';
+  remaining_balance?: number;
+  status: 'pending' | 'paid' | 'upcoming' | 'overdue' | 'partial';
   payment_date?: string;
   amount_paid?: number;
 };
@@ -149,6 +151,7 @@ export interface LoanRequestFilter {
 export type LoanRequestAction =
   | 'fetchList'
   | 'fetchOne'
+  | 'fetchDetailedLoan'
   | 'create'
   | 'update'
   | 'updateStatus'
@@ -158,3 +161,43 @@ export type LoanRequestAction =
   | 'uploadDocument'
   | 'fetchVendorRevenue'
   | 'addPenalty';
+
+export type LoanRepayment = {
+  repayment_id: string;
+  loan_id: string;
+  schedule_id: string | null;
+  amount: number;
+  payment_method: string;
+  payment_date: string;
+  reference_number?: string;
+  status: 'COMPLETED' | 'PENDING' | 'FAILED' | 'SUCCESS';
+  created_at: string;
+};
+
+export type LoanSchedule = {
+  schedule_id: string;
+  loan_id: string;
+  installment_number: number;
+  principal_due: number;
+  interest_due: number;
+  amount_due: number;
+  due_date: string;
+  status: 'PAID' | 'PENDING' | 'OVERDUE';
+  created_at: string;
+};
+
+export type DetailedLoan = {
+  loan_id: string;
+  request_id: string;
+  borrower_id: string;
+  principal_amount: number;
+  total_expected_interest: number;
+  outstanding_balance: number;
+  disbursement_status: string;
+  disbursed_at: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  schedules: LoanSchedule[];
+  repayments: LoanRepayment[];
+};

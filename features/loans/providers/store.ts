@@ -101,11 +101,12 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         }));
         
         const isWrapped = !Array.isArray(rawData);
+        const metadata = (isWrapped ? rawData : {}) as { total?: number; skip?: number; limit?: number };
         const providerResponse: LoanProviderListResponse = {
           items: providersList,
-          total: (isWrapped ? (rawData as any).total : providersList.length) || providersList.length,
-          skip: (isWrapped ? (rawData as any).skip : filter.skip) || 0,
-          limit: (isWrapped ? (rawData as any).limit : filter.limit) || 10
+          total: metadata.total ?? providersList.length,
+          skip: metadata.skip ?? (filter.skip || 0),
+          limit: metadata.limit ?? (filter.limit || 10)
         };
         
         setProviders(providersList);
@@ -138,7 +139,8 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         
         const response = await apiClient.post<LoanProvider>('/loans/providers/', payload, headers);
         // Handle both direct and wrapped responses
-        const newProvider = (response.data as any).data || response.data;
+        const rawBody = (response.data as ApiResponse<LoanProvider>).data || response.data;
+        const newProvider = Array.isArray(rawBody) ? (rawBody[0] as LoanProvider) : (rawBody as LoanProvider);
         
         setLoading(false);
         return newProvider;
@@ -164,7 +166,8 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         
         const response = await apiClient.put<LoanProvider>(`/loans/providers/${id}`, data, headers);
         // Handle both direct and wrapped responses
-        const updatedProvider = (response.data as any).data || response.data;
+        const rawBody = (response.data as ApiResponse<LoanProvider>).data || response.data;
+        const updatedProvider = Array.isArray(rawBody) ? (rawBody[0] as LoanProvider) : (rawBody as LoanProvider);
         
         // Update local state
         const updatedProviders = providers.map(p => p.provider_id === id ? updatedProvider : p);
