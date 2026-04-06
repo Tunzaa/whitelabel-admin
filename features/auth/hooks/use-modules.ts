@@ -4,7 +4,7 @@ import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import useAuthStore from '../store';
 import { useSelectedTenantStore } from '@/features/tenants/store';
 import { useTenantStore } from '@/features/tenants/store';
-import { isModuleEnabled as checkModuleEnabled } from '@/features/settings/data/modules';
+import { isModuleEnabled as checkModuleEnabled, platformModules } from '@/features/settings/data/modules';
 import { setCachedModules, getCachedModules, clearCache } from '@/lib/cache';
 
 /**
@@ -105,15 +105,18 @@ export const useModules = () => {
 
   // Memoize the module check function
   const isModuleEnabled = useCallback((moduleName: string) => {
+    // Superusers can access all modules
+    if (hasRole('super')) return true;
+
     if (!currentTenantModules) return false;
     return checkModuleEnabled(currentTenantModules, moduleName);
-  }, [currentTenantModules]);
+  }, [currentTenantModules, hasRole]);
 
   // Get enabled modules
   const enabledModules = useMemo(() => {
     if (!currentTenantModules) return [];
     return Object.keys(currentTenantModules).filter(module => currentTenantModules[module]);
-  }, [currentTenantModules]);
+  }, [currentTenantModules, hasRole]);
 
   return useMemo(() => ({
     isModuleEnabled,
