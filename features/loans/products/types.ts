@@ -1,20 +1,14 @@
 // Types for loan products
 export type LoanProductFormValues = {
-  tenant_id: string;
   provider_id: string;
   name: string;
-  description: string;
-  interest_rate: string;
+  interest_rate: number;
   interest_period: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
   interest_rate_type: 'FLAT' | 'REDUCING' | 'REDUCING_BALANCE';
   term_duration: number;
   term_unit: 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
   repayment_frequency: 'DAILY' | 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY';
-  min_amount?: string;
-  max_amount?: string;
-  processing_fee?: string;
-  charges?: Record<string, any>;
-  is_active: boolean;
+  charges: Record<string, any>;
   // For responses/edit forms when we have a product ID
   product_id?: string;
   id?: string;
@@ -33,11 +27,11 @@ export type LoanProduct = {
   _id?: string;
   id?: string;
   product_id: string;
-  tenant_id: string;
+  tenant_id?: string;
   provider_id: string;
   provider_name?: string;
   name: string;
-  description: string;
+  description?: string;
   interest_rate: number;
   interest_period: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
   interest_rate_type: 'FLAT' | 'REDUCING' | 'REDUCING_BALANCE';
@@ -48,8 +42,8 @@ export type LoanProduct = {
   max_amount?: number;
   status?: string;
   processing_fee?: number;
-  charges?: Record<string, any>;
-  is_active: boolean;
+  charges: Record<string, any>;
+  is_active?: boolean;
   created_at?: string;
   updated_at?: string;
 };

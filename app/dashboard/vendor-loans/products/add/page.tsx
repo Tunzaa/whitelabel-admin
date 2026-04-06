@@ -34,7 +34,7 @@ export default function AddLoanProductPage() {
     'X-Tenant-ID': tenantId || ''
   };
 
-  const activeProvider = providers?.find(p => p.provider_id === providerId);
+  const activeProvider = providers?.find(p => p.provider_id === providerId || (p as any).id === providerId);
 
   useEffect(() => {
     const loadProviders = async () => {
@@ -51,7 +51,7 @@ export default function AddLoanProductPage() {
     if (tenantId) {
       loadProviders();
     }
-  }, [fetchProviders, tenantId]);
+  }, [fetchProviders, tenantId, providerId]);
 
   const handleSubmit = async (values: LoanProductFormValues) => {
     try {
@@ -74,20 +74,15 @@ export default function AddLoanProductPage() {
   };
 
   const initialValues: LoanProductFormValues = {
-    tenant_id: tenantId || '',
     provider_id: providerId || '',
     name: '',
-    description: '',
-    interest_rate: '',
+    interest_rate: 0,
     interest_period: 'MONTHLY',
     interest_rate_type: 'REDUCING_BALANCE',
     term_duration: 3,
     term_unit: 'MONTHS',
     repayment_frequency: 'MONTHLY',
-    min_amount: '',
-    max_amount: '',
-    processing_fee: '',
-    is_active: true,
+    charges: {},
   };
 
   return (
