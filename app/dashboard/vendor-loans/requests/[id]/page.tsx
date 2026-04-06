@@ -10,7 +10,7 @@ import {
   CreditCard, Check, X, Percent, Clock, Calendar, ShoppingBag,
   User, Building, Phone, Mail, ExternalLink, BarChart, History,
   CreditCard as CreditCardIcon, CheckCircle, AlertCircle, ChevronRight,
-  Receipt, Calculator, Eye, Wallet, TrendingUp, Settings, Store, Globe, Info, ListChecks
+  Receipt, Calculator, Eye, Wallet, Settings, Store, Globe, Info, ListChecks
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,8 @@ import { useLoanProductStore } from "@/features/loans/products/store";
 import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { useVendorStore } from "@/features/vendors/store";
 import { compactCurrency } from "@/lib/utils";
+import { apiClient } from "@/lib/api/client";
+import { ApiResponse } from "@/lib/core/api";
 
 import { withAuthorization } from "@/components/auth/with-authorization";
 import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
@@ -268,20 +270,8 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  const [vendorLoans, setVendorLoans] = useState<{
-    id: string;
-    date: string;
-    amount: number;
-    term: number;
-    status: string;
-    product_name: string;
-  }[]>([]);
-  const [revenueData, setRevenueData] = useState<{
-    monthly_average: number;
-    annual_revenue: number;
-    growth_rate: number;
-    recent_months: { month: string; amount: number }[];
-  } | null>(null);
+  const [vendorLoanHistory, setVendorLoanHistory] = useState<LoanRequest[]>([]);
+  const [vendorHistoryLoading, setVendorHistoryLoading] = useState(false);
 
   // Memoize tenant headers to prevent recreation on each render
   const tenantHeaders = useMemo(() => ({
@@ -352,64 +342,25 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     fetchProviderData();
   }, [product?.provider_id, fetchProvider, tenantHeaders]);
 
-  // Separate effect for vendor history generation
+  // Fetch real vendor loan history
   useEffect(() => {
-    if (requestId) {
-      generateMockVendorLoans();
-      generateMockRevenueData();
-    }
-  }, [requestId]);
-
-  // Generate mock vendor loans history
-  const generateMockVendorLoans = () => {
-    const mockLoans = [
-      {
-        id: 'loan1',
-        date: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-        amount: 5000,
-        term: 6,
-        status: 'paid',
-        product_name: 'Business Expansion Loan'
-      },
-      {
-        id: 'loan2',
-        date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-        amount: 8000,
-        term: 12,
-        status: 'active',
-        product_name: 'Inventory Financing'
-      },
-      {
-        id: id, // Current loan
-        date: request?.created_at || new Date().toISOString(),
-        amount: request?.loan_amount || 0,
-        term: request?.term_length || 0,
-        status: request?.status || 'pending',
-        product_name: product?.name || 'Unknown Product'
+    const fetchVendorHistory = async () => {
+      if (!vendorId) return;
+      try {
+        setVendorHistoryLoading(true);
+        const response = await apiClient.get<LoanRequest[]>(`/loans/vendors/${vendorId}/requests`, undefined, tenantHeaders);
+        const rawData = response.data as unknown as (ApiResponse<LoanRequest[]> | LoanRequest[]);
+        const historyList = Array.isArray(rawData) ? rawData : ((rawData as any).data || []);
+        setVendorLoanHistory(historyList);
+      } catch (error) {
+        console.warn('Failed to fetch vendor loan history:', error);
+      } finally {
+        setVendorHistoryLoading(false);
       }
-    ];
-
-    setVendorLoans(mockLoans);
-  };
-
-  // Generate mock revenue data
-  const generateMockRevenueData = () => {
-    const mockRevenue = {
-      monthly_average: 12500,
-      annual_revenue: 150000,
-      growth_rate: 15,
-      recent_months: [
-        { month: 'Jan', amount: 11000 },
-        { month: 'Feb', amount: 12500 },
-        { month: 'Mar', amount: 13200 },
-        { month: 'Apr', amount: 12800 },
-        { month: 'May', amount: 13500 },
-        { month: 'Jun', amount: 14200 }
-      ]
     };
 
-    setRevenueData(mockRevenue);
-  };
+    fetchVendorHistory();
+  }, [vendorId, tenantHeaders]);
 
   // Calculate monthly payment for a loan
   const calculateMonthlyPayment = (principal: string | number | undefined | null, interestRate: string | number | undefined | null, termMonths: number | undefined | null) => {
@@ -1075,7 +1026,12 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                   </CardHeader>
 
                   <CardContent>
-                    {vendorLoans.length > 0 ? (
+                    {vendorHistoryLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Spinner className="h-6 w-6" />
+                        <p className="ml-2 text-sm text-muted-foreground">Loading loan history...</p>
+                      </div>
+                    ) : vendorLoanHistory.length > 0 ? (
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
@@ -1083,48 +1039,45 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                               <TableHead>Date</TableHead>
                               <TableHead>Loan Amount</TableHead>
                               <TableHead>Term</TableHead>
-                              <TableHead>Product</TableHead>
                               <TableHead>Status</TableHead>
                               <TableHead>Action</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {vendorLoans.map((loan) => (
-                              <TableRow key={loan.id} className={loan.id === id ? "bg-muted/20" : ""}>
-                                <TableCell>{formatDate(loan.date, 'short')}</TableCell>
-                                <TableCell>{compactCurrency(loan.amount)}</TableCell>
-                                <TableCell>{loan.term} {loan.term === 1 ? 'month' : 'months'}</TableCell>
-                                <TableCell>{loan.product_name}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline" className={`capitalize
-                                      ${loan.status === 'paid' ? 'bg-green-50 text-green-700' : ''}
-                                      ${loan.status === 'active' || loan.status === 'disbursed' ? 'bg-blue-50 text-blue-700' : ''}
-                                      ${loan.status === 'pending' || loan.status === 'approved' ? 'bg-yellow-50 text-yellow-700' : ''}
-                                      ${loan.status === 'rejected' ? 'bg-red-50 text-red-700' : ''}
-                                    `}>
-                                    {loan.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  {loan.id !== id && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => router.push(`/dashboard/loans/requests/${loan.id}`)}
-                                    >
-                                      <Eye className="h-4 w-4 mr-2" />
-                                      View
-                                    </Button>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                            {vendorLoanHistory.map((historyLoan) => {
+                              const loanId = historyLoan.request_id || historyLoan.id;
+                              const isCurrent = loanId === id;
+                              return (
+                                <TableRow key={loanId} className={isCurrent ? "bg-muted/20" : ""}>
+                                  <TableCell>{formatDate(historyLoan.created_at, 'short')}</TableCell>
+                                  <TableCell>{compactCurrency(historyLoan.loan_amount)}</TableCell>
+                                  <TableCell>{historyLoan.term_length} {historyLoan.term_length === 1 ? 'month' : 'months'}</TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(historyLoan.status)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {!isCurrent ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => router.push(`/dashboard/vendor-loans/requests/${loanId}`)}
+                                      >
+                                        <Eye className="h-4 w-4 mr-2" />
+                                        View
+                                      </Button>
+                                    ) : (
+                                      <Badge variant="outline" className="text-xs">Current</Badge>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
                           </TableBody>
                         </Table>
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <p className="text-muted-foreground">No loan history available</p>
+                        <p className="text-muted-foreground">No loan history available for this vendor</p>
                       </div>
                     )}
                   </CardContent>
@@ -1354,44 +1307,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
               </Card>
             )}
 
-            {/* Revenue Summary */}
-            {revenueData && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Financial Summary</CardTitle>
-                  <CardDescription>Vendor's revenue overview</CardDescription>
-                </CardHeader>
 
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground">Monthly Average</p>
-                      <p className="text-lg font-bold">{compactCurrency(revenueData.monthly_average)}</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground">Annual Revenue</p>
-                      <p className="text-lg font-bold">{compactCurrency(revenueData.annual_revenue)}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm">Growth Rate</p>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        {revenueData.growth_rate}%
-                      </Badge>
-                    </div>
-                    <Progress value={revenueData.growth_rate} className="h-1" />
-                  </div>
-
-                  <div className="text-xs text-right text-muted-foreground">
-                    Last 6 months activity
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Approval Actions */}
             {request?.status === 'pending' && (
