@@ -18,6 +18,7 @@ export function LoanProvidersContent() {
   const router = useRouter();
   const { data: session } = useSession();
   const tenantId = (session?.user as any)?.tenant_id || "";
+  const userId = (session?.user as any)?.id || (session?.user as any)?.user_id || "";
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentProvider, setCurrentProvider] = useState<LoanProvider | null>(null);
@@ -100,6 +101,7 @@ export function LoanProvidersContent() {
           <ProviderForm 
             initialData={{
               tenant_id: tenantId,
+              user_id: userId,
               business_name: '',
               description: '',
               contact_email: '',
