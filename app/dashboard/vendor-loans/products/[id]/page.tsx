@@ -21,9 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 import { useLoanProductStore } from "@/features/loans/products/store";
-// import { useLoanProviderStore } from "@/features/loans/providers/store";
-import { generateMockLoanProducts } from "@/features/loans/products/data/mock-data";
-import { generateMockLoanProviders } from "@/features/loans/providers/data/mock-data";
+import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { LoanProduct } from "@/features/loans/products/types";
 import { LoanProvider } from "@/features/loans/providers/types";
 import { compactCurrency } from "@/lib/utils";
@@ -49,91 +47,55 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
   // Get tenant ID safely
   const tenantId = session?.data?.user ? (session.data.user as unknown as CustomUser).tenant_id : undefined;
 
-  // Skip the store for now and use local state directly
-  const [product, setProduct] = useState<LoanProduct | null>(null);
-  const [provider, setProvider] = useState<LoanProvider | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [productError, setProductError] = useState<ProductError | null>(null);
-  const [providerLoading] = useState(false);
+  const { 
+    product, 
+    loading: productLoading, 
+    storeError: productError, 
+    fetchProduct, 
+    updateProductStatus 
+  } = useLoanProductStore();
+  
+  const { 
+    provider, 
+    loading: providerLoading, 
+    fetchProvider 
+  } = useLoanProviderStore();
 
-  // Get the store functions we still need
-  const { updateProductStatus } = useLoanProductStore();
-  // Not using store fetchProvider anymore
+  const loading = productLoading || providerLoading;
 
   // Define tenant headers
   const tenantHeaders = {
     'X-Tenant-ID': tenantId || ''
   };
 
-  // Super simple data loading approach
+  // Fetch data on load
   useEffect(() => {
-
-    // Immediately set loading to true
-    setLoading(true);
-
-    // Hardcoded timeout to ensure we can debug the issue
-    setTimeout(() => {
+    const loadData = async () => {
       try {
-
-        // Use mock data directly
-        const mockProducts = generateMockLoanProducts();
-
-        const foundProduct = mockProducts.find(p => p.product_id === id);
-
-        if (foundProduct) {
-          setProduct(foundProduct);
-
-          // If product has provider_id, get provider data
-          if (foundProduct.provider_id) {
-            const mockProviders = generateMockLoanProviders();
-            const providerData = mockProviders.find(p => p.provider_id === foundProduct.provider_id);
-            if (providerData) {
-              setProvider(providerData);
-            }
-          }
-        } else {
-          setProductError({
-            message: 'Loan product not found',
-            status: 404
-          });
+        const fetchedProduct = await fetchProduct(id, tenantHeaders);
+        if (fetchedProduct?.provider_id) {
+          await fetchProvider(fetchedProduct.provider_id, tenantHeaders);
         }
       } catch (error) {
-        setProductError({
-          message: 'Failed to load loan product data',
-          status: 'error'
-        });
-      } finally {
-        // ALWAYS set loading to false, no matter what happened
-        setLoading(false);
+        console.error("Failed to load product/provider data", error);
       }
-    }, 500); // Small timeout to ensure component is fully mounted
-
-    // Cleanup function
-    return () => {
     };
-  }, [id]); // Only depend on the ID
+
+    loadData();
+  }, [id, tenantId, fetchProduct, fetchProvider]);
 
   const handleStatusChange = async (isActive: boolean) => {
     try {
-      toast.loading(`${isActive ? 'Activating' : 'Deactivating'} product?...`);
       await updateProductStatus(id, isActive, tenantHeaders);
-
-      // After updating, reload the data directly
-      const mockProducts = generateMockLoanProducts();
-      const updatedProduct = mockProducts.find(p => p.product_id === id);
-      if (updatedProduct) {
-        setProduct(updatedProduct);
-      }
-
       toast.success(`Product ${isActive ? 'activated' : 'deactivated'} successfully`);
     } catch {
       toast.error(`Failed to ${isActive ? 'activate' : 'deactivate'} product`);
     }
   };
 
-  const formatFrequency = (frequency: string) => {
+  const formatFrequency = (frequency?: string) => {
     if (!frequency) return "Not set";
-    return frequency.charAt(0).toUpperCase() + frequency.slice(1).replace("_", " ");
+    return frequency.charAt(0).toUpperCase() + frequency.slice(1).toLowerCase().replace("_", " ");
   };
 
   // Calculate monthly payment for a loan
@@ -209,10 +171,10 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
               <h1 className="text-2xl font-bold tracking-tight">{product?.name}</h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Badge
-                  variant={product?.is_active ? "default" : "destructive"}
-                  className={product?.is_active ? "bg-green-500 hover:bg-green-600 px-2 py-1" : "px-2 py-1"}
+                  variant={(product?.is_active || product?.status === 'ACTIVE') ? "default" : "destructive"}
+                  className={(product?.is_active || product?.status === 'ACTIVE') ? "bg-green-500 hover:bg-green-600 px-2 py-1" : "px-2 py-1"}
                 >
-                  {product?.is_active ? "Active" : "Inactive"}
+                  {(product?.is_active || product?.status === 'ACTIVE') ? "Active" : "Inactive"}
                 </Badge>
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
@@ -293,11 +255,11 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
                             <p className="text-3xl font-bold text-primary">{product?.interest_rate}%</p>
                             <p className="text-xs text-muted-foreground">Annual percentage rate (APR)</p>
 
-                            {product?.interest_rate && product?.term_options?.[0] && (
+                            {product?.interest_rate && product?.term_duration && (
                               <div className="mt-2 pt-2 border-t border-dashed border-muted">
                                 <p className="text-xs text-muted-foreground">
-                                  {calculateTotalInterest(10000, product.interest_rate, product.term_options[0]) > 0 ?
-                                    `~${compactCurrency(calculateTotalInterest(10000, product.interest_rate, product.term_options[0]))} interest on $10k/${product.term_options[0]}mo` :
+                                  {calculateTotalInterest(10000, product.interest_rate, product.term_duration) > 0 ?
+                                    `~${compactCurrency(calculateTotalInterest(10000, product.interest_rate, product.term_duration))} interest on $10k/${product.term_duration}${product.term_unit?.toLowerCase().charAt(0)}` :
                                     'Interest calculation not available'}
                                 </p>
                               </div>
@@ -320,14 +282,14 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="text-xs text-muted-foreground">Min</p>
-                                <p className="text-lg font-semibold">{compactCurrency(product?.min_amount)}</p>
+                                <p className="text-lg font-semibold">{compactCurrency(product?.min_amount ?? 0)}</p>
                               </div>
                               <div className="text-center">
                                 <span className="text-muted-foreground">—</span>
                               </div>
                               <div className="text-right">
                                 <p className="text-xs text-muted-foreground">Max</p>
-                                <p className="text-lg font-semibold">{compactCurrency(product?.max_amount)}</p>
+                                <p className="text-lg font-semibold">{compactCurrency(product?.max_amount ?? 0)}</p>
                               </div>
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">Loan amount boundaries</p>
@@ -350,23 +312,14 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
                               <div className="flex justify-between items-center mb-1">
                                 <p className="text-xs text-muted-foreground">Frequency:</p>
                                 <Badge variant="outline" className="capitalize bg-primary/5">
-                                  {formatFrequency(product?.payment_frequency)}
+                                  {formatFrequency(product?.repayment_frequency)}
                                 </Badge>
                               </div>
                               <div className="flex justify-between items-center">
-                                <p className="text-xs text-muted-foreground">Term Options:</p>
-                                <div className="flex flex-wrap gap-1 justify-end">
-                                  {product?.term_options?.slice(0, 3).map((term, index) => (
-                                    <Badge key={index} variant="outline" className="text-xs px-1 py-0 h-5">
-                                      {term}m
-                                    </Badge>
-                                  ))}
-                                  {product?.term_options && product.term_options.length > 3 && (
-                                    <Badge variant="outline" className="text-xs px-1 py-0 h-5">
-                                      +{product.term_options.length - 3}
-                                    </Badge>
-                                  )}
-                                </div>
+                                <p className="text-xs text-muted-foreground">Term:</p>
+                                <Badge variant="outline" className="text-xs px-2 py-0 h-5">
+                                  {product?.term_duration} {product?.term_unit}
+                                </Badge>
                               </div>
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">Payment structure details</p>
@@ -395,15 +348,20 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
                   <div className="space-y-4">
                     <div className="space-y-1">
                       <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
-                        <Calendar className="h-4 w-4" /> Term Options
+                        <Calendar className="h-4 w-4" /> Repayment Frequency
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        {product?.term_options.map((term, index) => (
-                          <Badge key={index} variant="outline" className="capitalize">
-                            {term} {term === 1 ? 'month' : 'months'}
-                          </Badge>
-                        ))}
-                      </div>
+                      <Badge variant="outline" className="capitalize">
+                        {formatFrequency(product?.repayment_frequency)}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
+                        <Clock className="h-4 w-4" /> Loan Term
+                      </p>
+                      <p className="text-sm">
+                        {product?.term_duration} {product?.term_unit}
+                      </p>
                     </div>
 
                     {/* Commented out late_fee since it's not in the LoanProduct type */
@@ -423,7 +381,7 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
                         <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                           <CreditCard className="h-4 w-4" /> Processing Fee
                         </p>
-                        <p className="text-sm">{compactCurrency(product?.processing_fee)}</p>
+                        <p className="text-sm">{compactCurrency(product?.processing_fee || 0)}</p>
                       </div>
                     )}
 
@@ -472,11 +430,11 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback style={{ backgroundColor: "#4f46e5" }}>
-                          {provider?.name ? provider.name.substring(0, 2).toUpperCase() : 'LP'}
+                          {provider?.business_name ? provider.business_name.substring(0, 2).toUpperCase() : 'LP'}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-medium">{provider?.name || 'Unknown Provider'}</h3>
+                        <h3 className="font-medium">{provider?.business_name || 'Unknown Provider'}</h3>
                         <p className="text-sm text-muted-foreground">
                           {provider?.is_active ? "Active Provider" : "Inactive Provider"}
                         </p>
@@ -609,14 +567,6 @@ export default function LoanProductDetailPage(props: LoanProductDetailPageProps)
           </div>
         </div>
 
-        {/* If product has verification_documents, render VerificationDocumentManager */}
-        {product?.verification_documents && (
-          <VerificationDocumentManager
-            documents={product.verification_documents}
-            onDocumentVerification={async () => { toast.info("Verification actions not available in view mode"); }}
-            showActions={false}
-          />
-        )}
       </div>
     </div>
   );

@@ -51,11 +51,22 @@ export type LoanProvider = {
   contact_email: string;
   contact_phone: string;
   is_active: boolean;
+  status?: string;
   name?: string;
   description?: string;
   website?: string;
   address?: string;
   logo_url?: string;
+  integration_key?: string;
+  integration_secret?: string;
+  api_endpoint?: string;
+  verification_documents?: VerificationDocument[];
+  statistics?: {
+    total_loans?: number;
+    loan_growth?: number;
+    avg_loan_value?: string;
+    repayment_rate?: number;
+  };
   created_at?: string;
   updated_at?: string;
 };

@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, use } from 'react';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -12,12 +12,13 @@ export const metadata: Metadata = {
 };
 
 interface ProviderEditPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function ProviderEditPage({ params }: ProviderEditPageProps) {
+export default function ProviderEditPage(props: ProviderEditPageProps) {
+  const params = use(props.params);
   const { id } = params;
   
   if (!id) {

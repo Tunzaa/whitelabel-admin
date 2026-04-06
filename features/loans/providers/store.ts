@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { LoanProvider, LoanProviderFilter, LoanProviderListResponse, LoanProviderAction, LoanProviderError, LoanProviderFormValues } from './types';
 import { apiClient } from '@/lib/api/client';
+import { ApiResponse } from '@/lib/core/api';
 
 interface LoanProviderStore {
   providers: LoanProvider[];
@@ -40,14 +41,30 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
     setProviders: (providers) => set({ providers }),
 
     fetchProvider: async (id: string, headers?: Record<string, string>) => {
-      const { setActiveAction, setLoading, setStoreError, setProvider } = get();
+      const { setActiveAction, setLoading, setStoreError, setProvider, activeAction, provider: currentProvider } = get();
+      
+      // If we're already fetching this exact provider, don't trigger again
+      if (activeAction === 'fetchOne' && currentProvider?.provider_id === id) {
+        return currentProvider;
+      }
+      
       try {
         setActiveAction('fetchOne');
         setLoading(true);
         
         const response = await apiClient.get<LoanProvider>(`/loans/providers/${id}`, undefined, headers);
-        // Handle both direct and wrapped responses
-        const provider = (response.data as any).data || response.data;
+        const rawBody = (response.data as ApiResponse<LoanProvider>).data || response.data;
+        const rawData = Array.isArray(rawBody) ? (rawBody[0] as LoanProvider) : (rawBody as LoanProvider);
+        
+        if (!rawData) {
+          throw new Error('Provider not found');
+        }
+        
+        // Normalize is_active if it's missing but status is present
+        const provider = {
+          ...rawData,
+          is_active: rawData.is_active !== undefined ? rawData.is_active : (rawData.status === 'ACTIVE')
+        };
         
         setProvider(provider);
         setLoading(false);
@@ -77,17 +94,21 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         const response = await apiClient.get<LoanProvider[]>('/loans/providers/', filter, headers);
         
         // Handle both direct array and wrapped response formats
-        const rawData = response.data as any;
-        const providerList = Array.isArray(rawData) ? rawData : (rawData.data || []);
+        const rawData = response.data as unknown as (ApiResponse<LoanProvider[]> | LoanProvider[]);
+        const providersList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanProvider[]>).data || [])).map((p: LoanProvider) => ({
+          ...p,
+          is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE')
+        }));
         
+        const isWrapped = !Array.isArray(rawData);
         const providerResponse: LoanProviderListResponse = {
-          items: providerList,
-          total: rawData.total || providerList.length,
-          skip: rawData.skip || filter.skip || 0,
-          limit: rawData.limit || filter.limit || 10
+          items: providersList,
+          total: (isWrapped ? (rawData as any).total : providersList.length) || providersList.length,
+          skip: (isWrapped ? (rawData as any).skip : filter.skip) || 0,
+          limit: (isWrapped ? (rawData as any).limit : filter.limit) || 10
         };
         
-        setProviders(providerList);
+        setProviders(providersList);
         setLoading(false);
         return providerResponse;
       } catch (error: unknown) {

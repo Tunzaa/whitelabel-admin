@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
@@ -59,16 +59,17 @@ const DetailItem = ({ icon: Icon, label, value, isLink = false, href }: DetailIt
 };
 
 interface LoanProviderDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function LoanProviderDetailPage({ params }: LoanProviderDetailPageProps) {
+export default function LoanProviderDetailPage(props: LoanProviderDetailPageProps) {
+  const params = use(props.params) as { id: string };
   const providerId = params.id;
   const router = useRouter();
   const session = useSession();
-  const tenantId = session?.data?.user?.tenantId || '';
+  const tenantId = (session?.data?.user as any)?.tenant_id || '';
 
   const loanProviderStore = useLoanProviderStore();
   const loanProductStore = useLoanProductStore();
@@ -77,32 +78,34 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
   const { products, loading: productsLoading } = loanProductStore;
 
   const [activeTab, setActiveTab] = useState("details");
-  const [fetchAttempted, setFetchAttempted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // UI States
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fetchInitiated = useRef(false);
 
   // Define tenant headers
   const tenantHeaders = {
     'X-Tenant-ID': tenantId
   };
-
+  
   useEffect(() => {
     // Fetch provider data if not already loaded
-    if (!fetchAttempted && providerId) {
-      setFetchAttempted(true);
-      loanProviderStore.fetchProvider(providerId, tenantHeaders).catch((error) => {
-      });
+    if (!fetchInitiated.current && providerId) {
+      fetchInitiated.current = true;
+      
+      const loadData = async () => {
+        try {
+          const fetchedProvider = await loanProviderStore.fetchProvider(providerId, tenantHeaders);
+          if (fetchedProvider) {
+            await loanProductStore.fetchProducts({ provider_id: providerId }, tenantHeaders);
+          }
+        } catch (error) {
+          // Errors are handled in the store
+        }
+      };
+      
+      loadData();
     }
-  }, [providerId, loanProviderStore, fetchAttempted, tenantHeaders]);
-
-  useEffect(() => {
-    if (activeTab === "products" && provider) {
-      loanProductStore.fetchProducts({ provider_id: providerId }, tenantHeaders).catch((error) => {
-      });
-    }
-  }, [activeTab, loanProductStore, providerId, provider, tenantHeaders]);
+  }, [providerId, loanProviderStore, loanProductStore, tenantHeaders]);
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "Not set";
@@ -118,39 +121,18 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
     }
   };
 
-  // Handle document approve
-  const handleDocumentApprove = async (documentId: string) => {
+  // Handle document verification
+  const handleDocumentVerification = async (payload: { document_id: string, verification_status: "verified" | "rejected", rejection_reason?: string }) => {
     try {
-      toast.success("Document approved successfully");
-      // Simulate an API call for demo purposes
-      await new Promise(resolve => setTimeout(resolve, 500));
+      toast.success(`Document ${payload.verification_status}`);
       // In a real app, you would make an API call here
-      // await approveDocument(documentId);
+      // await updateDocumentStatus(payload);
 
       // Refresh provider data
-      loanProviderStore.fetchProvider(providerId, tenantHeaders);
-      return Promise.resolve();
+      await loanProviderStore.fetchProvider(providerId, tenantHeaders);
     } catch (error) {
-      toast.error("Failed to approve document");
-      return Promise.reject(error);
-    }
-  };
-
-  // Handle document reject
-  const handleDocumentReject = async (documentId: string, reason: string) => {
-    try {
-      toast.success("Document rejected");
-      // Simulate an API call for demo purposes
-      await new Promise(resolve => setTimeout(resolve, 500));
-      // In a real app, you would make an API call here
-      // await rejectDocument(documentId, reason);
-
-      // Refresh provider data
-      loanProviderStore.fetchProvider(providerId, tenantHeaders);
-      return Promise.resolve();
-    } catch (error) {
-      toast.error("Failed to reject document");
-      return Promise.reject(error);
+      toast.error("Failed to update document status");
+      throw error;
     }
   };
 
@@ -221,14 +203,14 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
 
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={provider.logo_url} alt={provider.name} />
+              <AvatarImage src={provider.logo_url} alt={provider.business_name} />
               <AvatarFallback style={{ backgroundColor: "#4f46e5" }}>
-                {provider.name.substring(0, 2).toUpperCase()}
+                {provider.business_name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
 
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{provider.name}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{provider.business_name}</h1>
               {provider.website && (
                 <p className="text-muted-foreground text-sm flex items-center gap-1">
                   <Globe className="h-3 w-3" />
@@ -535,11 +517,16 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
                   </div>
                 ) : products && products.length > 0 ? (
                   <ProductTable
-                    products={products}
+                    products={products.map(p => ({ ...p, provider_name: provider.business_name }))}
                     onView={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}`)}
                     onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
-                    onStatusChange={(productId, isActive) => {
-                      // This would be implemented in the product store
+                    onStatusChange={async (productId, isActive) => {
+                      try {
+                        await loanProductStore.updateProductStatus(productId, isActive, tenantHeaders);
+                        toast.success(`Product ${isActive ? 'activated' : 'deactivated'} successfully`);
+                      } catch (error) {
+                        toast.error("Failed to update product status");
+                      }
                     }}
                   />
                 ) : (
@@ -609,9 +596,8 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
               </CardHeader>
               <CardContent>
                 <VerificationDocumentManager
-                  documents={provider?.verification_documents || []}
-                  onApprove={handleDocumentApprove}
-                  onReject={handleDocumentReject}
+                  documents={(provider?.verification_documents || []) as any}
+                  onDocumentVerification={handleDocumentVerification}
                   showActions={true}
                 />
               </CardContent>

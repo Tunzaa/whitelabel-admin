@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -35,6 +36,7 @@ interface ProductTableProps {
   products: LoanProduct[];
   onView: (product: LoanProduct) => void;
   onEdit: (product: LoanProduct) => void;
+  onProviderClick?: (providerId: string) => void;
   onStatusChange?: (productId: string, isActive: boolean) => void;
 }
 
@@ -42,8 +44,10 @@ export function ProductTable({
   products,
   onView,
   onEdit,
+  onProviderClick,
   onStatusChange,
 }: ProductTableProps) {
+  const router = useRouter();
   const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
   const [selectedProduct, setSelectedProduct] =
     React.useState<LoanProduct | null>(null);
@@ -125,7 +129,19 @@ export function ProductTable({
                 >
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>
-                    {product.provider_name || "Unknown Provider"}
+                    <span 
+                      className="text-primary hover:underline font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onProviderClick) {
+                          onProviderClick(product.provider_id);
+                        } else {
+                          router.push(`/dashboard/vendor-loans/providers/${product.provider_id}`);
+                        }
+                      }}
+                    >
+                      {product.provider_name || "Unknown Provider"}
+                    </span>
                   </TableCell>
                   <TableCell>{product.interest_rate}%</TableCell>
                   <TableCell>

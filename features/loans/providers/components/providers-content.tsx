@@ -83,6 +83,7 @@ export function LoanProvidersContent() {
           <ProviderTable 
             providers={providers} 
             onEdit={handleEditClick}
+            onView={(provider) => router.push(`/dashboard/vendor-loans/providers/${provider.provider_id}`)}
           />
         </CardContent>
       </Card>

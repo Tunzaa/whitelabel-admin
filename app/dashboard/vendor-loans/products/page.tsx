@@ -17,6 +17,7 @@ import {
   LoanProduct,
 } from "@/features/loans/products/types";
 import { ProductTable } from "@/features/loans/products/components/product-table";
+import { useLoanProviderStore } from "@/features/loans/providers/store";
 
 import { withAuthorization } from "@/components/auth/with-authorization";
 import { Can } from "@/components/auth/can";
@@ -26,8 +27,11 @@ function LoanProductsPage() {
   const session = useSession();
   const tenantId = (session?.data?.user as { tenant_id?: string })?.tenant_id;
 
-  const { products, loading, storeError, fetchProducts, updateProductStatus } =
+  const { products, loading: productsLoading, storeError, fetchProducts, updateProductStatus } =
     useLoanProductStore();
+  const { providers, fetchProviders, loading: providersLoading } = useLoanProviderStore();
+
+  const loading = productsLoading || providersLoading;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -71,11 +75,14 @@ function LoanProductsPage() {
 
   // Fetch products when tab changes or page changes
   useEffect(() => {
-    const fetchProductData = async () => {
+    const fetchData = async () => {
       try {
         setIsTabLoading(true);
         const filters = getFilters();
-        await fetchProducts(filters, tenantHeaders);
+        await Promise.all([
+          fetchProducts(filters, tenantHeaders),
+          fetchProviders({}, tenantHeaders)
+        ]);
       } catch {
       } finally {
         setIsTabLoading(false);
@@ -83,9 +90,9 @@ function LoanProductsPage() {
     };
 
     if (tenantId) {
-      fetchProductData();
+      fetchData();
     }
-  }, [fetchProducts, activeTab, currentPage, searchQuery, tenantId]);
+  }, [fetchProducts, fetchProviders, activeTab, currentPage, searchQuery, tenantId]);
 
   const handleProductClick = (product: LoanProduct) => {
     router.push(`/dashboard/vendor-loans/products/${product.product_id}`);
@@ -107,6 +114,15 @@ function LoanProductsPage() {
     setActiveTab(value);
     setCurrentPage(1); // Reset to first page when changing tabs
   };
+
+  // Map provider names to products
+  const productsWithProviderNames = products.map(product => {
+    const provider = providers.find(p => p.provider_id === product.provider_id);
+    return {
+      ...product,
+      provider_name: provider?.business_name || product.provider_name
+    };
+  });
 
   if (loading && products.length === 0) {
     return (
@@ -222,7 +238,7 @@ function LoanProductsPage() {
               </div>
             ) : (
               <ProductTable
-                products={products}
+                products={productsWithProviderNames}
                 onView={handleProductClick}
                 onEdit={(product: LoanProduct) =>
                   router.push(
@@ -240,7 +256,7 @@ function LoanProductsPage() {
               </div>
             ) : (
               <ProductTable
-                products={products}
+                products={productsWithProviderNames}
                 onView={handleProductClick}
                 onEdit={(product: LoanProduct) =>
                   router.push(
@@ -258,7 +274,7 @@ function LoanProductsPage() {
               </div>
             ) : (
               <ProductTable
-                products={products}
+                products={productsWithProviderNames}
                 onView={handleProductClick}
                 onEdit={(product: LoanProduct) =>
                   router.push(

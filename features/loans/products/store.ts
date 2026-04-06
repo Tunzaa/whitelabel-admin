@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { LoanProduct, LoanProductFilter, LoanProductListResponse, LoanProductAction, LoanProductError, LoanProductFormValues } from './types';
 import { apiClient } from '@/lib/api/client';
+import { ApiResponse } from '@/lib/core/api';
 
 interface LoanProductStore {
   products: LoanProduct[];
@@ -45,7 +46,18 @@ export const useLoanProductStore = create<LoanProductStore>()(
         setLoading(true);
         
         const response = await apiClient.get<LoanProduct>(`/loans/products/${id}`, undefined, headers);
-        const product = response.data.data;
+        const rawBody = (response.data as ApiResponse<LoanProduct>).data || response.data;
+        const rawData = Array.isArray(rawBody) ? (rawBody[0] as LoanProduct) : (rawBody as LoanProduct);
+        
+        if (!rawData) {
+          throw new Error('Product not found');
+        }
+        
+        // Normalize is_active if it's missing but status is present
+        const product = {
+          ...rawData,
+          is_active: rawData.is_active !== undefined ? rawData.is_active : (rawData.status === 'ACTIVE')
+        };
         
         setProduct(product);
         setLoading(false);
@@ -79,14 +91,18 @@ export const useLoanProductStore = create<LoanProductStore>()(
         const response = await apiClient.get<LoanProduct[]>(url, filter, headers);
         
         // Handle both direct array and wrapped response formats
-        const rawData = response.data as any;
-        const productsList = Array.isArray(rawData) ? rawData : (rawData.data || []);
+        const rawData = response.data as unknown as (ApiResponse<LoanProduct[]> | LoanProduct[]);
+        const productsList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanProduct[]>).data || [])).map((p: LoanProduct) => ({
+          ...p,
+          is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE')
+        }));
         
+        const isWrapped = !Array.isArray(rawData);
         const productResponse: LoanProductListResponse = {
           items: productsList,
-          total: rawData.total || productsList.length,
-          skip: rawData.skip || filter.skip || 0,
-          limit: rawData.limit || filter.limit || 10
+          total: (isWrapped ? (rawData as any).total : productsList.length) || productsList.length,
+          skip: (isWrapped ? (rawData as any).skip : filter.skip) || 0,
+          limit: (isWrapped ? (rawData as any).limit : filter.limit) || 10
         };
         
         setProducts(productsList);
@@ -122,7 +138,7 @@ export const useLoanProductStore = create<LoanProductStore>()(
         
         const response = await apiClient.post<LoanProduct>('/loans/products/', payload, headers);
         // Handle both direct and wrapped responses
-        const newProduct = (response.data as any).data || response.data;
+        const newProduct = (response.data as ApiResponse<LoanProduct>).data || response.data;
         
         setLoading(false);
         return newProduct;
@@ -148,7 +164,7 @@ export const useLoanProductStore = create<LoanProductStore>()(
         
         const response = await apiClient.put<LoanProduct>(`/loans/products/${id}`, data, headers);
         // Handle both direct and wrapped responses
-        const updatedProduct = (response.data as any).data || response.data;
+        const updatedProduct = (response.data as ApiResponse<LoanProduct>).data || response.data;
         
         const updatedProducts = products.map(p => p.product_id === id ? updatedProduct : p);
         setProducts(updatedProducts);
