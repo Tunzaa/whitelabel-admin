@@ -239,8 +239,11 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
         let response;
         if (status === 'approved') {
           response = await apiClient.post<LoanRequest>(`/loans/requests/${id}/approve`, undefined, headers);
+        } else if (status === 'rejected') {
+          // Use the specific /deny endpoint for rejections as requested
+          response = await apiClient.post<LoanRequest>(`/loans/requests/${id}/deny`, { rejection_reason: rejectionReason }, headers);
         } else {
-          // Reject or other status updates
+          // Fallback for other status updates
           response = await apiClient.patch<LoanRequest>(`/loans/requests/${id}/status`, { status, rejection_reason: rejectionReason }, headers);
         }
 
