@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 import { useLoanRequestStore } from "@/features/loans/requests/store";
-import { LoanRequest, PaymentSchedule } from "@/features/loans/requests/types";
+import { LoanRequest, PaymentSchedule, DetailedLoan } from "@/features/loans/requests/types";
 import { useLoanProductStore } from "@/features/loans/products/store";
 import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { useVendorStore } from "@/features/vendors/store";
@@ -40,49 +40,81 @@ import { withAuthorization } from "@/components/auth/with-authorization";
 import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
 
-const StatusTimeline = ({ request }: { request: LoanRequest }) => {
+const StatusTimeline = ({ request, loan }: { request: LoanRequest; loan?: DetailedLoan | null }) => {
   if (!request) return null;
 
-  const currentStatus = request.status.toLowerCase();
+  const requestStatus = request.status?.toUpperCase();
+
+  // If denied, show a denied banner instead of the timeline
+  if (requestStatus === 'REJECTED' || requestStatus === 'DENIED') {
+    return (
+      <div className="w-full py-6 px-4">
+        <div className="flex flex-col items-center gap-3 p-6 rounded-xl bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200">
+          <div className="w-12 h-12 rounded-full bg-red-100 border-2 border-red-300 flex items-center justify-center">
+            <X className="h-6 w-6 text-red-600" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-red-700">Request Denied</p>
+            <p className="text-xs text-red-500 mt-1">
+              {request.updated_at
+                ? format(new Date(request.updated_at), 'MMM d, yyyy')
+                : 'Date unavailable'}
+            </p>
+            {request.rejection_reason && (
+              <p className="text-xs text-red-600 mt-2 max-w-xs">
+                Reason: {request.rejection_reason}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Determine step completion from actual API data
+  const isApproved = requestStatus === 'APPROVED';
+  const isDisbursed = loan?.disbursement_status?.toUpperCase() === 'DISBURSED';
+  const isRepaid = loan?.status?.toUpperCase() === 'REPAID';
 
   const steps = [
     {
-      id: 'pending',
+      id: 'requested',
       label: 'Requested',
+      completed: true, // Always true — request exists
       date: request.created_at,
-      state: 'completed',
-      icon: FileText
+      icon: FileText,
     },
     {
       id: 'approved',
       label: 'Approved',
-      date: request.approved_at,
-      state: currentStatus === 'rejected'
-        ? 'error'
-        : (request.approved_at || ['approved', 'active', 'disbursed', 'paid', 'completed'].includes(currentStatus)
-          ? 'completed'
-          : (currentStatus === 'pending' ? 'current' : 'pending')),
-      icon: CheckCircle
+      completed: isApproved,
+      date: isApproved ? (loan?.created_at ?? null) : null,
+      icon: CheckCircle,
     },
     {
       id: 'disbursed',
       label: 'Disbursed',
-      date: request.disbursed_at,
-      state: request.disbursed_at || ['active', 'disbursed', 'paid', 'completed'].includes(currentStatus)
-        ? 'completed'
-        : (currentStatus === 'approved' ? 'current' : 'pending'),
-      icon: Wallet
+      completed: isDisbursed,
+      date: isDisbursed ? (loan?.disbursed_at ?? null) : null,
+      icon: Wallet,
     },
     {
-      id: 'paid',
+      id: 'repaid',
       label: 'Repaid',
-      date: request.paid_at,
-      state: request.paid_at || ['paid', 'completed'].includes(currentStatus)
-        ? 'completed'
-        : (['active', 'disbursed'].includes(currentStatus) ? 'current' : 'pending'),
-      icon: Banknote
-    }
+      completed: isRepaid,
+      date: isRepaid ? (loan?.updated_at ?? null) : null,
+      icon: Banknote,
+    },
   ];
+
+  // Mark the last completed step as "active" (current stage)
+  let activeIndex = 0;
+  steps.forEach((step, i) => {
+    if (step.completed) activeIndex = i;
+  });
+
+  // Calculate progress width based on last completed step position
+  const progressWidth = (activeIndex / (steps.length - 1)) * 100;
 
   return (
     <div className="w-full py-4 px-2">
@@ -90,35 +122,44 @@ const StatusTimeline = ({ request }: { request: LoanRequest }) => {
         {/* Connecting Line */}
         <div className="absolute top-5 left-0 w-full h-1 bg-gray-100 -z-0">
           <div
-            className="h-full bg-primary transition-all duration-500"
-            style={{
-              width: `${(steps.filter(s => s.state === 'completed').length / (steps.length - 1)) * 100}%`
-            }}
+            className="h-full bg-primary transition-all duration-700 ease-in-out"
+            style={{ width: `${progressWidth}%` }}
           />
         </div>
 
         {steps.map((step, index) => {
-          const isCompleted = step.state === 'completed';
-          const isCurrent = step.state === 'current';
-          const isError = step.state === 'error';
+          const isCompleted = step.completed;
+          const isActive = index === activeIndex;
+          const isPending = !isCompleted;
 
           let colorClass = "bg-gray-100 text-gray-400 border-gray-200";
-          if (isCompleted) colorClass = "bg-primary text-white border-primary";
-          if (isCurrent) colorClass = "bg-white text-primary border-primary ring-4 ring-primary/20";
-          if (isError) colorClass = "bg-red-100 text-red-600 border-red-200";
+          if (isCompleted && !isActive) colorClass = "bg-primary text-white border-primary";
+          if (isActive) colorClass = "bg-primary text-white border-primary ring-4 ring-primary/20 shadow-lg shadow-primary/25";
+          if (isPending && !isCompleted) colorClass = "bg-gray-50 text-gray-300 border-gray-200";
 
           return (
             <div key={step.id} className="flex flex-col items-center relative z-10">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${colorClass} bg-background`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${colorClass}`}
               >
                 <step.icon className="h-5 w-5" />
               </div>
               <div className="mt-2 text-center">
-                <p className={`text-sm font-medium ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`}>
+                <p className={`text-sm font-medium transition-colors duration-300 ${isActive ? 'text-primary font-semibold' :
+                    isCompleted ? 'text-muted-foreground' :
+                      'text-muted-foreground/50'
+                  }`}>
                   {step.label}
                 </p>
-                {step.date && <p className="text-xs text-muted-foreground">{format(new Date(step.date), 'MMM d')}</p>}
+                {step.date ? (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {format(new Date(step.date), 'MMM d')}
+                  </p>
+                ) : (
+                  isPending && (
+                    <p className="text-xs text-muted-foreground/40 mt-0.5">—</p>
+                  )
+                )}
               </div>
             </div>
           );
@@ -840,7 +881,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                             <Clock className="h-4 w-4 text-primary" />
                             Loan Status Timeline
                           </h3>
-                          <StatusTimeline request={request} />
+                          <StatusTimeline request={request} loan={detailedLoan} />
                         </div>
                       )}
                     </div>
@@ -1000,12 +1041,12 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                               <TableCell className="capitalize">Repayment</TableCell>
                               <TableCell>{repayment.payment_method} {repayment.reference_number ? `(${repayment.reference_number})` : ''}</TableCell>
                               <TableCell className="text-green-600">
-                                +{compactCurrency(repayment.amount)}
+                                +{compactCurrency(repayment.amount_paid)}
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className={`capitalize ${repayment.status === 'SUCCESS' || repayment.status === 'COMPLETED' ? 'bg-green-50 text-green-700 border-green-200' :
-                                    repayment.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                      'bg-red-50 text-red-700 border-red-200'
+                                  repayment.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                    'bg-red-50 text-red-700 border-red-200'
                                   }`}>
                                   {repayment.status}
                                 </Badge>

@@ -166,7 +166,7 @@ export type LoanRepayment = {
   repayment_id: string;
   loan_id: string;
   schedule_id: string | null;
-  amount: number;
+  amount_paid: number;
   payment_method: string;
   payment_date: string;
   reference_number?: string;
