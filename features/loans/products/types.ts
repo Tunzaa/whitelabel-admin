@@ -5,11 +5,15 @@ export type LoanProductFormValues = {
   name: string;
   description: string;
   interest_rate: string;
-  term_options: number[]; // Available terms in months
-  payment_frequency: 'weekly' | 'bi-weekly' | 'monthly';
+  interest_period: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+  interest_rate_type: 'FLAT' | 'REDUCING';
+  term_duration: number;
+  term_unit: 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
+  repayment_frequency: 'DAILY' | 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY';
   min_amount: string;
   max_amount: string;
   processing_fee?: string;
+  charges?: Record<string, any>;
   is_active: boolean;
   // For responses/edit forms when we have a product ID
   product_id?: string;
@@ -35,11 +39,15 @@ export type LoanProduct = {
   name: string;
   description: string;
   interest_rate: number;
-  term_options: number[]; // Available term lengths in months
-  payment_frequency: 'weekly' | 'bi-weekly' | 'monthly';
+  interest_period: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+  interest_rate_type: 'FLAT' | 'REDUCING';
+  term_duration: number;
+  term_unit: 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
+  repayment_frequency: 'DAILY' | 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY';
   min_amount: number;
   max_amount: number;
   processing_fee?: number;
+  charges?: Record<string, any>;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
@@ -79,7 +87,7 @@ export interface LoanProductFilter {
 }
 
 // Action Types
-export type LoanProductAction = 
+export type LoanProductAction =
   | 'fetchList'
   | 'fetchOne'
   | 'create'

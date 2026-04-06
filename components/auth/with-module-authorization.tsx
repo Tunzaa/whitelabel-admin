@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { useModules } from '@/features/auth/hooks/use-modules';
 import Forbidden from './forbidden';
@@ -5,11 +7,7 @@ import { Spinner } from '@/components/ui/spinner';
 
 interface WithModuleAuthorizationProps {
   // Props that might be passed to the wrapped component
-  [key: string]: any;
-}
-
-interface ModuleAuthorizationConfig {
-  module: string;
+  [key: string]: unknown;
 }
 
 /**

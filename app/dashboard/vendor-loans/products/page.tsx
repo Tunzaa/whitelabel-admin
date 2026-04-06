@@ -24,7 +24,7 @@ import { Can } from "@/components/auth/can";
 function LoanProductsPage() {
   const router = useRouter();
   const session = useSession();
-  const tenantId = (session?.data?.user as any)?.tenant_id;
+  const tenantId = (session?.data?.user as { tenant_id?: string })?.tenant_id;
 
   const { products, loading, storeError, fetchProducts, updateProductStatus } =
     useLoanProductStore();
@@ -37,7 +37,7 @@ function LoanProductsPage() {
 
   // Define tenant headers
   const tenantHeaders = {
-    "X-Tenant-ID": tenantId,
+    "X-Tenant-ID": tenantId || "",
   };
 
   // Define filter based on active tab
@@ -76,7 +76,7 @@ function LoanProductsPage() {
         setIsTabLoading(true);
         const filters = getFilters();
         await fetchProducts(filters, tenantHeaders);
-      } catch (error) {
+      } catch {
       } finally {
         setIsTabLoading(false);
       }
@@ -98,7 +98,7 @@ function LoanProductsPage() {
       // Refresh the product list after status change
       const filters = getFilters();
       fetchProducts(filters, tenantHeaders);
-    } catch (error) {
+    } catch {
     }
   };
 
@@ -224,7 +224,7 @@ function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) =>
+                onEdit={(product: LoanProduct) =>
                   router.push(
                     `/dashboard/vendor-loans/products/${product.product_id}/edit`,
                   )
@@ -242,7 +242,7 @@ function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) =>
+                onEdit={(product: LoanProduct) =>
                   router.push(
                     `/dashboard/vendor-loans/products/${product.product_id}/edit`,
                   )
@@ -260,7 +260,7 @@ function LoanProductsPage() {
               <ProductTable
                 products={products}
                 onView={handleProductClick}
-                onEdit={(product) =>
+                onEdit={(product: LoanProduct) =>
                   router.push(
                     `/dashboard/vendor-loans/products/${product.product_id}/edit`,
                   )

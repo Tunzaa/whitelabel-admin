@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo, useCallback } from 'react';
 import useAuthStore from '../store';
 import { Permission, Role } from '../types';
@@ -15,16 +17,8 @@ import { Permission, Role } from '../types';
  *  - `permissions`: An array of all permissions the user has.
  *  - `user`: The current user object.
  */
-// Create a stable selector function outside the component
-const selector = (state: any) => ({
-  permissions: state.permissions,
-  isLoading: state.isLoading,
-  permissionsLoaded: state.permissionsLoaded,
-  user: state.user,
-});
-
 export const usePermissions = () => {
-  // Use individual selectors to avoid creating new objects
+  // Use individual hooks to avoid creating new objects and avoid getSnapshot error
   const permissions = useAuthStore((state) => state.permissions);
   const isLoading = useAuthStore((state) => state.isLoading);
   const permissionsLoaded = useAuthStore((state) => state.permissionsLoaded);

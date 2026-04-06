@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { usePermissions } from '@/features/auth/hooks/use-permissions';
 import { Permission, Role } from '@/features/auth/types';
@@ -6,7 +8,7 @@ import { Spinner } from '@/components/ui/spinner';
 
 interface WithAuthorizationProps {
   // Props that might be passed to the wrapped component
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface AuthorizationConfig {

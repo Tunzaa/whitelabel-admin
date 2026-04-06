@@ -5,24 +5,22 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Search, RefreshCw } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { ErrorCard } from "@/components/ui/error-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useLoanRequestStore } from "@/features/loans/requests/store";
-import { LoanRequestFilter } from "@/features/loans/requests/types";
+import { LoanRequestFilter, LoanRequest } from "@/features/loans/requests/types";
 import { RequestTable } from "@/features/loans/requests/components/request-table";
 
 import { withAuthorization } from "@/components/auth/with-authorization";
 import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
-import { Can } from "@/components/auth/can";
 
 function LoanRequestsPage() {
   const router = useRouter();
   const session = useSession();
-  const tenantId = (session?.data?.user as any)?.tenant_id || "";
+  const tenantId = (session?.data?.user as { tenant_id?: string })?.tenant_id || "";
 
   const { requests, loading, storeError, fetchRequests, updateRequestStatus } =
     useLoanRequestStore();
@@ -89,7 +87,7 @@ function LoanRequestsPage() {
         setIsTabLoading(true);
         const filters = getFilters();
         await fetchRequests(filters, tenantHeaders);
-      } catch (error) {
+      } catch {
       } finally {
         setIsTabLoading(false);
       }
@@ -100,7 +98,7 @@ function LoanRequestsPage() {
     }
   }, [fetchRequests, activeTab, currentPage, searchQuery, tenantId]);
 
-  const handleRequestClick = (request: any) => {
+  const handleRequestClick = (request: LoanRequest) => {
     router.push(`/dashboard/vendor-loans/requests/${request.request_id}`);
   };
 
@@ -111,7 +109,7 @@ function LoanRequestsPage() {
       // Refresh the request list after status change
       const filters = getFilters();
       fetchRequests(filters, tenantHeaders);
-    } catch (error) {
+    } catch {
     }
   };
 

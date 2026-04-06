@@ -1,7 +1,6 @@
 import { create } from 'zustand';
-import { LoanProvider, LoanProviderFilter, LoanProviderListResponse, LoanProviderAction, LoanProviderError, ApiResponse, LoanProviderFormValues } from './types';
+import { LoanProvider, LoanProviderFilter, LoanProviderListResponse, LoanProviderAction, LoanProviderError, LoanProviderFormValues } from './types';
 import { apiClient } from '@/lib/api/client';
-import { generateMockLoanProviders } from './data/mock-data';
 
 interface LoanProviderStore {
   providers: LoanProvider[];
@@ -45,24 +44,15 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         setActiveAction('fetchOne');
         setLoading(true);
         
-        // For now, we'll use mock data
-        // In a real implementation, this would be an API call
-        // const response = await apiClient.get<ApiResponse<LoanProvider>>(`/loans/providers/${id}`, undefined, headers);
+        const response = await apiClient.get<LoanProvider>(`/loans/${id}`, undefined, headers);
+        const provider = response.data.data;
         
-        // Mock implementation
-        const mockProviders = generateMockLoanProviders();
-        const provider = mockProviders.find(provider => provider.provider_id === id);
-        
-        if (provider) {
-          setProvider(provider);
-          setLoading(false);
-          return provider;
-        }
-        
-        throw new Error('Loan provider not found');
+        setProvider(provider);
+        setLoading(false);
+        return provider;
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch loan provider';
-        const errorStatus = (error as any)?.response?.status;
+        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
           message: errorMessage,
           status: errorStatus,
@@ -81,48 +71,23 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         setActiveAction('fetchList');
         setLoading(true);
         
-        // For now, we'll use mock data
-        // In a real implementation, this would be an API call
-        // const response = await apiClient.get<ApiResponse<LoanProviderListResponse>>(`/loans/providers`, undefined, headers);
-        
-        // Mock implementation
-        const mockProviders = generateMockLoanProviders();
-        
-        // Filter providers based on search and is_active if provided
-        let filteredProviders = mockProviders;
-        if (filter.search) {
-          const search = filter.search.toLowerCase();
-          filteredProviders = filteredProviders.filter(provider => 
-            provider.name.toLowerCase().includes(search) || 
-            provider.description.toLowerCase().includes(search) ||
-            provider.contact_email.toLowerCase().includes(search)
-          );
-        }
-        
-        if (filter.is_active !== undefined) {
-          filteredProviders = filteredProviders.filter(provider => 
-            provider.is_active === filter.is_active
-          );
-        }
-        
-        // Handle pagination
-        const skip = filter.skip || 0;
-        const limit = filter.limit || 10;
-        const paginatedProviders = filteredProviders.slice(skip, skip + limit);
+        // Postman: GET /v1/loans/providers/
+        const response = await apiClient.get<LoanProvider[]>('/loans/providers/', filter, headers);
+        const providerList = response.data.data;
         
         const providerResponse: LoanProviderListResponse = {
-          items: paginatedProviders,
-          total: filteredProviders.length,
-          skip,
-          limit
+          items: providerList,
+          total: providerList.length,
+          skip: filter.skip || 0,
+          limit: filter.limit || 10
         };
         
-        setProviders(paginatedProviders);
+        setProviders(providerList);
         setLoading(false);
         return providerResponse;
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch loan providers';
-        const errorStatus = (error as any)?.response?.status;
+        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
           message: errorMessage,
           status: errorStatus,
@@ -140,36 +105,20 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         setActiveAction('create');
         setLoading(true);
         
-        // For now, we'll use mock data
-        // In a real implementation, this would be an API call
-        // const response = await apiClient.post<ApiResponse<LoanProvider>>('/loans/providers', data, headers);
-        
-        // Mock implementation
-        const mockProviders = generateMockLoanProviders();
-        const newProvider: LoanProvider = {
-          provider_id: `provider_${Date.now()}`,
-          tenant_id: data.tenant_id,
-          name: data.name,
-          description: data.description,
-          contact_email: data.contact_email,
-          contact_phone: data.contact_phone,
-          website: data.website,
-          address: data.address,
-          is_active: data.is_active,
-          integration_key: data.integration_key,
-          integration_secret: data.integration_secret,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+        // Map form values to API payload if necessary. Postman uses business_name.
+        const payload = {
+          ...data,
+          business_name: data.business_name || data.name
         };
         
-        // In a real app, this would be persisted to a database
-        mockProviders.push(newProvider);
+        const response = await apiClient.post<LoanProvider>('/loans/providers/', payload, headers);
+        const newProvider = response.data.data;
         
         setLoading(false);
         return newProvider;
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to create loan provider';
-        const errorStatus = (error as any)?.response?.status;
+        const errorMessage = error instanceof Error ? error.message : 'Failed to register loan provider';
+        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
           message: errorMessage,
           status: errorStatus,
@@ -187,33 +136,19 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         setActiveAction('update');
         setLoading(true);
         
-        // For now, we'll use mock data
-        // In a real implementation, this would be an API call
-        // const response = await apiClient.put<ApiResponse<LoanProvider>>(`/loans/providers/${id}`, data, headers);
+        const response = await apiClient.put<LoanProvider>(`/loans/providers/${id}`, data, headers);
+        const updatedProvider = response.data.data;
         
-        // Mock implementation
-        const mockProviders = [...providers];
-        const providerIndex = mockProviders.findIndex(p => p.provider_id === id);
-        
-        if (providerIndex === -1) {
-          throw new Error('Loan provider not found');
-        }
-        
-        const updatedProvider = {
-          ...mockProviders[providerIndex],
-          ...data,
-          updated_at: new Date().toISOString()
-        };
-        
-        mockProviders[providerIndex] = updatedProvider as LoanProvider;
-        setProviders(mockProviders);
-        setProvider(updatedProvider as LoanProvider);
+        // Update local state
+        const updatedProviders = providers.map(p => p.provider_id === id ? updatedProvider : p);
+        setProviders(updatedProviders);
+        setProvider(updatedProvider);
         
         setLoading(false);
-        return updatedProvider as LoanProvider;
+        return updatedProvider;
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to update loan provider';
-        const errorStatus = (error as any)?.response?.status;
+        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
           message: errorMessage,
           status: errorStatus,
@@ -231,29 +166,18 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         setActiveAction('updateStatus');
         setLoading(true);
         
-        // For now, we'll use mock data
-        // In a real implementation, this would be an API call
-        // const response = await apiClient.patch<ApiResponse<void>>(`/loans/providers/${id}/status`, { is_active: isActive }, headers);
+        await apiClient.patch<void>(`/loans/providers/${id}/status`, { is_active: isActive }, headers);
         
-        // Mock implementation
-        const mockProviders = [...providers];
-        const providerIndex = mockProviders.findIndex(p => p.provider_id === id);
+        // Update local state
+        const updatedProviders = providers.map(p => 
+          p.provider_id === id ? { ...p, is_active: isActive } : p
+        );
+        setProviders(updatedProviders);
         
-        if (providerIndex === -1) {
-          throw new Error('Loan provider not found');
-        }
-        
-        mockProviders[providerIndex] = {
-          ...mockProviders[providerIndex],
-          is_active: isActive,
-          updated_at: new Date().toISOString()
-        };
-        
-        setProviders(mockProviders);
         setLoading(false);
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to update loan provider status';
-        const errorStatus = (error as any)?.response?.status;
+        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
           message: errorMessage,
           status: errorStatus,

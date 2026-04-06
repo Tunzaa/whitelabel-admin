@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import useAuthStore from '../store';
 import { useSelectedTenantStore } from '@/features/tenants/store';
@@ -83,7 +85,7 @@ export const useModules = () => {
         setCurrentTenantModules(modulesData);
         // Cache the result
         setCachedModules(modulesData, currentTenantId);
-      } catch (error) {
+      } catch {
         // Set empty modules instead of crashing
         setCurrentTenantModules({});
         // Don't cache empty data to allow retry on next load

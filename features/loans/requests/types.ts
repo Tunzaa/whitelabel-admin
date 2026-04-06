@@ -1,10 +1,12 @@
 // Types for loan requests
 export type LoanRequestFormValues = {
   tenant_id: string;
-  vendor_id: string;
+  vendor_id?: string;
+  borrower_id: string;
   product_id: string;
-  loan_amount: string;
-  term_length: number; // in months
+  amount_requested: number;
+  loan_amount?: string;
+  term_length?: number; // in months
   purpose: string;
   status?: string;
   notes?: string;
