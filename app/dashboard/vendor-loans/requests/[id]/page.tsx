@@ -217,7 +217,8 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     addPenalty,
     detailedLoan,
     detailedLoanLoading,
-    fetchDetailedLoan
+    fetchDetailedLoan,
+    disburseLoan
   } = useLoanRequestStore();
 
   const [penaltyOpen, setPenaltyOpen] = useState(false);
@@ -395,6 +396,33 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     }
   };
 
+  const handleDisburse = async () => {
+    if (!detailedLoan?.loan_id) {
+      toast.error("Loan details not loaded yet");
+      return;
+    }
+
+    if (detailedLoan.disbursement_status === 'DISBURSED') {
+      toast.error("Loan is already disbursed");
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      await disburseLoan(detailedLoan.loan_id, tenantHeaders);
+      
+      // The store refreshes the request automatically, but let's be sure to use the request ID if they differ
+      await fetchRequest(id, tenantHeaders);
+      await fetchDetailedLoan(id, tenantHeaders);
+
+      toast.success("Loan disbursed successfully");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to disburse loan");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending':
@@ -440,13 +468,15 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
       case 'approved':
         return (
           <div className="flex space-x-2 mt-4">
-            <Button
-              variant="default"
-              disabled={updating}
-              onClick={() => handleStatusChange('disbursed')}
-            >
-              Mark as Disbursed
-            </Button>
+            {(!detailedLoan || detailedLoan.disbursement_status !== 'DISBURSED') && (
+              <Button
+                variant="default"
+                disabled={updating || detailedLoanLoading}
+                onClick={handleDisburse}
+              >
+                Mark as Disbursed
+              </Button>
+            )}
           </div>
         );
       case 'disbursed':
@@ -1352,11 +1382,11 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  {request?.status === 'approved' && (
+                  {request?.status === 'approved' && (!detailedLoan || detailedLoan.disbursement_status !== 'DISBURSED') && (
                     <Button
                       variant="default"
-                      disabled={updating}
-                      onClick={() => handleStatusChange('disbursed')}
+                      disabled={updating || detailedLoanLoading}
+                      onClick={handleDisburse}
                       className="w-full"
                     >
                       <Wallet className="h-4 w-4 mr-2" />
