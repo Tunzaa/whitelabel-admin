@@ -115,8 +115,8 @@ export const useLoanProductStore = create<LoanProductStore>()(
         const payload = {
           ...data,
           interest_rate: parseFloat(data.interest_rate),
-          min_amount: parseFloat(data.min_amount),
-          max_amount: parseFloat(data.max_amount),
+          min_amount: data.min_amount ? parseFloat(data.min_amount) : undefined,
+          max_amount: data.max_amount ? parseFloat(data.max_amount) : undefined,
           processing_fee: data.processing_fee ? parseFloat(data.processing_fee) : undefined
         };
         

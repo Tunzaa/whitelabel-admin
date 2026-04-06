@@ -19,7 +19,7 @@ export default function AddLoanProductPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const session = useSession();
-  const tenantId = session?.data?.user?.tenant_id;
+  const tenantId = (session?.data?.user as any)?.tenant_id;
 
   const { createProduct, loading: productLoading } = useLoanProductStore();
   const { providers, fetchProviders, loading: providersLoading } = useLoanProviderStore();
@@ -37,11 +37,7 @@ export default function AddLoanProductPage() {
       try {
         await fetchProviders({ is_active: true }, tenantHeaders);
       } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load loan providers",
-          variant: "destructive",
-        });
+        toast.error("Failed to load loan providers");
       }
     };
 
@@ -53,11 +49,7 @@ export default function AddLoanProductPage() {
       setSubmitting(true);
       await createProduct(values, tenantHeaders);
 
-      toast({
-        title: "Success",
-        description: "Loan product created successfully",
-        variant: "success",
-      });
+      toast.success("Loan product created successfully");
 
       // If there was a providerId in the URL, redirect back to that provider's details
       if (providerId) {
@@ -66,11 +58,7 @@ export default function AddLoanProductPage() {
         router.push("/dashboard/vendor-loans/products");
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to create loan product",
-        variant: "destructive",
-      });
+      toast.error(error?.message || "Failed to create loan product");
     } finally {
       setSubmitting(false);
     }
@@ -82,8 +70,11 @@ export default function AddLoanProductPage() {
     name: '',
     description: '',
     interest_rate: '',
-    term_options: [3, 6, 12], // Default term options in months
-    payment_frequency: 'monthly',
+    interest_period: 'MONTHLY',
+    interest_rate_type: 'REDUCING_BALANCE',
+    term_duration: 3,
+    term_unit: 'MONTHS',
+    repayment_frequency: 'MONTHLY',
     min_amount: '',
     max_amount: '',
     processing_fee: '',

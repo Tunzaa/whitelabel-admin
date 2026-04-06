@@ -27,7 +27,7 @@ export default function EditLoanProductPage(props: EditLoanProductPageProps) {
   const { id } = params;
   const router = useRouter();
   const session = useSession();
-  const tenantId = session?.data?.user?.tenant_id;
+  const tenantId = (session?.data?.user as any)?.tenant_id;
 
   const {
     product,
@@ -68,14 +68,17 @@ export default function EditLoanProductPage(props: EditLoanProductPageProps) {
         tenant_id: product.tenant_id,
         provider_id: product.provider_id,
         name: product.name,
-        description: product.description,
+        description: product.description || '',
         interest_rate: product.interest_rate.toString(),
-        term_options: product.term_options,
-        payment_frequency: product.payment_frequency,
-        min_amount: product.min_amount.toString(),
-        max_amount: product.max_amount.toString(),
-        processing_fee: product.processing_fee ? product.processing_fee.toString() : '',
-        is_active: product.is_active,
+        interest_period: product.interest_period,
+        interest_rate_type: product.interest_rate_type,
+        term_duration: product.term_duration,
+        term_unit: product.term_unit,
+        repayment_frequency: product.repayment_frequency,
+        min_amount: product.min_amount !== undefined ? product.min_amount.toString() : '',
+        max_amount: product.max_amount !== undefined ? product.max_amount.toString() : '',
+        processing_fee: product.processing_fee !== undefined ? product.processing_fee.toString() : '',
+        is_active: product.is_active || product.status === 'ACTIVE',
       });
     }
   }, [product]);
