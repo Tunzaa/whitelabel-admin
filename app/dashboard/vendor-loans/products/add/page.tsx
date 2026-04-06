@@ -13,13 +13,15 @@ import { Spinner } from "@/components/ui/spinner";
 import { ProductForm } from "@/features/loans/products/components/product-form";
 import { useLoanProductStore } from "@/features/loans/products/store";
 import { useLoanProviderStore } from "@/features/loans/providers/store";
+import { useSelectedTenantStore } from "@/features/tenants/store";
 import { LoanProductFormValues } from "@/features/loans/products/types";
 
 export default function AddLoanProductPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const session = useSession();
-  const tenantId = (session?.data?.user as any)?.tenant_id;
+  const { selectedTenantId } = useSelectedTenantStore();
+  const tenantId = selectedTenantId || (session?.data?.user as any)?.tenant_id;
 
   const { createProduct, loading: productLoading } = useLoanProductStore();
   const { providers, fetchProviders, loading: providersLoading } = useLoanProviderStore();
@@ -32,17 +34,24 @@ export default function AddLoanProductPage() {
     'X-Tenant-ID': tenantId || ''
   };
 
+  const activeProvider = providers?.find(p => p.provider_id === providerId);
+
   useEffect(() => {
     const loadProviders = async () => {
       try {
         await fetchProviders({ is_active: true }, tenantHeaders);
       } catch (error) {
-        toast.error("Failed to load loan providers");
+        // Only show error if we're not still waiting for session/tenant
+        if (tenantId) {
+          toast.error("Failed to load loan providers");
+        }
       }
     };
 
-    loadProviders();
-  }, [fetchProviders]);
+    if (tenantId) {
+      loadProviders();
+    }
+  }, [fetchProviders, tenantId]);
 
   const handleSubmit = async (values: LoanProductFormValues) => {
     try {
@@ -95,9 +104,14 @@ export default function AddLoanProductPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Add Loan Product</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Add Loan Product {activeProvider ? `for ${activeProvider.name}` : ''}
+          </h1>
           <p className="text-muted-foreground">
-            Create a new loan product offered by a provider
+            {activeProvider 
+              ? `Creating a new product for ${activeProvider.name}`
+              : 'Create a new loan product offered by a provider'
+            }
           </p>
         </div>
       </div>
