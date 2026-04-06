@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { PlusIcon } from 'lucide-react';
 
 import { ProviderTable } from './provider-table';
@@ -91,7 +91,12 @@ export function LoanProvidersContent() {
       {/* Add Provider Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl">
-          <h2 className="text-xl font-bold mb-4">Add New Provider</h2>
+          <DialogHeader>
+            <DialogTitle>Add New Provider</DialogTitle>
+            <DialogDescription>
+              Enter the details of the new loan provider below.
+            </DialogDescription>
+          </DialogHeader>
           <ProviderForm 
             initialData={{
               tenant_id: tenantId,
@@ -112,7 +117,12 @@ export function LoanProvidersContent() {
       {/* Edit Provider Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl">
-          <h2 className="text-xl font-bold mb-4">Edit Provider</h2>
+          <DialogHeader>
+            <DialogTitle>Edit Provider</DialogTitle>
+            <DialogDescription>
+              Update the provider information below.
+            </DialogDescription>
+          </DialogHeader>
           {currentProvider && (
             <ProviderForm 
               initialData={currentProvider}
