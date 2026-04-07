@@ -217,6 +217,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     addPenalty,
     detailedLoan,
     detailedLoanLoading,
+    detailedLoanError,
     fetchDetailedLoan,
     disburseLoan
   } = useLoanRequestStore();
@@ -282,15 +283,21 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   // Use a stable function reference with useCallback
   const fetchLoanRequestData = useCallback(async () => {
     if (!id) return;
-
+    
     try {
       setLoading(true);
-      await fetchRequest(id, tenantHeaders);
+      // Fetch both request and detailed loan in parallel
+      // We use settled to ensure one failure doesn't block the other
+      await Promise.allSettled([
+        fetchRequest(id, tenantHeaders),
+        fetchDetailedLoan(id, tenantHeaders)
+      ]);
     } catch (error) {
+      console.error("Error fetching loan data:", error);
     } finally {
       setLoading(false);
     }
-  }, [fetchRequest, id, tenantHeaders]);
+  }, [fetchRequest, fetchDetailedLoan, id, tenantHeaders]);
 
   // Call the fetch function only once on mount
   useEffect(() => {
@@ -315,19 +322,6 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
       fetchVendor(vendorId, tenantHeaders).catch(() => { });
     }
   }, [vendorId, fetchVendor, tenantHeaders]);
-
-  // Fetch detailed loan data once request is loaded (any non-pending status)
-  useEffect(() => {
-    if (request && requestId) {
-      const status = request.status?.toLowerCase();
-      // Skip only for pending/rejected — all others may have loan data
-      if (status !== 'pending' && status !== 'rejected') {
-        fetchDetailedLoan(id, tenantHeaders).catch((err) => {
-          console.warn('No detailed loan data available:', err);
-        });
-      }
-    }
-  }, [requestId, request?.status, fetchDetailedLoan, id, tenantHeaders]);
 
   // Separate effect for provider fetching
   useEffect(() => {
@@ -502,7 +496,9 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     );
   }
 
-  if (!request && !requestLoading && requestError) {
+  // Only show the error card if BOTH the request and detailed loan data failed to load
+  // If we have either, we can usually show something useful
+  if (!request && !detailedLoan && !requestLoading && !detailedLoanLoading && (requestError || detailedLoanError)) {
     return (
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-4 border-b">
@@ -531,8 +527,8 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
             <ErrorCard
               title="Failed to load loan request"
               error={{
-                status: requestError.status?.toString() || "Error",
-                message: requestError.message || "An error occurred while loading the loan request details."
+                status: (requestError?.status || detailedLoanError?.status)?.toString() || "Error",
+                message: requestError?.message || detailedLoanError?.message || "An error occurred while loading the loan request details."
               }}
               buttonText="Return to Loan Requests"
               buttonAction={() => router.push("/dashboard/vendor-loans/providers")}
