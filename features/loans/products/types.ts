@@ -9,6 +9,12 @@ export type LoanProductFormValues = {
   term_unit: 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS';
   repayment_frequency: 'DAILY' | 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY';
   charges: Record<string, any>;
+  min_amount?: number;
+  max_amount?: number;
+  processing_fee?: number;
+  description?: string;
+  is_active?: boolean;
+  tenant_id?: string;
   // For responses/edit forms when we have a product ID
   product_id?: string;
   id?: string;

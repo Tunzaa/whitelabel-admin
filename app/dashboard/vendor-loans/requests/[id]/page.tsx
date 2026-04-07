@@ -574,7 +574,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
 
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
-                {compactCurrency(request?.loan_amount || 0)} Loan Request
+                {compactCurrency(detailedLoan?.principal_amount || request?.loan_amount || 0)} Loan Request
               </h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 {getStatusBadge(request?.status || 'Unknown')}
@@ -637,7 +637,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                             <Banknote className="h-4 w-4" /> Loan Amount
                           </p>
-                          <p className="text-xl font-bold">{compactCurrency(request?.loan_amount || 0)}</p>
+                          <p className="text-xl font-bold">{compactCurrency(detailedLoan?.principal_amount || request?.loan_amount || 0)}</p>
                         </div>
 
                         <div className="space-y-1">
@@ -645,7 +645,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                             <Clock className="h-4 w-4" /> Term Length
                           </p>
                           <p className="text-sm">
-                            {request?.term_length} {request?.term_length === 1 ? 'month' : 'months'}
+                            {detailedLoan?.schedules ? detailedLoan.schedules.length : (request?.term_length || 0)} {(detailedLoan?.schedules?.length || request?.term_length) === 1 ? 'month' : 'months'}
                           </p>
                         </div>
 
@@ -653,7 +653,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                             <Percent className="h-4 w-4" /> Interest Rate
                           </p>
-                          <p className="text-sm">{product?.interest_rate || 'N/A'}%</p>
+                          <p className="text-sm">{(detailedLoan as any)?.interest_rate ?? request?.interest_rate ?? product?.interest_rate ?? 'N/A'}%</p>
                         </div>
                       </div>
 
@@ -667,10 +667,12 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
 
                         <div className="space-y-1">
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="h-4 w-4" /> Expected Disbursement
+                            <Calendar className="h-4 w-4" /> {['disbursed', 'active', 'completed', 'paid'].includes(request?.status?.toLowerCase() || '') ? 'Disbursement Date' : 'Expected Disbursement'}
                           </p>
                           <p className="text-sm">
-                            {request?.status === 'approved' ? formatDateDisplay(new Date().toISOString()) : 'Pending approval'}
+                            {['approved', 'disbursed', 'active', 'completed', 'paid'].includes(request?.status?.toLowerCase() || '') ?
+                              formatDateDisplay(detailedLoan?.disbursed_at || request?.disbursed_at || (request?.status?.toLowerCase() === 'approved' ? new Date().toISOString() : null) || '—') :
+                              'Pending approval'}
                           </p>
                         </div>
 
@@ -679,9 +681,11 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                             <CreditCard className="h-4 w-4" /> Monthly Payment (Est.)
                           </p>
                           <p className="text-sm">
-                            {product && request ?
-                              compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
-                              'N/A'}
+                            {detailedLoan?.schedules?.[0]?.amount_due ?
+                              compactCurrency(detailedLoan.schedules[0].amount_due) :
+                              (product && request ?
+                                compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
+                                'N/A')}
                           </p>
                         </div>
                       </div>
@@ -764,7 +768,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                   </div>
                                   <Badge variant="outline" className="bg-primary/5">Requested</Badge>
                                 </div>
-                                <p className="text-3xl font-bold text-primary">{compactCurrency(request?.loan_amount || 0)}</p>
+                                <p className="text-3xl font-bold text-primary">{compactCurrency(detailedLoan?.principal_amount || request?.loan_amount || 0)}</p>
                                 <p className="text-xs text-muted-foreground">Total loan amount requested</p>
                               </div>
                             </CardContent>
@@ -828,9 +832,11 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                 <div>
                                   <p className="text-sm font-medium text-muted-foreground">Monthly Payment</p>
                                   <p className="text-2xl font-bold text-primary">
-                                    {product && request ?
-                                      compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
-                                      'N/A'}
+                                    {detailedLoan?.schedules?.[0]?.amount_due ?
+                                      compactCurrency(detailedLoan.schedules[0].amount_due) :
+                                      (product && request ?
+                                        compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
+                                        'N/A')}
                                   </p>
                                 </div>
                               </div>
@@ -846,7 +852,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                 <div>
                                   <p className="text-sm font-medium text-muted-foreground">Term Length</p>
                                   <p className="text-2xl font-bold text-primary">
-                                    {request?.term_length || 0} <span className="text-lg font-medium text-primary/70">{(request?.term_length || 0) === 1 ? 'month' : 'months'}</span>
+                                    {detailedLoan?.schedules ? detailedLoan.schedules.length : (request?.term_length || 0)} <span className="text-lg font-medium text-primary/70">{(detailedLoan?.schedules?.length || request?.term_length || 0) === 1 ? 'month' : 'months'}</span>
                                   </p>
                                 </div>
                               </div>
@@ -1318,7 +1324,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">Amount Range</p>
                       <p className="text-sm font-medium">
-                        {compactCurrency(product.min_amount)} - {compactCurrency(product.max_amount)}
+                        {compactCurrency(product.min_amount || (product as any).min_principal || 0)} - {compactCurrency(product.max_amount || (product as any).max_principal || 0)}
                       </p>
                     </div>
                   </div>

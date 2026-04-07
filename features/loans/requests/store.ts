@@ -108,7 +108,14 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
         const response = await apiClient.get<LoanRequest>(`/loans/requests/${id}`, undefined, headers);
         // Handle both direct and wrapped responses
         
-        const request = (response.data as ApiResponse<LoanRequest>).data || response.data;
+        const rawRequest = (response.data as ApiResponse<LoanRequest>).data || response.data;
+        
+        // Normalize request data
+        const request: LoanRequest = {
+          ...rawRequest,
+          loan_amount: rawRequest.loan_amount || (rawRequest as any).amount || (rawRequest as any).principal || 0,
+          term_length: rawRequest.term_length || (rawRequest as any).duration || (rawRequest as any).term || 0,
+        };
 
         setRequest(request);
         setLoading(false);
@@ -138,9 +145,11 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
 
         // Handle both direct array and wrapped response formats
         const rawData = response.data as unknown as (ApiResponse<LoanRequest[]> | LoanRequest[]);
-        const requestList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanRequest[]>).data || [])).map((r: LoanRequest) => ({
+        const requestList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanRequest[]>).data || [])).map((r: any) => ({
           ...r,
-        }));
+          loan_amount: r.loan_amount || r.amount || r.principal || 0,
+          term_length: r.term_length || r.duration || r.term || 0,
+        })) as LoanRequest[];
 
         const isWrapped = !Array.isArray(rawData);
         const metadata = (isWrapped ? rawData : {}) as { total?: number; skip?: number; limit?: number };
@@ -192,10 +201,11 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
 
         // Handle both direct array and wrapped response formats
         const rawData = response.data as unknown as (ApiResponse<LoanRequest[]> | LoanRequest[]);
-        const requestList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanRequest[]>).data || [])).map((r: LoanRequest) => ({
+        const requestList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanRequest[]>).data || [])).map((r: any) => ({
           ...r,
-          // Add any normalization if needed
-        }));
+          loan_amount: r.loan_amount || r.amount || r.principal || 0,
+          term_length: r.term_length || r.duration || r.term || 0,
+        })) as LoanRequest[];
 
         interface RequestListMetadata {
           total?: number;

@@ -53,10 +53,12 @@ export const useLoanProductStore = create<LoanProductStore>()(
           throw new Error('Product not found');
         }
         
-        // Normalize is_active if it's missing but status is present
+        // Normalize is_active and amounts
         const product = {
           ...rawData,
-          is_active: rawData.is_active !== undefined ? rawData.is_active : (rawData.status === 'ACTIVE')
+          is_active: rawData.is_active !== undefined ? rawData.is_active : (rawData.status === 'ACTIVE'),
+          min_amount: rawData.min_amount || (rawData as any).min_principal || (rawData as any).minimum_amount || 0,
+          max_amount: rawData.max_amount || (rawData as any).max_principal || (rawData as any).maximum_amount || 0,
         };
         
         setProduct(product);
@@ -92,10 +94,12 @@ export const useLoanProductStore = create<LoanProductStore>()(
         
         // Handle both direct array and wrapped response formats
         const rawData = response.data as unknown as (ApiResponse<LoanProduct[]> | LoanProduct[]);
-        const productsList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanProduct[]>).data || [])).map((p: LoanProduct) => ({
+        const productsList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanProduct[]>).data || [])).map((p: any) => ({
           ...p,
-          is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE')
-        }));
+          is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
+          min_amount: p.min_amount || p.min_principal || p.minimum_amount || 0,
+          max_amount: p.max_amount || p.max_principal || p.maximum_amount || 0,
+        })) as LoanProduct[];
         
         const isWrapped = !Array.isArray(rawData);
         const metadata = (isWrapped ? rawData : {}) as { total?: number; skip?: number; limit?: number };
@@ -131,10 +135,10 @@ export const useLoanProductStore = create<LoanProductStore>()(
         
         const payload = {
           ...data,
-          interest_rate: parseFloat(data.interest_rate),
-          min_amount: data.min_amount ? parseFloat(data.min_amount) : undefined,
-          max_amount: data.max_amount ? parseFloat(data.max_amount) : undefined,
-          processing_fee: data.processing_fee ? parseFloat(data.processing_fee) : undefined
+          interest_rate: typeof data.interest_rate === 'string' ? parseFloat(data.interest_rate) : data.interest_rate,
+          min_amount: typeof data.min_amount === 'string' ? parseFloat(data.min_amount) : data.min_amount,
+          max_amount: typeof data.max_amount === 'string' ? parseFloat(data.max_amount) : data.max_amount,
+          processing_fee: typeof data.processing_fee === 'string' ? parseFloat(data.processing_fee) : data.processing_fee
         };
         
         const response = await apiClient.post<LoanProduct>('/loans/products/', payload, headers);
