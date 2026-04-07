@@ -180,6 +180,7 @@ export type LoanSchedule = {
   installment_number: number;
   principal_due: number;
   interest_due: number;
+  fees_due: number;
   amount_due: number;
   due_date: string;
   status: 'PAID' | 'PENDING' | 'OVERDUE';
@@ -192,6 +193,7 @@ export type DetailedLoan = {
   borrower_id: string;
   principal_amount: number;
   total_expected_interest: number;
+  total_fees: number;
   outstanding_balance: number;
   disbursement_status: string;
   disbursed_at: string;

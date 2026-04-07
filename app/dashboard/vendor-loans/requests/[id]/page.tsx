@@ -148,8 +148,8 @@ const StatusTimeline = ({ request, loan }: { request: LoanRequest; loan?: Detail
               </div>
               <div className="mt-2 text-center">
                 <p className={`text-sm font-medium transition-colors duration-300 ${isActive ? 'text-primary font-semibold' :
-                    isCompleted ? 'text-muted-foreground' :
-                      'text-muted-foreground/50'
+                  isCompleted ? 'text-muted-foreground' :
+                    'text-muted-foreground/50'
                   }`}>
                   {step.label}
                 </p>
@@ -410,7 +410,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     try {
       setUpdating(true);
       await disburseLoan(detailedLoan.loan_id, tenantHeaders);
-      
+
       // The store refreshes the request automatically, but let's be sure to use the request ID if they differ
       await fetchRequest(id, tenantHeaders);
       await fetchDetailedLoan(id, tenantHeaders);
@@ -546,8 +546,15 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
 
   // Format date helper for display
   const formatDateDisplay = (dateString: string | null | undefined) => {
-    if (!dateString) return "Not set";
-    return format(new Date(dateString), "MMMM d, yyyy");
+    if (!dateString || dateString === '—') return "—";
+    try {
+      const date = new Date(dateString);
+      // Check if the date is valid (isNaN on getTime() returns true for Invalid Date)
+      if (isNaN(date.getTime())) return "—";
+      return format(date, "MMMM d, yyyy");
+    } catch (e) {
+      return "—";
+    }
   };
 
   return (
@@ -755,7 +762,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                     <div className="space-y-6">
                       {/* Loan Summary Stats */}
                       <div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
                             <CardContent className="p-4">
                               <div className="flex flex-col gap-2">
@@ -813,6 +820,25 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                   }
                                 </p>
                                 <p className="text-xs text-muted-foreground">Total interest on this loan</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
+                            <CardContent className="p-4">
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="bg-primary/10 p-2 rounded-full">
+                                      <Banknote className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <p className="text-sm font-medium">Total Fees</p>
+                                  </div>
+                                </div>
+                                <p className="text-3xl font-bold text-primary">
+                                  {detailedLoan ? compactCurrency(detailedLoan.total_fees || 0) : 0}
+                                </p>
+                                <p className="text-xs text-muted-foreground">Total fees for this loan</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -892,14 +918,14 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                           <TableHead>Amount</TableHead>
                           <TableHead>Principal</TableHead>
                           <TableHead>Interest</TableHead>
-                          <TableHead>Balance</TableHead>
+                          <TableHead>Fees</TableHead>
                           <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {detailedLoanLoading ? (
                           <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center">
+                            <TableCell colSpan={8} className="h-24 text-center">
                               <Spinner className="h-6 w-6 mx-auto" />
                               <p className="mt-2 text-sm text-muted-foreground">Loading payment schedule...</p>
                             </TableCell>
@@ -912,7 +938,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                               <TableCell>{compactCurrency(schedule.amount_due)}</TableCell>
                               <TableCell>{compactCurrency(schedule.principal_due)}</TableCell>
                               <TableCell>{compactCurrency(schedule.interest_due)}</TableCell>
-                              <TableCell>{compactCurrency(schedule.amount_due)}</TableCell>
+                              <TableCell>{compactCurrency(schedule.fees_due || 0)}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className={
                                   schedule.status === 'PAID' ? 'bg-green-50 text-green-700 border-green-200' :
@@ -926,7 +952,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                            <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                               No payment schedule available yet.
                             </TableCell>
                           </TableRow>
