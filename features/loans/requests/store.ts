@@ -190,11 +190,8 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
         } else if (filter.vendor_id) {
           url = `/loans/vendors/${filter.vendor_id}/requests`;
         } else {
-          // If no specific filter is provided, we avoid the generic fetch
-          // to comply with the request to remove generic occurrences.
-          console.warn('Attempted to fetch loan requests without provider_id or vendor_id. Skipping request.');
-          set({ requests: [], loading: false });
-          return { items: [], total: 0, skip: filter.skip || 0, limit: filter.limit || 10 };
+          // Fallback to global requests endpoint for Super Users or all-access views
+          url = '/loans/requests';
         }
 
         const response = await apiClient.get<LoanRequest[]>(url, filter, headers);
@@ -203,7 +200,7 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
         const rawData = response.data as unknown as (ApiResponse<LoanRequest[]> | LoanRequest[]);
         const requestList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanRequest[]>).data || [])).map((r: any) => ({
           ...r,
-          loan_amount: r.loan_amount || r.amount || r.principal || 0,
+          loan_amount: r.loan_amount || r.amount || r.principal || r.amount_requested || 0,
           term_length: r.term_length || r.duration || r.term || 0,
         })) as LoanRequest[];
 

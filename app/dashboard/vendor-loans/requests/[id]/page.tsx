@@ -510,7 +510,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => router.push("/dashboard/loans/requests")}
+              onClick={() => router.push("/dashboard/vendor-loans/providers")}
               className="shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -535,7 +535,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                 message: requestError.message || "An error occurred while loading the loan request details."
               }}
               buttonText="Return to Loan Requests"
-              buttonAction={() => router.push("/dashboard/loans/requests")}
+              buttonAction={() => router.push("/dashboard/vendor-loans/providers")}
               buttonIcon={ArrowLeft}
             />
           </div>
@@ -558,7 +558,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/dashboard/vendor-loans/requests")}
+            onClick={() => router.push("/dashboard/vendor-loans/providers")}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
