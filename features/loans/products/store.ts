@@ -4,18 +4,18 @@ import { apiClient } from '@/lib/api/client';
 import { ApiResponse } from '@/lib/core/api';
 
 interface LoanProductStore {
-  products: LoanProduct[];
+  products: LoanProductListResponse | null;
   product: LoanProduct | null;
   loading: boolean;
   storeError: LoanProductError | null;
   activeAction: LoanProductAction | null;
-  
+
   // UI State
   setActiveAction: (action: LoanProductAction | null) => void;
   setLoading: (loading: boolean) => void;
   setStoreError: (error: LoanProductError | null) => void;
   setProduct: (product: LoanProduct | null) => void;
-  setProducts: (products: LoanProduct[]) => void;
+  setProducts: (products: LoanProductListResponse | null) => void;
   
   // API Methods
   fetchProduct: (id: string, headers?: Record<string, string>) => Promise<LoanProduct>;
@@ -27,7 +27,7 @@ interface LoanProductStore {
 
 export const useLoanProductStore = create<LoanProductStore>()(
   (set, get) => ({
-    products: [],
+    products: null,
     product: null,
     loading: false,
     storeError: null,
@@ -91,26 +91,67 @@ export const useLoanProductStore = create<LoanProductStore>()(
         }
         
         const response = await apiClient.get<LoanProduct[]>(url, filter, headers);
-        
-        // Handle both direct array and wrapped response formats
-        const rawData = response.data as unknown as (ApiResponse<LoanProduct[]> | LoanProduct[]);
-        const productsList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanProduct[]>).data || [])).map((p: any) => ({
-          ...p,
-          is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
-          min_amount: p.min_amount || p.min_principal || p.minimum_amount || 0,
-          max_amount: p.max_amount || p.max_principal || p.maximum_amount || 0,
-        })) as LoanProduct[];
-        
-        const isWrapped = !Array.isArray(rawData);
-        const metadata = (isWrapped ? rawData : {}) as { total?: number; skip?: number; limit?: number };
+
+        console.log('[Loan Products Store] Raw API response:', response.data);
+
+        // Handle both direct array, wrapped with .data, and wrapped with .items response formats
+        const rawData = response.data as unknown as (ApiResponse<LoanProduct[]> | LoanProduct[] | LoanProductListResponse);
+        let productsList: LoanProduct[] = [];
+
+        if (Array.isArray(rawData)) {
+          // Direct array
+          productsList = rawData.map((p: any) => ({
+            ...p,
+            is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
+            min_amount: p.min_amount || p.min_principal || p.minimum_amount || 0,
+            max_amount: p.max_amount || p.max_principal || p.maximum_amount || 0,
+          })) as LoanProduct[];
+        } else if ('items' in rawData && Array.isArray(rawData.items)) {
+          // Wrapped with .items (paginated response)
+          productsList = rawData.items.map((p: any) => ({
+            ...p,
+            is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
+            min_amount: p.min_amount || p.min_principal || p.minimum_amount || 0,
+            max_amount: p.max_amount || p.max_principal || p.maximum_amount || 0,
+          })) as LoanProduct[];
+        } else if ('data' in rawData && Array.isArray(rawData.data)) {
+          // Wrapped with .data (ApiResponse format)
+          productsList = rawData.data.map((p: any) => ({
+            ...p,
+            is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
+            min_amount: p.min_amount || p.min_principal || p.minimum_amount || 0,
+            max_amount: p.max_amount || p.max_principal || p.maximum_amount || 0,
+          })) as LoanProduct[];
+        }
+
+        console.log('[Loan Products Store] Processed productsList:', productsList);
+
+        // Extract metadata from the response
+        let total = productsList.length;
+        let skip = filter.skip || 0;
+        let limit = filter.limit || 10;
+
+        if ('items' in rawData && typeof rawData === 'object' && rawData !== null) {
+          // Response is already in paginated format with .items
+          total = (rawData as any).total ?? productsList.length;
+          skip = (rawData as any).skip ?? (filter.skip || 0);
+          limit = (rawData as any).limit ?? (filter.limit || 10);
+        } else if ('data' in rawData && typeof rawData === 'object' && rawData !== null) {
+          // Response is in ApiResponse format with .data
+          total = (rawData as any).total ?? productsList.length;
+          skip = (rawData as any).skip ?? (filter.skip || 0);
+          limit = (rawData as any).limit ?? (filter.limit || 10);
+        }
+
         const productResponse: LoanProductListResponse = {
           items: productsList,
-          total: metadata.total ?? productsList.length,
-          skip: metadata.skip ?? (filter.skip || 0),
-          limit: metadata.limit ?? (filter.limit || 10)
+          total,
+          skip,
+          limit
         };
-        
-        setProducts(productsList);
+
+        console.log('[Loan Products Store] Setting products:', productResponse);
+        setProducts(productResponse);
         setLoading(false);
         return productResponse;
       } catch (error: unknown) {
@@ -196,21 +237,20 @@ export const useLoanProductStore = create<LoanProductStore>()(
       try {
         setActiveAction('updateStatus');
         setLoading(true);
-        
+
         await apiClient.patch<void>(`/loans/products/${id}/status`, { is_active: isActive }, headers);
-        
-        const updatedProducts = products.map(p => 
+
+        // Update local state
+        const updatedProducts = products?.items?.map(p =>
           p.product_id === id ? { ...p, is_active: isActive } : p
-        );
-        setProducts(updatedProducts);
-        
+        ) || [];
+        setProducts({ ...products!, items: updatedProducts });
+
         setLoading(false);
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to update loan product status';
-        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
-          message: errorMessage,
-          status: errorStatus,
+          message: error instanceof Error ? error.message : 'Failed to update loan product status',
+          status: (error as { response?: { status?: number } })?.response?.status
         });
         setLoading(false);
         throw error;

@@ -9,12 +9,7 @@ import { withAuthorization } from '@/components/auth/with-authorization';
 
 function LoanProvidersPage() {
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <PageHeader
-        title="Loan Providers"
-        description="Manage loan providers for your organization"
-      />
-      
+    <div className="">
       <Suspense fallback={<LoadingPage />}>
         <LoanProvidersContent />
       </Suspense>

@@ -601,9 +601,12 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
           {/* Main Content Area - 5 columns */}
           <div className="md:col-span-5">
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <Info className="h-4 w-4" /> Overview
+                </TabsTrigger>
+                <TabsTrigger value="vendor" className="flex items-center gap-2">
+                  <Building className="h-4 w-4" /> Vendor Details
                 </TabsTrigger>
                 <TabsTrigger value="payment-plan" className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" /> Payment Plan
@@ -896,6 +899,248 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Vendor Details Tab */}
+              <TabsContent value="vendor" className="space-y-6 mt-6">
+                {request?.vendor_details ? (
+                  <>
+                    {/* Business Information Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Building className="h-5 w-5" />
+                          Business Information
+                        </CardTitle>
+                        <CardDescription>Vendor business details and contact information</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Business Name</p>
+                              <p className="text-lg font-semibold">{request.vendor_details.business_name}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Vendor ID</p>
+                              <p className="text-sm">{request.vendor_details.vendor_id}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Contact Email</p>
+                              <p className="text-sm flex items-center gap-2">
+                                <Mail className="h-4 w-4" />
+                                {request.vendor_details.contact_email}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Contact Phone</p>
+                              <p className="text-sm flex items-center gap-2">
+                                <Phone className="h-4 w-4" />
+                                {request.vendor_details.contact_phone}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Verification Status</p>
+                              <Badge variant={request.vendor_details.verification_status === 'verified' ? 'default' : 'secondary'}>
+                                {request.vendor_details.verification_status}
+                              </Badge>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Source</p>
+                              <p className="text-sm">{request.vendor_details.source}</p>
+                            </div>
+                            {request.vendor_details.business_details && (
+                              <>
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Registration Date</p>
+                                  <p className="text-sm">{request.vendor_details.business_details.registration_date || 'Not provided'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Location</p>
+                                  <p className="text-sm">
+                                    {request.vendor_details.business_details.country}{request.vendor_details.business_details.region ? `, ${request.vendor_details.business_details.region}` : ''}
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Business Metrics Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <BarChart className="h-5 w-5" />
+                          Business Metrics
+                        </CardTitle>
+                        <CardDescription>Transaction and order statistics for vendor</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-muted/20 p-4 rounded-lg border">
+                            <p className="text-sm text-muted-foreground">Total Transactions</p>
+                            <p className="text-2xl font-bold">{request.vendor_details.transaction_stats?.transaction_count || 0}</p>
+                          </div>
+                          <div className="bg-muted/20 p-4 rounded-lg border">
+                            <p className="text-sm text-muted-foreground">Total Transaction Value</p>
+                            <p className="text-2xl font-bold">{compactCurrency(request.vendor_details.transaction_stats?.total_value || 0)}</p>
+                          </div>
+                          <div className="bg-muted/20 p-4 rounded-lg border">
+                            <p className="text-sm text-muted-foreground">Current Orders</p>
+                            <p className="text-2xl font-bold">{request.vendor_details.current_orders_count || 0}</p>
+                          </div>
+                          <div className="bg-muted/20 p-4 rounded-lg border">
+                            <p className="text-sm text-muted-foreground">Outstanding Payments</p>
+                            <p className="text-2xl font-bold">{compactCurrency(request.vendor_details.outstanding_payments || 0)}</p>
+                          </div>
+                          <div className="bg-muted/20 p-4 rounded-lg border md:col-span-2">
+                            <p className="text-sm text-muted-foreground">Last Transaction Date</p>
+                            <p className="text-2xl font-bold">
+                              {request.vendor_details.transaction_stats?.last_transaction_date
+                                ? format(new Date(request.vendor_details.transaction_stats.last_transaction_date), 'MMM d, yyyy')
+                                : 'No transactions'}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* KYC Documents Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          KYC Documents
+                        </CardTitle>
+                        <CardDescription>Verification documents for the business</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {request.vendor_details.kyc_documents ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {request.vendor_details.kyc_documents.business_license && (
+                              <div className="border rounded-lg p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="bg-blue-100 p-2 rounded-md">
+                                    <FileText className="h-5 w-5 text-blue-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Business License</p>
+                                    <p className="text-sm text-muted-foreground">Verification document</p>
+                                  </div>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={request.vendor_details.kyc_documents.business_license} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    View
+                                  </a>
+                                </Button>
+                              </div>
+                            )}
+                            {request.vendor_details.kyc_documents.business_certificate && (
+                              <div className="border rounded-lg p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="bg-green-100 p-2 rounded-md">
+                                    <FileText className="h-5 w-5 text-green-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Business Certificate</p>
+                                    <p className="text-sm text-muted-foreground">Registration certificate</p>
+                                  </div>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={request.vendor_details.kyc_documents.business_certificate} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    View
+                                  </a>
+                                </Button>
+                              </div>
+                            )}
+                            {request.vendor_details.kyc_documents.tra_certificate && (
+                              <div className="border rounded-lg p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="bg-purple-100 p-2 rounded-md">
+                                    <FileText className="h-5 w-5 text-purple-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">TRA Certificate</p>
+                                    <p className="text-sm text-muted-foreground">Tax registration certificate</p>
+                                  </div>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={request.vendor_details.kyc_documents.tra_certificate} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    View
+                                  </a>
+                                </Button>
+                              </div>
+                            )}
+                            {request.vendor_details.kyc_documents.logo && (
+                              <div className="border rounded-lg p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="bg-orange-100 p-2 rounded-md">
+                                    <Store className="h-5 w-5 text-orange-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Business Logo</p>
+                                    <p className="text-sm text-muted-foreground">Company branding</p>
+                                  </div>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={request.vendor_details.kyc_documents.logo} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    View
+                                  </a>
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No KYC documents available</p>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Bank Details Card */}
+                    {request.vendor_details.bank_details && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <CreditCard className="h-5 w-5" />
+                            Bank Details
+                          </CardTitle>
+                          <CardDescription>Bank account information for payments</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Bank ID</p>
+                              <p className="text-sm">{request.vendor_details.bank_details.bank_id || 'Not provided'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Account Number</p>
+                              <p className="text-sm">{request.vendor_details.bank_details.account_number || 'Not provided'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Account Name</p>
+                              <p className="text-sm">{request.vendor_details.bank_details.account_name || 'Not provided'}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                ) : (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                      <Building className="h-12 w-12 mb-4 opacity-20" />
+                      <p>No vendor details available</p>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* Payment Plan Tab */}

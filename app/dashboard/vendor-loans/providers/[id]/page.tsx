@@ -85,6 +85,15 @@ function LoanProviderDetailPage(props: LoanProviderDetailPageProps) {
 
   const initialTab = searchParams.get("tab") || "overview";
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  console.log('[Provider Details] Current state:', {
+    providerId,
+    products,
+    productsLoading,
+    requests,
+    requestsLoading,
+    activeTab,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fetchInitiated = useRef(false);
@@ -521,11 +530,20 @@ function LoanProviderDetailPage(props: LoanProviderDetailPageProps) {
                     </Button>
                   </CardHeader>
                   <CardContent>
+                    {(() => {
+                      console.log('[Provider Details] Products tab rendering:', {
+                        productsLoading,
+                        products,
+                        productsItems: products?.items,
+                        productsLength: products?.items?.length || products?.length,
+                      });
+                      return null;
+                    })()}
                     {productsLoading ? (
                       <div className="flex justify-center py-8"><Spinner /></div>
-                    ) : products && products.length > 0 ? (
+                    ) : products && (products.items?.length > 0 || products.length > 0) ? (
                       <ProductTable
-                        products={products.map((p) => ({ ...p, provider_name: provider.business_name }))}
+                        products={(products.items || products).map((p) => ({ ...p, provider_name: provider.business_name }))}
                         onView={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}`)}
                         onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
                         onStatusChange={async (productId, isActive) => {
@@ -562,11 +580,15 @@ function LoanProviderDetailPage(props: LoanProviderDetailPageProps) {
                     </Button>
                   </CardHeader>
                   <CardContent>
+                    {(() => {
+                      console.log('[Provider Details] Requests tab rendering:', { requestsLoading, requests, requestsItems: requests?.items });
+                      return null;
+                    })()}
                     {requestsLoading ? (
                       <div className="flex justify-center py-8"><Spinner /></div>
-                    ) : requests && requests.length > 0 ? (
+                    ) : requests && (requests.items?.length > 0 || requests.length > 0) ? (
                       <RequestTable
-                        requests={requests}
+                        requests={requests.items || requests}
                         onView={(request) => router.push(`/dashboard/vendor-loans/requests/${request.request_id}`)}
                         onStatusChange={async (requestId, status) => {
                           try {

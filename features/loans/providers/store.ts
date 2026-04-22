@@ -4,18 +4,18 @@ import { apiClient } from '@/lib/api/client';
 import { ApiResponse } from '@/lib/core/api';
 
 interface LoanProviderStore {
-  providers: LoanProvider[];
+  providers: LoanProviderListResponse | null;
   provider: LoanProvider | null;
   loading: boolean;
   storeError: LoanProviderError | null;
   activeAction: LoanProviderAction | null;
-  
+
   // UI State
   setActiveAction: (action: LoanProviderAction | null) => void;
   setLoading: (loading: boolean) => void;
   setStoreError: (error: LoanProviderError | null) => void;
   setProvider: (provider: LoanProvider | null) => void;
-  setProviders: (providers: LoanProvider[]) => void;
+  setProviders: (providers: LoanProviderListResponse | null) => void;
   
   // API Methods
   fetchProvider: (id: string, headers?: Record<string, string>) => Promise<LoanProvider>;
@@ -28,7 +28,7 @@ interface LoanProviderStore {
 
 export const useLoanProviderStore = create<LoanProviderStore>()(
   (set, get) => ({
-    providers: [],
+    providers: null,
     provider: null,
     loading: false,
     storeError: null,
@@ -92,24 +92,61 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         
         // Postman: GET /v1/loans/providers/
         const response = await apiClient.get<LoanProvider[]>('/loans/providers/', filter, headers);
-        
-        // Handle both direct array and wrapped response formats
-        const rawData = response.data as unknown as (ApiResponse<LoanProvider[]> | LoanProvider[]);
-        const providersList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanProvider[]>).data || [])).map((p: LoanProvider) => ({
-          ...p,
-          is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE')
-        }));
-        
-        const isWrapped = !Array.isArray(rawData);
-        const metadata = (isWrapped ? rawData : {}) as { total?: number; skip?: number; limit?: number };
+
+        console.log('[Loan Providers Store] Raw API response:', response.data);
+
+        // Handle both direct array, wrapped with .data, and wrapped with .items response formats
+        const rawData = response.data as unknown as (ApiResponse<LoanProvider[]> | LoanProvider[] | LoanProviderListResponse);
+        let providersList: LoanProvider[] = [];
+
+        if (Array.isArray(rawData)) {
+          // Direct array
+          providersList = rawData.map((p: any) => ({
+            ...p,
+            is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
+          })) as LoanProvider[];
+        } else if ('items' in rawData && Array.isArray(rawData.items)) {
+          // Wrapped with .items (paginated response)
+          providersList = rawData.items.map((p: any) => ({
+            ...p,
+            is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
+          })) as LoanProvider[];
+        } else if ('data' in rawData && Array.isArray(rawData.data)) {
+          // Wrapped with .data (ApiResponse format)
+          providersList = rawData.data.map((p: any) => ({
+            ...p,
+            is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
+          })) as LoanProvider[];
+        }
+
+        console.log('[Loan Providers Store] Processed providersList:', providersList);
+
+        // Extract metadata from the response
+        let total = providersList.length;
+        let skip = filter.skip || 0;
+        let limit = filter.limit || 10;
+
+        if ('items' in rawData && typeof rawData === 'object' && rawData !== null) {
+          // Response is already in paginated format with .items
+          total = (rawData as any).total ?? providersList.length;
+          skip = (rawData as any).skip ?? (filter.skip || 0);
+          limit = (rawData as any).limit ?? (filter.limit || 10);
+        } else if ('data' in rawData && typeof rawData === 'object' && rawData !== null) {
+          // Response is in ApiResponse format with .data
+          total = (rawData as any).total ?? providersList.length;
+          skip = (rawData as any).skip ?? (filter.skip || 0);
+          limit = (rawData as any).limit ?? (filter.limit || 10);
+        }
+
         const providerResponse: LoanProviderListResponse = {
           items: providersList,
-          total: metadata.total ?? providersList.length,
-          skip: metadata.skip ?? (filter.skip || 0),
-          limit: metadata.limit ?? (filter.limit || 10)
+          total,
+          skip,
+          limit
         };
-        
-        setProviders(providersList);
+
+        console.log('[Loan Providers Store] Setting providers:', providerResponse);
+        setProviders(providerResponse);
         setLoading(false);
         return providerResponse;
       } catch (error: unknown) {
@@ -168,12 +205,12 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         // Handle both direct and wrapped responses
         const rawBody = (response.data as ApiResponse<LoanProvider>).data || response.data;
         const updatedProvider = Array.isArray(rawBody) ? (rawBody[0] as LoanProvider) : (rawBody as LoanProvider);
-        
+
         // Update local state
-        const updatedProviders = providers.map(p => p.provider_id === id ? updatedProvider : p);
-        setProviders(updatedProviders);
+        const updatedProviders = providers?.items?.map(p => p.provider_id === id ? updatedProvider : p) || [];
+        setProviders({ ...providers!, items: updatedProviders });
         setProvider(updatedProvider);
-        
+
         setLoading(false);
         return updatedProvider;
       } catch (error: unknown) {
@@ -197,13 +234,13 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
         setLoading(true);
         
         await apiClient.patch<void>(`/loans/providers/${id}/status`, { is_active: isActive }, headers);
-        
+
         // Update local state
-        const updatedProviders = providers.map(p => 
+        const updatedProviders = providers?.items?.map(p =>
           p.provider_id === id ? { ...p, is_active: isActive } : p
-        );
-        setProviders(updatedProviders);
-        
+        ) || [];
+        setProviders({ ...providers!, items: updatedProviders });
+
         setLoading(false);
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to update loan provider status';
@@ -224,18 +261,16 @@ export const useLoanProviderStore = create<LoanProviderStore>()(
       try {
         setLoading(true);
         await apiClient.delete(`/loans/providers/${id}`, undefined, headers);
-        
+
         // Update local state
-        const updatedProviders = providers.filter(p => p.provider_id !== id);
-        setProviders(updatedProviders);
-        
+        const updatedProviders = providers?.items?.filter(p => p.provider_id !== id) || [];
+        setProviders({ ...providers!, items: updatedProviders });
+
         setLoading(false);
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to delete loan provider';
-        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
-          message: errorMessage,
-          status: errorStatus,
+          message: error instanceof Error ? error.message : 'Failed to delete loan provider',
+          status: (error as { response?: { status?: number } })?.response?.status
         });
         setLoading(false);
         throw error;

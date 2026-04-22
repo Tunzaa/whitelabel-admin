@@ -15,7 +15,7 @@ import { apiClient } from '@/lib/api/client';
 import { ApiResponse } from '@/lib/core/api';
 
 interface LoanRequestStore {
-  requests: LoanRequest[];
+  requests: LoanRequestListResponse | null;
   request: LoanRequest | null;
   vendorRevenue: VendorRevenue | null;
   loading: boolean;
@@ -27,7 +27,7 @@ interface LoanRequestStore {
   setLoading: (loading: boolean) => void;
   setStoreError: (error: LoanRequestError | null) => void;
   setRequest: (request: LoanRequest | null) => void;
-  setRequests: (requests: LoanRequest[]) => void;
+  setRequests: (requests: LoanRequestListResponse | null) => void;
 
   // API Methods
   detailedLoan: DetailedLoan | null;
@@ -52,7 +52,7 @@ interface LoanRequestStore {
 
 export const useLoanRequestStore = create<LoanRequestStore>()(
   (set, get) => ({
-    requests: [],
+    requests: null,
     request: null,
     vendorRevenue: null,
     loading: false,
@@ -160,7 +160,7 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
           limit: metadata.limit ?? 10
         };
 
-        setRequests(requestList);
+        setRequests(requestResponse);
         setLoading(false);
         return requestResponse;
       } catch (error: unknown) {
@@ -196,31 +196,63 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
 
         const response = await apiClient.get<LoanRequest[]>(url, filter, headers);
 
-        // Handle both direct array and wrapped response formats
-        const rawData = response.data as unknown as (ApiResponse<LoanRequest[]> | LoanRequest[]);
-        const requestList = (Array.isArray(rawData) ? rawData : ((rawData as ApiResponse<LoanRequest[]>).data || [])).map((r: any) => ({
-          ...r,
-          loan_amount: r.loan_amount || r.amount || r.principal || r.amount_requested || 0,
-          term_length: r.term_length || r.duration || r.term || 0,
-        })) as LoanRequest[];
+        console.log('[Loan Requests Store] Raw API response:', response.data);
 
-        interface RequestListMetadata {
-          total?: number;
-          skip?: number;
-          limit?: number;
+        // Handle both direct array, wrapped with .data, and wrapped with .items response formats
+        const rawData = response.data as unknown as (ApiResponse<LoanRequest[]> | LoanRequest[] | LoanRequestListResponse);
+        let requestList: LoanRequest[] = [];
+
+        if (Array.isArray(rawData)) {
+          // Direct array
+          requestList = rawData.map((r: any) => ({
+            ...r,
+            loan_amount: r.loan_amount || r.amount || r.principal || r.amount_requested || 0,
+            term_length: r.term_length || r.duration || r.term || 0,
+          })) as LoanRequest[];
+        } else if ('items' in rawData && Array.isArray(rawData.items)) {
+          // Wrapped with .items (paginated response)
+          requestList = rawData.items.map((r: any) => ({
+            ...r,
+            loan_amount: r.loan_amount || r.amount || r.principal || r.amount_requested || 0,
+            term_length: r.term_length || r.duration || r.term || 0,
+          })) as LoanRequest[];
+        } else if ('data' in rawData && Array.isArray(rawData.data)) {
+          // Wrapped with .data (ApiResponse format)
+          requestList = rawData.data.map((r: any) => ({
+            ...r,
+            loan_amount: r.loan_amount || r.amount || r.principal || r.amount_requested || 0,
+            term_length: r.term_length || r.duration || r.term || 0,
+          })) as LoanRequest[];
         }
 
-        const isWrapped = !Array.isArray(rawData);
-        const metadata = (isWrapped ? rawData : {}) as RequestListMetadata;
+        console.log('[Loan Requests Store] Processed requestList:', requestList);
+
+        // Extract metadata from the response
+        let total = requestList.length;
+        let skip = filter.skip || 0;
+        let limit = filter.limit || 10;
+
+        if ('items' in rawData && typeof rawData === 'object' && rawData !== null) {
+          // Response is already in paginated format with .items
+          total = (rawData as any).total ?? requestList.length;
+          skip = (rawData as any).skip ?? (filter.skip || 0);
+          limit = (rawData as any).limit ?? (filter.limit || 10);
+        } else if ('data' in rawData && typeof rawData === 'object' && rawData !== null) {
+          // Response is in ApiResponse format with .data
+          total = (rawData as any).total ?? requestList.length;
+          skip = (rawData as any).skip ?? (filter.skip || 0);
+          limit = (rawData as any).limit ?? (filter.limit || 10);
+        }
 
         const requestResponse: LoanRequestListResponse = {
           items: requestList,
-          total: metadata.total ?? requestList.length,
-          skip: metadata.skip ?? (filter.skip || 0),
-          limit: metadata.limit ?? (filter.limit || 10)
+          total,
+          skip,
+          limit
         };
 
-        setRequests(requestList);
+        console.log('[Loan Requests Store] Setting requests:', requestResponse);
+        setRequests(requestResponse);
         setLoading(false);
         return requestResponse;
       } catch (error: unknown) {
@@ -257,8 +289,8 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
         const responseData = response.data as unknown as (ApiResponse<LoanRequest> | LoanRequest);
         const updatedRequest = (responseData as ApiResponse<LoanRequest>).data || (responseData as LoanRequest);
 
-        const updatedRequests = requests.map(r => r.request_id === id ? updatedRequest : r);
-        setRequests(updatedRequests);
+        const updatedRequests = requests?.items?.map(r => r.request_id === id ? updatedRequest : r) || [];
+        setRequests({ ...requests!, items: updatedRequests });
 
         if (request && request.request_id === id) {
           setRequest(updatedRequest);

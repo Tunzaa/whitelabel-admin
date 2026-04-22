@@ -95,7 +95,7 @@ export type LoanRequest = {
   remaining_balance?: number;
   processing_fee?: number;
   purpose: string;
-  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted' | 'disbursed' | 'paid';
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted' | 'disbursed' | 'paid' | 'PENDING' | 'APPROVED' | 'DENIED';
   rejection_reason?: string;
   notes?: string;
   payment_schedule?: PaymentSchedule[];
@@ -108,6 +108,45 @@ export type LoanRequest = {
   paid_at?: string;
   created_at?: string;
   updated_at?: string;
+  borrower_id?: string;
+  amount_requested?: number;
+  vendor_details?: {
+    vendor_id: string;
+    business_name: string;
+    display_name: string;
+    contact_email: string;
+    contact_phone: string;
+    verification_status: string;
+    is_active: boolean;
+    source: string;
+    kyc_documents?: {
+      business_license?: string;
+      business_certificate?: string;
+      tra_certificate?: string;
+      cover_image?: string;
+      logo?: string;
+    };
+    bank_details?: {
+      bank_id?: string;
+      account_number?: string;
+      account_name?: string;
+    };
+    business_details?: {
+      registration_date?: string;
+      country?: string;
+      region?: string;
+      area?: string;
+      street_address?: string;
+    };
+    transaction_stats?: {
+      transaction_count: number;
+      total_value: number;
+      last_transaction_date?: string;
+    };
+    outstanding_payments?: number;
+    current_orders_count?: number;
+    current_orders?: any[];
+  };
 };
 
 // Error Type
