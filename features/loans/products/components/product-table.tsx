@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -35,6 +36,7 @@ interface ProductTableProps {
   products: LoanProduct[];
   onView: (product: LoanProduct) => void;
   onEdit: (product: LoanProduct) => void;
+  onProviderClick?: (providerId: string) => void;
   onStatusChange?: (productId: string, isActive: boolean) => void;
 }
 
@@ -42,8 +44,10 @@ export function ProductTable({
   products,
   onView,
   onEdit,
+  onProviderClick,
   onStatusChange,
 }: ProductTableProps) {
+  const router = useRouter();
   const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
   const [selectedProduct, setSelectedProduct] =
     React.useState<LoanProduct | null>(null);
@@ -74,9 +78,14 @@ export function ProductTable({
   };
 
   const renderPaymentFrequency = (frequency: string) => {
-    switch (frequency) {
+    if (!frequency) return "N/A";
+    const normalized = frequency.toLowerCase();
+    switch (normalized) {
+      case "daily":
+        return "Daily";
       case "weekly":
         return "Weekly";
+      case "bi_weekly":
       case "bi-weekly":
         return "Bi-Weekly";
       case "monthly":
@@ -120,26 +129,38 @@ export function ProductTable({
                 >
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>
-                    {product.provider_name || "Unknown Provider"}
+                    <span 
+                      className="text-primary hover:underline font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onProviderClick) {
+                          onProviderClick(product.provider_id);
+                        } else {
+                          router.push(`/dashboard/vendor-loans/providers/${product.provider_id}`);
+                        }
+                      }}
+                    >
+                      {product.provider_name || "Unknown Provider"}
+                    </span>
                   </TableCell>
                   <TableCell>{product.interest_rate}%</TableCell>
                   <TableCell>
-                    {compactCurrency(product.min_amount)} -{" "}
-                    {compactCurrency(product.max_amount)}
+                    {product.min_amount !== undefined ? compactCurrency(product.min_amount) : "0"} -{" "}
+                    {product.max_amount !== undefined ? compactCurrency(product.max_amount) : "N/A"}
                   </TableCell>
                   <TableCell>
-                    {renderPaymentFrequency(product.payment_frequency)}
+                    {renderPaymentFrequency(product.repayment_frequency)}
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={product.is_active ? "success" : "secondary"}
+                      variant={(product.is_active || product.status === 'ACTIVE') ? "success" : "secondary"}
                       className={
-                        product.is_active
+                        (product.is_active || product.status === 'ACTIVE')
                           ? "bg-green-500 hover:bg-green-600 text-white"
                           : ""
                       }
                     >
-                      {product.is_active ? "Active" : "Inactive"}
+                      {(product.is_active || product.status === 'ACTIVE') ? "Active" : (product.status || "Inactive")}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -182,7 +203,7 @@ export function ProductTable({
                         {onStatusChange && (
                           <Can permission="vendor-loans:update">
                             <DropdownMenuSeparator />
-                            {product.is_active ? (
+                            {(product.is_active || product.status === 'ACTIVE') ? (
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
                                 onClick={(e) => {

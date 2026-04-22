@@ -10,7 +10,7 @@ import {
   CreditCard, Check, X, Percent, Clock, Calendar, ShoppingBag,
   User, Building, Phone, Mail, ExternalLink, BarChart, History,
   CreditCard as CreditCardIcon, CheckCircle, AlertCircle, ChevronRight,
-  Receipt, Calculator, Eye, Wallet, TrendingUp, Settings, Store, Globe, Info, ListChecks
+  Receipt, Calculator, Eye, Wallet, Settings, Store, Globe, Info, ListChecks
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -30,48 +30,93 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 import { useLoanRequestStore } from "@/features/loans/requests/store";
+import { LoanRequest, PaymentSchedule, DetailedLoan } from "@/features/loans/requests/types";
 import { useLoanProductStore } from "@/features/loans/products/store";
 import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { useVendorStore } from "@/features/vendors/store";
 import { compactCurrency } from "@/lib/utils";
+import { apiClient } from "@/lib/api/client";
+import { ApiResponse } from "@/lib/core/api";
 
 import { withAuthorization } from "@/components/auth/with-authorization";
 import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
 
-const StatusTimeline = ({ request }: { request: any }) => {
+const StatusTimeline = ({ request, loan }: { request: LoanRequest; loan?: DetailedLoan | null }) => {
   if (!request) return null;
+
+  const requestStatus = request.status?.toUpperCase();
+
+  // If denied, show a denied banner instead of the timeline
+  if (requestStatus === 'REJECTED' || requestStatus === 'DENIED') {
+    return (
+      <div className="w-full py-6 px-4">
+        <div className="flex flex-col items-center gap-3 p-6 rounded-xl bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200">
+          <div className="w-12 h-12 rounded-full bg-red-100 border-2 border-red-300 flex items-center justify-center">
+            <X className="h-6 w-6 text-red-600" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-red-700">Request Denied</p>
+            <p className="text-xs text-red-500 mt-1">
+              {request.updated_at
+                ? format(new Date(request.updated_at), 'MMM d, yyyy')
+                : 'Date unavailable'}
+            </p>
+            {request.rejection_reason && (
+              <p className="text-xs text-red-600 mt-2 max-w-xs">
+                Reason: {request.rejection_reason}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Determine step completion from actual API data
+  const isApproved = requestStatus === 'APPROVED';
+  const isDisbursed = loan?.disbursement_status?.toUpperCase() === 'DISBURSED';
+  const isRepaid = loan?.status?.toUpperCase() === 'REPAID';
 
   const steps = [
     {
-      id: 'pending',
+      id: 'requested',
       label: 'Requested',
+      completed: true, // Always true — request exists
       date: request.created_at,
-      state: 'completed',
-      icon: FileText
+      icon: FileText,
     },
     {
       id: 'approved',
       label: 'Approved',
-      date: request.approved_at,
-      state: request.status === 'rejected' ? 'error' : (request.approved_at ? 'completed' : (request.status === 'pending' ? 'current' : 'pending')),
-      icon: CheckCircle
+      completed: isApproved,
+      date: isApproved ? (loan?.created_at ?? null) : null,
+      icon: CheckCircle,
     },
     {
       id: 'disbursed',
       label: 'Disbursed',
-      date: request.disbursed_at,
-      state: request.disbursed_at ? 'completed' : (request.status === 'approved' ? 'current' : 'pending'),
-      icon: Wallet
+      completed: isDisbursed,
+      date: isDisbursed ? (loan?.disbursed_at ?? null) : null,
+      icon: Wallet,
     },
     {
-      id: 'paid',
+      id: 'repaid',
       label: 'Repaid',
-      date: request.paid_at,
-      state: request.paid_at ? 'completed' : (request.status === 'disbursed' ? 'current' : 'pending'),
-      icon: Banknote
-    }
+      completed: isRepaid,
+      date: isRepaid ? (loan?.updated_at ?? null) : null,
+      icon: Banknote,
+    },
   ];
+
+  // Mark the last completed step as "active" (current stage)
+  let activeIndex = 0;
+  steps.forEach((step, i) => {
+    if (step.completed) activeIndex = i;
+  });
+
+  // Calculate progress width based on last completed step position
+  const progressWidth = (activeIndex / (steps.length - 1)) * 100;
 
   return (
     <div className="w-full py-4 px-2">
@@ -79,35 +124,44 @@ const StatusTimeline = ({ request }: { request: any }) => {
         {/* Connecting Line */}
         <div className="absolute top-5 left-0 w-full h-1 bg-gray-100 -z-0">
           <div
-            className="h-full bg-primary transition-all duration-500"
-            style={{
-              width: `${(steps.filter(s => s.state === 'completed').length / (steps.length - 1)) * 100}%`
-            }}
+            className="h-full bg-primary transition-all duration-700 ease-in-out"
+            style={{ width: `${progressWidth}%` }}
           />
         </div>
 
         {steps.map((step, index) => {
-          const isCompleted = step.state === 'completed';
-          const isCurrent = step.state === 'current';
-          const isError = step.state === 'error';
+          const isCompleted = step.completed;
+          const isActive = index === activeIndex;
+          const isPending = !isCompleted;
 
           let colorClass = "bg-gray-100 text-gray-400 border-gray-200";
-          if (isCompleted) colorClass = "bg-primary text-white border-primary";
-          if (isCurrent) colorClass = "bg-white text-primary border-primary ring-4 ring-primary/20";
-          if (isError) colorClass = "bg-red-100 text-red-600 border-red-200";
+          if (isCompleted && !isActive) colorClass = "bg-primary text-white border-primary";
+          if (isActive) colorClass = "bg-primary text-white border-primary ring-4 ring-primary/20 shadow-lg shadow-primary/25";
+          if (isPending && !isCompleted) colorClass = "bg-gray-50 text-gray-300 border-gray-200";
 
           return (
             <div key={step.id} className="flex flex-col items-center relative z-10">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${colorClass} bg-background`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${colorClass}`}
               >
                 <step.icon className="h-5 w-5" />
               </div>
               <div className="mt-2 text-center">
-                <p className={`text-sm font-medium ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`}>
+                <p className={`text-sm font-medium transition-colors duration-300 ${isActive ? 'text-primary font-semibold' :
+                  isCompleted ? 'text-muted-foreground' :
+                    'text-muted-foreground/50'
+                  }`}>
                   {step.label}
                 </p>
-                {step.date && <p className="text-xs text-muted-foreground">{format(new Date(step.date), 'MMM d')}</p>}
+                {step.date ? (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {format(new Date(step.date), 'MMM d')}
+                  </p>
+                ) : (
+                  isPending && (
+                    <p className="text-xs text-muted-foreground/40 mt-0.5">—</p>
+                  )
+                )}
               </div>
             </div>
           );
@@ -152,7 +206,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   const id = unwrappedParams.id;
   const router = useRouter();
   const session = useSession();
-  const tenantId = session?.data?.user?.tenant_id || '';
+  const tenantId = (session?.data?.user as any)?.tenant_id || '';
 
   const {
     request,
@@ -160,7 +214,12 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     storeError: requestError,
     fetchRequest,
     updateRequestStatus,
-    addPenalty
+    addPenalty,
+    detailedLoan,
+    detailedLoanLoading,
+    detailedLoanError,
+    fetchDetailedLoan,
+    disburseLoan
   } = useLoanRequestStore();
 
   const [penaltyOpen, setPenaltyOpen] = useState(false);
@@ -213,11 +272,8 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  // Mock payment schedule and transaction data
-  const [paymentSchedule, setPaymentSchedule] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [vendorLoans, setVendorLoans] = useState<any[]>([]);
-  const [revenueData, setRevenueData] = useState<any>(null);
+  const [vendorLoanHistory, setVendorLoanHistory] = useState<LoanRequest[]>([]);
+  const [vendorHistoryLoading, setVendorHistoryLoading] = useState(false);
 
   // Memoize tenant headers to prevent recreation on each render
   const tenantHeaders = useMemo(() => ({
@@ -227,15 +283,21 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   // Use a stable function reference with useCallback
   const fetchLoanRequestData = useCallback(async () => {
     if (!id) return;
-
+    
     try {
       setLoading(true);
-      await fetchRequest(id, tenantHeaders);
+      // Fetch both request and detailed loan in parallel
+      // We use settled to ensure one failure doesn't block the other
+      await Promise.allSettled([
+        fetchRequest(id, tenantHeaders),
+        fetchDetailedLoan(id, tenantHeaders)
+      ]);
     } catch (error) {
+      console.error("Error fetching loan data:", error);
     } finally {
       setLoading(false);
     }
-  }, [fetchRequest, id, tenantHeaders]);
+  }, [fetchRequest, fetchDetailedLoan, id, tenantHeaders]);
 
   // Call the fetch function only once on mount
   useEffect(() => {
@@ -243,32 +305,23 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   }, [fetchLoanRequestData]);
 
   // Extract stable references to IDs to use in dependency arrays
-  const requestId = request?.id;
+  const requestId = request?.request_id || request?.id;
   const productId = request?.product_id;
   const vendorId = request?.vendor_id;
 
   // Separate effect for product fetching with minimal dependencies
   useEffect(() => {
     if (productId) {
-      fetchProduct(productId, tenantHeaders).catch(() => {});
+      fetchProduct(productId, tenantHeaders).catch(() => { });
     }
   }, [productId, fetchProduct, tenantHeaders]);
 
   // Separate effect for vendor fetching with minimal dependencies
   useEffect(() => {
     if (vendorId) {
-      fetchVendor(vendorId, tenantHeaders).catch(() => {});
+      fetchVendor(vendorId, tenantHeaders).catch(() => { });
     }
   }, [vendorId, fetchVendor, tenantHeaders]);
-
-  // Separate effect for mock data generation with minimal dependencies
-  useEffect(() => {
-    if (requestId) {
-      generateMockTransactions();
-      generateMockVendorLoans();
-      generateMockRevenueData();
-    }
-  }, [requestId]);
 
   // Separate effect for provider fetching
   useEffect(() => {
@@ -284,140 +337,43 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     fetchProviderData();
   }, [product?.provider_id, fetchProvider, tenantHeaders]);
 
-  // Separate effect for payment schedule generation
+  // Fetch real vendor loan history
   useEffect(() => {
-    if (request?.loan_amount && request?.term_length && product?.interest_rate) {
-      generateMockPaymentSchedule(request.loan_amount, request.term_length, product.interest_rate);
-    }
-  }, [request?.loan_amount, request?.term_length, product?.interest_rate]);
-
-  // Generate mock payment schedule based on loan details
-  const generateMockPaymentSchedule = (amount: number, termMonths: number, interestRate: number) => {
-    const monthlyInterestRate = interestRate / 100 / 12;
-    const monthlyPayment = calculateMonthlyPayment(amount, interestRate, termMonths);
-
-    const schedule = [];
-    let remainingBalance = amount;
-    const today = new Date();
-
-    for (let i = 1; i <= termMonths; i++) {
-      const dueDate = new Date(today);
-      dueDate.setMonth(dueDate.getMonth() + i);
-
-      const interestPayment = remainingBalance * monthlyInterestRate;
-      const principalPayment = monthlyPayment - interestPayment;
-      remainingBalance -= principalPayment;
-
-      const paymentStatus = i === 1 ? 'pending' : (i > 1 ? 'upcoming' : 'paid');
-
-      schedule.push({
-        payment_number: i,
-        due_date: dueDate.toISOString(),
-        payment_amount: monthlyPayment,
-        principal_amount: principalPayment,
-        interest_amount: interestPayment,
-        remaining_balance: Math.max(0, remainingBalance),
-        status: paymentStatus
-      });
-    }
-
-    setPaymentSchedule(schedule);
-  };
-
-  // Generate mock transactions for this loan
-  const generateMockTransactions = () => {
-    const mockTransactions = [
-      {
-        id: 'txn1',
-        date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        type: 'disbursement',
-        amount: request?.loan_amount || 0,
-        description: 'Loan disbursement',
-        status: 'completed'
-      },
-      {
-        id: 'txn2',
-        date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        type: 'payment',
-        amount: (request?.loan_amount || 0) * 0.1,
-        description: 'First payment',
-        status: 'completed'
-      },
-      {
-        id: 'txn3',
-        date: new Date().toISOString(),
-        type: 'payment',
-        amount: (request?.loan_amount || 0) * 0.1,
-        description: 'Monthly payment',
-        status: 'pending'
+    const fetchVendorHistory = async () => {
+      if (!vendorId) return;
+      try {
+        setVendorHistoryLoading(true);
+        const response = await apiClient.get<LoanRequest[]>(`/loans/vendors/${vendorId}/requests`, undefined, tenantHeaders);
+        const rawData = response.data as unknown as (ApiResponse<LoanRequest[]> | LoanRequest[]);
+        const historyList = Array.isArray(rawData) ? rawData : ((rawData as any).data || []);
+        setVendorLoanHistory(historyList);
+      } catch (error) {
+        console.warn('Failed to fetch vendor loan history:', error);
+      } finally {
+        setVendorHistoryLoading(false);
       }
-    ];
-
-    setTransactions(mockTransactions);
-  };
-
-  // Generate mock vendor loans history
-  const generateMockVendorLoans = () => {
-    const mockLoans = [
-      {
-        id: 'loan1',
-        date: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-        amount: 5000,
-        term: 6,
-        status: 'paid',
-        product_name: 'Business Expansion Loan'
-      },
-      {
-        id: 'loan2',
-        date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-        amount: 8000,
-        term: 12,
-        status: 'active',
-        product_name: 'Inventory Financing'
-      },
-      {
-        id: id, // Current loan
-        date: request?.created_at || new Date().toISOString(),
-        amount: request?.loan_amount || 0,
-        term: request?.term_length || 0,
-        status: request?.status || 'pending',
-        product_name: product?.name || 'Unknown Product'
-      }
-    ];
-
-    setVendorLoans(mockLoans);
-  };
-
-  // Generate mock revenue data
-  const generateMockRevenueData = () => {
-    const mockRevenue = {
-      monthly_average: 12500,
-      annual_revenue: 150000,
-      growth_rate: 15,
-      recent_months: [
-        { month: 'Jan', amount: 11000 },
-        { month: 'Feb', amount: 12500 },
-        { month: 'Mar', amount: 13200 },
-        { month: 'Apr', amount: 12800 },
-        { month: 'May', amount: 13500 },
-        { month: 'Jun', amount: 14200 }
-      ]
     };
 
-    setRevenueData(mockRevenue);
-  };
+    fetchVendorHistory();
+  }, [vendorId, tenantHeaders]);
 
   // Calculate monthly payment for a loan
-  const calculateMonthlyPayment = (principal: string | number, interestRate: string | number, termMonths: number) => {
-    const p = parseFloat(principal.toString());
-    const r = parseFloat(interestRate.toString()) / 100 / 12; // Monthly interest rate
-    const n = termMonths;
+  const calculateMonthlyPayment = (principal: string | number | undefined | null, interestRate: string | number | undefined | null, termMonths: number | undefined | null) => {
+    if (!principal || !interestRate || !termMonths) return 0;
 
-    // Monthly payment formula: P * (r * (1 + r)^n) / ((1 + r)^n - 1)
-    if (r === 0) return p / n; // If interest rate is 0, just divide principal by term
+    try {
+      const p = typeof principal === 'number' ? principal : parseFloat(principal.toString());
+      const r = (typeof interestRate === 'number' ? interestRate : parseFloat(interestRate.toString())) / 100 / 12; // Monthly interest rate
+      const n = termMonths;
 
-    const monthlyPayment = p * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-    return monthlyPayment;
+      // Monthly payment formula: P * (r * (1 + r)^n) / ((1 + r)^n - 1)
+      if (r === 0) return p / n; // If interest rate is 0, just divide principal by term
+
+      const monthlyPayment = p * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      return isNaN(monthlyPayment) ? 0 : monthlyPayment;
+    } catch (e) {
+      return 0;
+    }
   };
 
   const handleStatusChange = async (status: string) => {
@@ -429,6 +385,33 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
       toast.success(`Loan request status updated to ${status}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to update status");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDisburse = async () => {
+    if (!detailedLoan?.loan_id) {
+      toast.error("Loan details not loaded yet");
+      return;
+    }
+
+    if (detailedLoan.disbursement_status === 'DISBURSED') {
+      toast.error("Loan is already disbursed");
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      await disburseLoan(detailedLoan.loan_id, tenantHeaders);
+
+      // The store refreshes the request automatically, but let's be sure to use the request ID if they differ
+      await fetchRequest(id, tenantHeaders);
+      await fetchDetailedLoan(id, tenantHeaders);
+
+      toast.success("Loan disbursed successfully");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to disburse loan");
     } finally {
       setUpdating(false);
     }
@@ -479,13 +462,15 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
       case 'approved':
         return (
           <div className="flex space-x-2 mt-4">
-            <Button
-              variant="default"
-              disabled={updating}
-              onClick={() => handleStatusChange('disbursed')}
-            >
-              Mark as Disbursed
-            </Button>
+            {(!detailedLoan || detailedLoan.disbursement_status !== 'DISBURSED') && (
+              <Button
+                variant="default"
+                disabled={updating || detailedLoanLoading}
+                onClick={handleDisburse}
+              >
+                Mark as Disbursed
+              </Button>
+            )}
           </div>
         );
       case 'disbursed':
@@ -511,7 +496,9 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     );
   }
 
-  if (!request && !requestLoading && requestError) {
+  // Only show the error card if BOTH the request and detailed loan data failed to load
+  // If we have either, we can usually show something useful
+  if (!request && !detailedLoan && !requestLoading && !detailedLoanLoading && (requestError || detailedLoanError)) {
     return (
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-4 border-b">
@@ -519,7 +506,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => router.push("/dashboard/loans/requests")}
+              onClick={() => router.push("/dashboard/vendor-loans/providers")}
               className="shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -540,11 +527,11 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
             <ErrorCard
               title="Failed to load loan request"
               error={{
-                status: requestError.status?.toString() || "Error",
-                message: requestError.message || "An error occurred while loading the loan request details."
+                status: (requestError?.status || detailedLoanError?.status)?.toString() || "Error",
+                message: requestError?.message || detailedLoanError?.message || "An error occurred while loading the loan request details."
               }}
               buttonText="Return to Loan Requests"
-              buttonAction={() => router.push("/dashboard/loans/requests")}
+              buttonAction={() => router.push("/dashboard/vendor-loans/providers")}
               buttonIcon={ArrowLeft}
             />
           </div>
@@ -555,8 +542,15 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
 
   // Format date helper for display
   const formatDateDisplay = (dateString: string | null | undefined) => {
-    if (!dateString) return "Not set";
-    return format(new Date(dateString), "MMMM d, yyyy");
+    if (!dateString || dateString === '—') return "—";
+    try {
+      const date = new Date(dateString);
+      // Check if the date is valid (isNaN on getTime() returns true for Invalid Date)
+      if (isNaN(date.getTime())) return "—";
+      return format(date, "MMMM d, yyyy");
+    } catch (e) {
+      return "—";
+    }
   };
 
   return (
@@ -567,7 +561,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/dashboard/vendor-loans/requests")}
+            onClick={() => router.push("/dashboard/vendor-loans/providers")}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -583,7 +577,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
 
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
-                {compactCurrency(request?.loan_amount || 0)} Loan Request
+                {compactCurrency(detailedLoan?.principal_amount || request?.loan_amount || 0)} Loan Request
               </h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 {getStatusBadge(request?.status || 'Unknown')}
@@ -607,9 +601,12 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
           {/* Main Content Area - 5 columns */}
           <div className="md:col-span-5">
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <Info className="h-4 w-4" /> Overview
+                </TabsTrigger>
+                <TabsTrigger value="vendor" className="flex items-center gap-2">
+                  <Building className="h-4 w-4" /> Vendor Details
                 </TabsTrigger>
                 <TabsTrigger value="payment-plan" className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" /> Payment Plan
@@ -646,7 +643,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                             <Banknote className="h-4 w-4" /> Loan Amount
                           </p>
-                          <p className="text-xl font-bold">{compactCurrency(request?.loan_amount || 0)}</p>
+                          <p className="text-xl font-bold">{compactCurrency(detailedLoan?.principal_amount || request?.loan_amount || 0)}</p>
                         </div>
 
                         <div className="space-y-1">
@@ -654,7 +651,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                             <Clock className="h-4 w-4" /> Term Length
                           </p>
                           <p className="text-sm">
-                            {request?.term_length} {request?.term_length === 1 ? 'month' : 'months'}
+                            {detailedLoan?.schedules ? detailedLoan.schedules.length : (request?.term_length || 0)} {(detailedLoan?.schedules?.length || request?.term_length) === 1 ? 'month' : 'months'}
                           </p>
                         </div>
 
@@ -662,7 +659,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                             <Percent className="h-4 w-4" /> Interest Rate
                           </p>
-                          <p className="text-sm">{product?.interest_rate || 'N/A'}%</p>
+                          <p className="text-sm">{(detailedLoan as any)?.interest_rate ?? request?.interest_rate ?? product?.interest_rate ?? 'N/A'}%</p>
                         </div>
                       </div>
 
@@ -676,10 +673,12 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
 
                         <div className="space-y-1">
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="h-4 w-4" /> Expected Disbursement
+                            <Calendar className="h-4 w-4" /> {['disbursed', 'active', 'completed', 'paid'].includes(request?.status?.toLowerCase() || '') ? 'Disbursement Date' : 'Expected Disbursement'}
                           </p>
                           <p className="text-sm">
-                            {request?.status === 'approved' ? formatDateDisplay(new Date().toISOString()) : 'Pending approval'}
+                            {['approved', 'disbursed', 'active', 'completed', 'paid'].includes(request?.status?.toLowerCase() || '') ?
+                              formatDateDisplay(detailedLoan?.disbursed_at || request?.disbursed_at || (request?.status?.toLowerCase() === 'approved' ? new Date().toISOString() : null) || '—') :
+                              'Pending approval'}
                           </p>
                         </div>
 
@@ -688,9 +687,11 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                             <CreditCard className="h-4 w-4" /> Monthly Payment (Est.)
                           </p>
                           <p className="text-sm">
-                            {product && request ?
-                              compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
-                              'N/A'}
+                            {detailedLoan?.schedules?.[0]?.amount_due ?
+                              compactCurrency(detailedLoan.schedules[0].amount_due) :
+                              (product && request ?
+                                compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
+                                'N/A')}
                           </p>
                         </div>
                       </div>
@@ -760,11 +761,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                     <div className="space-y-6">
                       {/* Loan Summary Stats */}
                       <div>
-                        <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-primary" />
-                          Key Financial Details
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
                             <CardContent className="p-4">
                               <div className="flex flex-col gap-2">
@@ -777,7 +774,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                   </div>
                                   <Badge variant="outline" className="bg-primary/5">Requested</Badge>
                                 </div>
-                                <p className="text-3xl font-bold text-primary">{compactCurrency(request?.loan_amount || 0)}</p>
+                                <p className="text-3xl font-bold text-primary">{compactCurrency(detailedLoan?.principal_amount || request?.loan_amount || 0)}</p>
                                 <p className="text-xs text-muted-foreground">Total loan amount requested</p>
                               </div>
                             </CardContent>
@@ -791,15 +788,13 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                     <div className="bg-primary/10 p-2 rounded-full">
                                       <Wallet className="h-4 w-4 text-primary" />
                                     </div>
-                                    <p className="text-sm font-medium">Total Repayment</p>
+                                    <p className="text-sm font-medium">Outstanding Balance</p>
                                   </div>
                                 </div>
                                 <p className="text-3xl font-bold text-primary">
-                                  {product && request ?
-                                    compactCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length)) :
-                                    'N/A'}
+                                  {detailedLoan ? compactCurrency(detailedLoan.outstanding_balance) : (request?.loan_amount ? compactCurrency(request.loan_amount) : '0')}
                                 </p>
-                                <p className="text-xs text-muted-foreground">Total amount to be repaid</p>
+                                <p className="text-xs text-muted-foreground">Remaining loan balance</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -816,11 +811,33 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                   </div>
                                 </div>
                                 <p className="text-3xl font-bold text-primary">
-                                  {product && request ?
-                                    compactCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length) - request.loan_amount) :
-                                    'N/A'}
+                                  {detailedLoan ?
+                                    compactCurrency(detailedLoan.total_expected_interest) :
+                                    (product && request ?
+                                      compactCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length) - request.loan_amount) :
+                                      'N/A')
+                                  }
                                 </p>
-                                <p className="text-xs text-muted-foreground">Total interest payable</p>
+                                <p className="text-xs text-muted-foreground">Total interest on this loan</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
+                            <CardContent className="p-4">
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="bg-primary/10 p-2 rounded-full">
+                                      <Banknote className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <p className="text-sm font-medium">Total Fees</p>
+                                  </div>
+                                </div>
+                                <p className="text-3xl font-bold text-primary">
+                                  {detailedLoan ? compactCurrency(detailedLoan.total_fees || 0) : 0}
+                                </p>
+                                <p className="text-xs text-muted-foreground">Total fees for this loan</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -840,9 +857,11 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                 <div>
                                   <p className="text-sm font-medium text-muted-foreground">Monthly Payment</p>
                                   <p className="text-2xl font-bold text-primary">
-                                    {product && request ?
-                                      compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
-                                      'N/A'}
+                                    {detailedLoan?.schedules?.[0]?.amount_due ?
+                                      compactCurrency(detailedLoan.schedules[0].amount_due) :
+                                      (product && request ?
+                                        compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
+                                        'N/A')}
                                   </p>
                                 </div>
                               </div>
@@ -858,7 +877,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                                 <div>
                                   <p className="text-sm font-medium text-muted-foreground">Term Length</p>
                                   <p className="text-2xl font-bold text-primary">
-                                    {request?.term_length || 0} <span className="text-lg font-medium text-primary/70">{(request?.term_length || 0) === 1 ? 'month' : 'months'}</span>
+                                    {detailedLoan?.schedules ? detailedLoan.schedules.length : (request?.term_length || 0)} <span className="text-lg font-medium text-primary/70">{(detailedLoan?.schedules?.length || request?.term_length || 0) === 1 ? 'month' : 'months'}</span>
                                   </p>
                                 </div>
                               </div>
@@ -868,16 +887,260 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                       </div>
 
                       {/* Status Timeline */}
-                      <div className="pt-4 border-t mt-4">
-                        <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-primary" />
-                          Loan Status Timeline
-                        </h3>
-                        <StatusTimeline request={request} />
-                      </div>
+                      {request && (
+                        <div className="pt-4 border-t mt-4">
+                          <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-primary" />
+                            Loan Status Timeline
+                          </h3>
+                          <StatusTimeline request={request} loan={detailedLoan} />
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Vendor Details Tab */}
+              <TabsContent value="vendor" className="space-y-6 mt-6">
+                {request?.vendor_details ? (
+                  <>
+                    {/* Business Information Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Building className="h-5 w-5" />
+                          Business Information
+                        </CardTitle>
+                        <CardDescription>Vendor business details and contact information</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Business Name</p>
+                              <p className="text-lg font-semibold">{request.vendor_details.business_name}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Vendor ID</p>
+                              <p className="text-sm">{request.vendor_details.vendor_id}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Contact Email</p>
+                              <p className="text-sm flex items-center gap-2">
+                                <Mail className="h-4 w-4" />
+                                {request.vendor_details.contact_email}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Contact Phone</p>
+                              <p className="text-sm flex items-center gap-2">
+                                <Phone className="h-4 w-4" />
+                                {request.vendor_details.contact_phone}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Verification Status</p>
+                              <Badge variant={request.vendor_details.verification_status === 'verified' ? 'default' : 'secondary'}>
+                                {request.vendor_details.verification_status}
+                              </Badge>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Source</p>
+                              <p className="text-sm">{request.vendor_details.source}</p>
+                            </div>
+                            {request.vendor_details.business_details && (
+                              <>
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Registration Date</p>
+                                  <p className="text-sm">{request.vendor_details.business_details.registration_date || 'Not provided'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Location</p>
+                                  <p className="text-sm">
+                                    {request.vendor_details.business_details.country}{request.vendor_details.business_details.region ? `, ${request.vendor_details.business_details.region}` : ''}
+                                  </p>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Business Metrics Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <BarChart className="h-5 w-5" />
+                          Business Metrics
+                        </CardTitle>
+                        <CardDescription>Transaction and order statistics for vendor</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-muted/20 p-4 rounded-lg border">
+                            <p className="text-sm text-muted-foreground">Total Transactions</p>
+                            <p className="text-2xl font-bold">{request.vendor_details.transaction_stats?.transaction_count || 0}</p>
+                          </div>
+                          <div className="bg-muted/20 p-4 rounded-lg border">
+                            <p className="text-sm text-muted-foreground">Total Transaction Value</p>
+                            <p className="text-2xl font-bold">{compactCurrency(request.vendor_details.transaction_stats?.total_value || 0)}</p>
+                          </div>
+                          <div className="bg-muted/20 p-4 rounded-lg border">
+                            <p className="text-sm text-muted-foreground">Current Orders</p>
+                            <p className="text-2xl font-bold">{request.vendor_details.current_orders_count || 0}</p>
+                          </div>
+                          <div className="bg-muted/20 p-4 rounded-lg border">
+                            <p className="text-sm text-muted-foreground">Outstanding Payments</p>
+                            <p className="text-2xl font-bold">{compactCurrency(request.vendor_details.outstanding_payments || 0)}</p>
+                          </div>
+                          <div className="bg-muted/20 p-4 rounded-lg border md:col-span-2">
+                            <p className="text-sm text-muted-foreground">Last Transaction Date</p>
+                            <p className="text-2xl font-bold">
+                              {request.vendor_details.transaction_stats?.last_transaction_date
+                                ? format(new Date(request.vendor_details.transaction_stats.last_transaction_date), 'MMM d, yyyy')
+                                : 'No transactions'}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* KYC Documents Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          KYC Documents
+                        </CardTitle>
+                        <CardDescription>Verification documents for the business</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {request.vendor_details.kyc_documents ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {request.vendor_details.kyc_documents.business_license && (
+                              <div className="border rounded-lg p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="bg-blue-100 p-2 rounded-md">
+                                    <FileText className="h-5 w-5 text-blue-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Business License</p>
+                                    <p className="text-sm text-muted-foreground">Verification document</p>
+                                  </div>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={request.vendor_details.kyc_documents.business_license} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    View
+                                  </a>
+                                </Button>
+                              </div>
+                            )}
+                            {request.vendor_details.kyc_documents.business_certificate && (
+                              <div className="border rounded-lg p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="bg-green-100 p-2 rounded-md">
+                                    <FileText className="h-5 w-5 text-green-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Business Certificate</p>
+                                    <p className="text-sm text-muted-foreground">Registration certificate</p>
+                                  </div>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={request.vendor_details.kyc_documents.business_certificate} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    View
+                                  </a>
+                                </Button>
+                              </div>
+                            )}
+                            {request.vendor_details.kyc_documents.tra_certificate && (
+                              <div className="border rounded-lg p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="bg-purple-100 p-2 rounded-md">
+                                    <FileText className="h-5 w-5 text-purple-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">TRA Certificate</p>
+                                    <p className="text-sm text-muted-foreground">Tax registration certificate</p>
+                                  </div>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={request.vendor_details.kyc_documents.tra_certificate} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    View
+                                  </a>
+                                </Button>
+                              </div>
+                            )}
+                            {request.vendor_details.kyc_documents.logo && (
+                              <div className="border rounded-lg p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="bg-orange-100 p-2 rounded-md">
+                                    <Store className="h-5 w-5 text-orange-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Business Logo</p>
+                                    <p className="text-sm text-muted-foreground">Company branding</p>
+                                  </div>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={request.vendor_details.kyc_documents.logo} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    View
+                                  </a>
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No KYC documents available</p>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Bank Details Card */}
+                    {request.vendor_details.bank_details && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <CreditCard className="h-5 w-5" />
+                            Bank Details
+                          </CardTitle>
+                          <CardDescription>Bank account information for payments</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Bank ID</p>
+                              <p className="text-sm">{request.vendor_details.bank_details.bank_id || 'Not provided'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Account Number</p>
+                              <p className="text-sm">{request.vendor_details.bank_details.account_number || 'Not provided'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Account Name</p>
+                              <p className="text-sm">{request.vendor_details.bank_details.account_name || 'Not provided'}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                ) : (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                      <Building className="h-12 w-12 mb-4 opacity-20" />
+                      <p>No vendor details available</p>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* Payment Plan Tab */}
@@ -896,30 +1159,45 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                           <TableHead>Amount</TableHead>
                           <TableHead>Principal</TableHead>
                           <TableHead>Interest</TableHead>
-                          <TableHead>Balance</TableHead>
+                          <TableHead>Fees</TableHead>
                           <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paymentSchedule.map((payment) => (
-                          <TableRow key={payment.payment_number}>
-                            <TableCell>{payment.payment_number}</TableCell>
-                            <TableCell>{formatDateDisplay(payment.due_date)}</TableCell>
-                            <TableCell>{compactCurrency(payment.payment_amount)}</TableCell>
-                            <TableCell>{compactCurrency(payment.principal_amount)}</TableCell>
-                            <TableCell>{compactCurrency(payment.interest_amount)}</TableCell>
-                            <TableCell>{compactCurrency(payment.remaining_balance)}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={
-                                payment.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' :
-                                  payment.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' :
-                                    payment.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : ''
-                              }>
-                                {payment.status}
-                              </Badge>
+                        {detailedLoanLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={8} className="h-24 text-center">
+                              <Spinner className="h-6 w-6 mx-auto" />
+                              <p className="mt-2 text-sm text-muted-foreground">Loading payment schedule...</p>
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : detailedLoan?.schedules && detailedLoan.schedules.length > 0 ? (
+                          detailedLoan.schedules.map((schedule) => (
+                            <TableRow key={schedule.schedule_id}>
+                              <TableCell>{schedule.installment_number}</TableCell>
+                              <TableCell>{formatDateDisplay(schedule.due_date)}</TableCell>
+                              <TableCell>{compactCurrency(schedule.amount_due)}</TableCell>
+                              <TableCell>{compactCurrency(schedule.principal_due)}</TableCell>
+                              <TableCell>{compactCurrency(schedule.interest_due)}</TableCell>
+                              <TableCell>{compactCurrency(schedule.fees_due || 0)}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={
+                                  schedule.status === 'PAID' ? 'bg-green-50 text-green-700 border-green-200' :
+                                    schedule.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                      schedule.status === 'OVERDUE' ? 'bg-red-50 text-red-700 border-red-200' : ''
+                                }>
+                                  {schedule.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                              No payment schedule available yet.
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </CardContent>
@@ -1003,23 +1281,39 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions.map((txn) => (
-                          <TableRow key={txn.id}>
-                            <TableCell>{formatDateDisplay(txn.date)}</TableCell>
-                            <TableCell className="capitalize">{txn.type}</TableCell>
-                            <TableCell>{txn.description}</TableCell>
-                            <TableCell
-                              className={txn.type === 'payment' ? 'text-green-600' : 'text-blue-600'}
-                            >
-                              {txn.type === 'payment' ? '+' : '-'}{compactCurrency(txn.amount)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="capitalize">
-                                {txn.status}
-                              </Badge>
+                        {detailedLoanLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="h-24 text-center">
+                              <Spinner className="h-6 w-6 mx-auto" />
+                              <p className="mt-2 text-sm text-muted-foreground">Loading transactions...</p>
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : detailedLoan?.repayments && detailedLoan.repayments.length > 0 ? (
+                          detailedLoan.repayments.map((repayment) => (
+                            <TableRow key={repayment.repayment_id}>
+                              <TableCell>{formatDateDisplay(repayment.payment_date)}</TableCell>
+                              <TableCell className="capitalize">Repayment</TableCell>
+                              <TableCell>{repayment.payment_method} {repayment.reference_number ? `(${repayment.reference_number})` : ''}</TableCell>
+                              <TableCell className="text-green-600">
+                                +{compactCurrency(repayment.amount_paid)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`capitalize ${repayment.status === 'SUCCESS' || repayment.status === 'COMPLETED' ? 'bg-green-50 text-green-700 border-green-200' :
+                                  repayment.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                    'bg-red-50 text-red-700 border-red-200'
+                                  }`}>
+                                  {repayment.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                              No transactions recorded yet.
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </CardContent>
@@ -1035,7 +1329,12 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                   </CardHeader>
 
                   <CardContent>
-                    {vendorLoans.length > 0 ? (
+                    {vendorHistoryLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Spinner className="h-6 w-6" />
+                        <p className="ml-2 text-sm text-muted-foreground">Loading loan history...</p>
+                      </div>
+                    ) : vendorLoanHistory.length > 0 ? (
                       <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
@@ -1043,48 +1342,45 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                               <TableHead>Date</TableHead>
                               <TableHead>Loan Amount</TableHead>
                               <TableHead>Term</TableHead>
-                              <TableHead>Product</TableHead>
                               <TableHead>Status</TableHead>
                               <TableHead>Action</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {vendorLoans.map((loan) => (
-                              <TableRow key={loan.id} className={loan.id === id ? "bg-muted/20" : ""}>
-                                <TableCell>{formatDate(loan.date, 'short')}</TableCell>
-                                <TableCell>{compactCurrency(loan.amount)}</TableCell>
-                                <TableCell>{loan.term} {loan.term === 1 ? 'month' : 'months'}</TableCell>
-                                <TableCell>{loan.product_name}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline" className={`capitalize
-                                      ${loan.status === 'paid' ? 'bg-green-50 text-green-700' : ''}
-                                      ${loan.status === 'active' || loan.status === 'disbursed' ? 'bg-blue-50 text-blue-700' : ''}
-                                      ${loan.status === 'pending' || loan.status === 'approved' ? 'bg-yellow-50 text-yellow-700' : ''}
-                                      ${loan.status === 'rejected' ? 'bg-red-50 text-red-700' : ''}
-                                    `}>
-                                    {loan.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  {loan.id !== id && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => router.push(`/dashboard/loans/requests/${loan.id}`)}
-                                    >
-                                      <Eye className="h-4 w-4 mr-2" />
-                                      View
-                                    </Button>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                            {vendorLoanHistory.map((historyLoan) => {
+                              const loanId = historyLoan.request_id || historyLoan.id;
+                              const isCurrent = loanId === id;
+                              return (
+                                <TableRow key={loanId} className={isCurrent ? "bg-muted/20" : ""}>
+                                  <TableCell>{formatDate(historyLoan.created_at, 'short')}</TableCell>
+                                  <TableCell>{compactCurrency(historyLoan.loan_amount)}</TableCell>
+                                  <TableCell>{historyLoan.term_length} {historyLoan.term_length === 1 ? 'month' : 'months'}</TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(historyLoan.status)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {!isCurrent ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => router.push(`/dashboard/vendor-loans/requests/${loanId}`)}
+                                      >
+                                        <Eye className="h-4 w-4 mr-2" />
+                                        View
+                                      </Button>
+                                    ) : (
+                                      <Badge variant="outline" className="text-xs">Current</Badge>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
                           </TableBody>
                         </Table>
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <p className="text-muted-foreground">No loan history available</p>
+                        <p className="text-muted-foreground">No loan history available for this vendor</p>
                       </div>
                     )}
                   </CardContent>
@@ -1295,7 +1591,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">Amount Range</p>
                       <p className="text-sm font-medium">
-                        {compactCurrency(product.min_amount)} - {compactCurrency(product.max_amount)}
+                        {compactCurrency(product.min_amount || (product as any).min_principal || 0)} - {compactCurrency(product.max_amount || (product as any).max_principal || 0)}
                       </p>
                     </div>
                   </div>
@@ -1314,44 +1610,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
               </Card>
             )}
 
-            {/* Revenue Summary */}
-            {revenueData && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Financial Summary</CardTitle>
-                  <CardDescription>Vendor's revenue overview</CardDescription>
-                </CardHeader>
 
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground">Monthly Average</p>
-                      <p className="text-lg font-bold">{compactCurrency(revenueData.monthly_average)}</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground">Annual Revenue</p>
-                      <p className="text-lg font-bold">{compactCurrency(revenueData.annual_revenue)}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm">Growth Rate</p>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        {revenueData.growth_rate}%
-                      </Badge>
-                    </div>
-                    <Progress value={revenueData.growth_rate} className="h-1" />
-                  </div>
-
-                  <div className="text-xs text-right text-muted-foreground">
-                    Last 6 months activity
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Approval Actions */}
             {request?.status === 'pending' && (
@@ -1396,11 +1655,11 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  {request?.status === 'approved' && (
+                  {request?.status === 'approved' && (!detailedLoan || detailedLoan.disbursement_status !== 'DISBURSED') && (
                     <Button
                       variant="default"
-                      disabled={updating}
-                      onClick={() => handleStatusChange('disbursed')}
+                      disabled={updating || detailedLoanLoading}
+                      onClick={handleDisburse}
                       className="w-full"
                     >
                       <Wallet className="h-4 w-4 mr-2" />
@@ -1475,6 +1734,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
   );
 }
 
-export default withModuleAuthorization(withAuthorization(LoanRequestDetailPage, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default withModuleAuthorization(withAuthorization(LoanRequestDetailPage as any, {
   permission: "vendor-loans:read",
 }), "vendor_loans");

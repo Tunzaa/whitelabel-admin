@@ -1,10 +1,12 @@
 // Types for loan requests
 export type LoanRequestFormValues = {
   tenant_id: string;
-  vendor_id: string;
+  vendor_id?: string;
+  borrower_id: string;
   product_id: string;
-  loan_amount: string;
-  term_length: number; // in months
+  amount_requested: number;
+  loan_amount?: string;
+  term_length?: number; // in months
   purpose: string;
   status?: string;
   notes?: string;
@@ -26,11 +28,13 @@ export interface ApiResponse<T> {
 // Payment Schedule Type
 export type PaymentSchedule = {
   payment_id: string;
+  payment_number?: number;
   due_date: string;
   amount: number;
   principal: number;
   interest: number;
-  status: 'pending' | 'paid' | 'overdue' | 'partial';
+  remaining_balance?: number;
+  status: 'pending' | 'paid' | 'upcoming' | 'overdue' | 'partial';
   payment_date?: string;
   amount_paid?: number;
 };
@@ -91,7 +95,7 @@ export type LoanRequest = {
   remaining_balance?: number;
   processing_fee?: number;
   purpose: string;
-  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted' | 'disbursed' | 'paid';
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'defaulted' | 'disbursed' | 'paid' | 'PENDING' | 'APPROVED' | 'DENIED';
   rejection_reason?: string;
   notes?: string;
   payment_schedule?: PaymentSchedule[];
@@ -104,6 +108,45 @@ export type LoanRequest = {
   paid_at?: string;
   created_at?: string;
   updated_at?: string;
+  borrower_id?: string;
+  amount_requested?: number;
+  vendor_details?: {
+    vendor_id: string;
+    business_name: string;
+    display_name: string;
+    contact_email: string;
+    contact_phone: string;
+    verification_status: string;
+    is_active: boolean;
+    source: string;
+    kyc_documents?: {
+      business_license?: string;
+      business_certificate?: string;
+      tra_certificate?: string;
+      cover_image?: string;
+      logo?: string;
+    };
+    bank_details?: {
+      bank_id?: string;
+      account_number?: string;
+      account_name?: string;
+    };
+    business_details?: {
+      registration_date?: string;
+      country?: string;
+      region?: string;
+      area?: string;
+      street_address?: string;
+    };
+    transaction_stats?: {
+      transaction_count: number;
+      total_value: number;
+      last_transaction_date?: string;
+    };
+    outstanding_payments?: number;
+    current_orders_count?: number;
+    current_orders?: any[];
+  };
 };
 
 // Error Type
@@ -147,6 +190,7 @@ export interface LoanRequestFilter {
 export type LoanRequestAction =
   | 'fetchList'
   | 'fetchOne'
+  | 'fetchDetailedLoan'
   | 'create'
   | 'update'
   | 'updateStatus'
@@ -156,3 +200,45 @@ export type LoanRequestAction =
   | 'uploadDocument'
   | 'fetchVendorRevenue'
   | 'addPenalty';
+
+export type LoanRepayment = {
+  repayment_id: string;
+  loan_id: string;
+  schedule_id: string | null;
+  amount_paid: number;
+  payment_method: string;
+  payment_date: string;
+  reference_number?: string;
+  status: 'COMPLETED' | 'PENDING' | 'FAILED' | 'SUCCESS';
+  created_at: string;
+};
+
+export type LoanSchedule = {
+  schedule_id: string;
+  loan_id: string;
+  installment_number: number;
+  principal_due: number;
+  interest_due: number;
+  fees_due: number;
+  amount_due: number;
+  due_date: string;
+  status: 'PAID' | 'PENDING' | 'OVERDUE';
+  created_at: string;
+};
+
+export type DetailedLoan = {
+  loan_id: string;
+  request_id: string;
+  borrower_id: string;
+  principal_amount: number;
+  total_expected_interest: number;
+  total_fees: number;
+  outstanding_balance: number;
+  disbursement_status: string;
+  disbursed_at: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  schedules: LoanSchedule[];
+  repayments: LoanRepayment[];
+};

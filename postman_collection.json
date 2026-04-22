@@ -1,0 +1,313 @@
+{
+	"info": {
+		"_postman_id": "8b5c9284-9ff1-4e20-8aee-c7b7423319dc",
+		"name": "Tunzaa Loan Service",
+		"description": "API collection for managing loan providers, products, requests, and repayments.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Providers",
+			"item": [
+				{
+					"name": "Register Provider",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tenant_id\": \"tenant-123\",\n    \"user_id\": \"user-456\",\n    \"business_name\": \"Fast Cash Loans\",\n    \"contact_email\": \"contact@fastcash.com\",\n    \"contact_phone\": \"+255700000000\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/loans/providers/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"providers",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Providers (Tenant)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-ID",
+								"value": "tenant-123",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/loans/providers/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"providers",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Create Product",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"provider_id\": \"{{provider_id}}\",\n    \"name\": \"Small Biz Quick Loan\",\n    \"interest_rate\": 5.0,\n    \"interest_period\": \"MONTHLY\",\n    \"interest_rate_type\": \"FLAT\",\n    \"term_duration\": 3,\n    \"term_unit\": \"MONTHS\",\n    \"repayment_frequency\": \"MONTHLY\",\n    \"charges\": {}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/loans/products/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"products",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Provider Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/loans/products/provider/{{provider_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"products",
+								"provider",
+								"{{provider_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Loan Operations",
+			"item": [
+				{
+					"name": "Submit Loan Request",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"product_id\": \"{{product_id}}\",\n    \"borrower_id\": \"user-789\",\n    \"amount_requested\": 10000.0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/loans/requests",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Loan Request Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/loans/requests/{{request_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"requests",
+								"{{request_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Request",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/loans/requests/{{request_id}}/approve",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"requests",
+								"{{request_id}}",
+								"approve"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Loan Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/loans/{{loan_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"{{loan_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Loans for Borrower",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/loans/borrower/{{borrower_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"borrower",
+								"{{borrower_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Disburse Loan",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/loans/{{loan_id}}/disburse",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"disburse"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Repayment",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 3500.0,\n    \"method\": \"m-pesa\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/loans/{{loan_id}}/repayments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"loans",
+								"{{loan_id}}",
+								"repayments"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "provider_id",
+			"value": "id-here"
+		},
+		{
+			"key": "product_id",
+			"value": "id-here"
+		},
+		{
+			"key": "request_id",
+			"value": "id-here"
+		},
+		{
+			"key": "loan_id",
+			"value": "id-here"
+		},
+		{
+			"key": "borrower_id",
+			"value": "id-here"
+		}
+	]
+}

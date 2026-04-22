@@ -1,21 +1,21 @@
 import { create } from 'zustand';
-import { LoanProduct, LoanProductFilter, LoanProductListResponse, LoanProductAction, LoanProductError, ApiResponse, LoanProductFormValues } from './types';
+import { LoanProduct, LoanProductFilter, LoanProductListResponse, LoanProductAction, LoanProductError, LoanProductFormValues } from './types';
 import { apiClient } from '@/lib/api/client';
-import { generateMockLoanProducts } from './data/mock-data';
+import { ApiResponse } from '@/lib/core/api';
 
 interface LoanProductStore {
-  products: LoanProduct[];
+  products: LoanProductListResponse | null;
   product: LoanProduct | null;
   loading: boolean;
   storeError: LoanProductError | null;
   activeAction: LoanProductAction | null;
-  
+
   // UI State
   setActiveAction: (action: LoanProductAction | null) => void;
   setLoading: (loading: boolean) => void;
   setStoreError: (error: LoanProductError | null) => void;
   setProduct: (product: LoanProduct | null) => void;
-  setProducts: (products: LoanProduct[]) => void;
+  setProducts: (products: LoanProductListResponse | null) => void;
   
   // API Methods
   fetchProduct: (id: string, headers?: Record<string, string>) => Promise<LoanProduct>;
@@ -27,7 +27,7 @@ interface LoanProductStore {
 
 export const useLoanProductStore = create<LoanProductStore>()(
   (set, get) => ({
-    products: [],
+    products: null,
     product: null,
     loading: false,
     storeError: null,
@@ -45,24 +45,28 @@ export const useLoanProductStore = create<LoanProductStore>()(
         setActiveAction('fetchOne');
         setLoading(true);
         
-        // For now, we'll use mock data
-        // In a real implementation, this would be an API call
-        // const response = await apiClient.get<ApiResponse<LoanProduct>>(`/loans/products/${id}`, undefined, headers);
+        const response = await apiClient.get<LoanProduct>(`/loans/products/${id}`, undefined, headers);
+        const rawBody = (response.data as ApiResponse<LoanProduct>).data || response.data;
+        const rawData = Array.isArray(rawBody) ? (rawBody[0] as LoanProduct) : (rawBody as LoanProduct);
         
-        // Mock implementation
-        const mockProducts = generateMockLoanProducts();
-        const product = mockProducts.find(product => product.product_id === id);
-        
-        if (product) {
-          setProduct(product);
-          setLoading(false);
-          return product;
+        if (!rawData) {
+          throw new Error('Product not found');
         }
         
-        throw new Error('Loan product not found');
+        // Normalize is_active and amounts
+        const product = {
+          ...rawData,
+          is_active: rawData.is_active !== undefined ? rawData.is_active : (rawData.status === 'ACTIVE'),
+          min_amount: rawData.min_amount || (rawData as any).min_principal || (rawData as any).minimum_amount || 0,
+          max_amount: rawData.max_amount || (rawData as any).max_principal || (rawData as any).maximum_amount || 0,
+        };
+        
+        setProduct(product);
+        setLoading(false);
+        return product;
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch loan product';
-        const errorStatus = (error as any)?.response?.status;
+        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
           message: errorMessage,
           status: errorStatus,
@@ -81,66 +85,78 @@ export const useLoanProductStore = create<LoanProductStore>()(
         setActiveAction('fetchList');
         setLoading(true);
         
-        // For now, we'll use mock data
-        // In a real implementation, this would be an API call
-        // const response = await apiClient.get<ApiResponse<LoanProductListResponse>>(`/loans/products`, undefined, headers);
-        
-        // Mock implementation
-        const mockProducts = generateMockLoanProducts();
-        
-        // Filter products based on search params
-        let filteredProducts = mockProducts;
-        
-        if (filter.search) {
-          const search = filter.search.toLowerCase();
-          filteredProducts = filteredProducts.filter(product => 
-            product.name.toLowerCase().includes(search) || 
-            product.description.toLowerCase().includes(search)
-          );
-        }
-        
+        let url = '/loans/products/';
         if (filter.provider_id) {
-          filteredProducts = filteredProducts.filter(product => 
-            product.provider_id === filter.provider_id
-          );
+          url = `/loans/products/provider/${filter.provider_id}`;
         }
         
-        if (filter.is_active !== undefined) {
-          filteredProducts = filteredProducts.filter(product => 
-            product.is_active === filter.is_active
-          );
+        const response = await apiClient.get<LoanProduct[]>(url, filter, headers);
+
+        console.log('[Loan Products Store] Raw API response:', response.data);
+
+        // Handle both direct array, wrapped with .data, and wrapped with .items response formats
+        const rawData = response.data as unknown as (ApiResponse<LoanProduct[]> | LoanProduct[] | LoanProductListResponse);
+        let productsList: LoanProduct[] = [];
+
+        if (Array.isArray(rawData)) {
+          // Direct array
+          productsList = rawData.map((p: any) => ({
+            ...p,
+            is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
+            min_amount: p.min_amount || p.min_principal || p.minimum_amount || 0,
+            max_amount: p.max_amount || p.max_principal || p.maximum_amount || 0,
+          })) as LoanProduct[];
+        } else if ('items' in rawData && Array.isArray(rawData.items)) {
+          // Wrapped with .items (paginated response)
+          productsList = rawData.items.map((p: any) => ({
+            ...p,
+            is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
+            min_amount: p.min_amount || p.min_principal || p.minimum_amount || 0,
+            max_amount: p.max_amount || p.max_principal || p.maximum_amount || 0,
+          })) as LoanProduct[];
+        } else if ('data' in rawData && Array.isArray(rawData.data)) {
+          // Wrapped with .data (ApiResponse format)
+          productsList = rawData.data.map((p: any) => ({
+            ...p,
+            is_active: p.is_active !== undefined ? p.is_active : (p.status === 'ACTIVE'),
+            min_amount: p.min_amount || p.min_principal || p.minimum_amount || 0,
+            max_amount: p.max_amount || p.max_principal || p.maximum_amount || 0,
+          })) as LoanProduct[];
         }
-        
-        if (filter.min_interest_rate !== undefined) {
-          filteredProducts = filteredProducts.filter(product => 
-            product.interest_rate >= filter.min_interest_rate!
-          );
+
+        console.log('[Loan Products Store] Processed productsList:', productsList);
+
+        // Extract metadata from the response
+        let total = productsList.length;
+        let skip = filter.skip || 0;
+        let limit = filter.limit || 10;
+
+        if ('items' in rawData && typeof rawData === 'object' && rawData !== null) {
+          // Response is already in paginated format with .items
+          total = (rawData as any).total ?? productsList.length;
+          skip = (rawData as any).skip ?? (filter.skip || 0);
+          limit = (rawData as any).limit ?? (filter.limit || 10);
+        } else if ('data' in rawData && typeof rawData === 'object' && rawData !== null) {
+          // Response is in ApiResponse format with .data
+          total = (rawData as any).total ?? productsList.length;
+          skip = (rawData as any).skip ?? (filter.skip || 0);
+          limit = (rawData as any).limit ?? (filter.limit || 10);
         }
-        
-        if (filter.max_interest_rate !== undefined) {
-          filteredProducts = filteredProducts.filter(product => 
-            product.interest_rate <= filter.max_interest_rate!
-          );
-        }
-        
-        // Handle pagination
-        const skip = filter.skip || 0;
-        const limit = filter.limit || 10;
-        const paginatedProducts = filteredProducts.slice(skip, skip + limit);
-        
+
         const productResponse: LoanProductListResponse = {
-          items: paginatedProducts,
-          total: filteredProducts.length,
+          items: productsList,
+          total,
           skip,
           limit
         };
-        
-        setProducts(paginatedProducts);
+
+        console.log('[Loan Products Store] Setting products:', productResponse);
+        setProducts(productResponse);
         setLoading(false);
         return productResponse;
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch loan products';
-        const errorStatus = (error as any)?.response?.status;
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch provider loan products';
+        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
           message: errorMessage,
           status: errorStatus,
@@ -158,37 +174,23 @@ export const useLoanProductStore = create<LoanProductStore>()(
         setActiveAction('create');
         setLoading(true);
         
-        // For now, we'll use mock data
-        // In a real implementation, this would be an API call
-        // const response = await apiClient.post<ApiResponse<LoanProduct>>('/loans/products', data, headers);
-        
-        // Mock implementation
-        const newProduct: LoanProduct = {
-          product_id: `product_${Date.now()}`,
-          tenant_id: data.tenant_id,
-          provider_id: data.provider_id,
-          name: data.name,
-          description: data.description,
-          interest_rate: parseFloat(data.interest_rate),
-          term_options: data.term_options,
-          payment_frequency: data.payment_frequency,
-          min_amount: parseFloat(data.min_amount),
-          max_amount: parseFloat(data.max_amount),
-          processing_fee: data.processing_fee ? parseFloat(data.processing_fee) : undefined,
-          is_active: data.is_active,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+        const payload = {
+          ...data,
+          interest_rate: typeof data.interest_rate === 'string' ? parseFloat(data.interest_rate) : data.interest_rate,
+          min_amount: typeof data.min_amount === 'string' ? parseFloat(data.min_amount) : data.min_amount,
+          max_amount: typeof data.max_amount === 'string' ? parseFloat(data.max_amount) : data.max_amount,
+          processing_fee: typeof data.processing_fee === 'string' ? parseFloat(data.processing_fee) : data.processing_fee
         };
         
-        // In a real app, this would be persisted to a database
-        const mockProducts = generateMockLoanProducts();
-        mockProducts.push(newProduct);
+        const response = await apiClient.post<LoanProduct>('/loans/products/', payload, headers);
+        // Handle both direct and wrapped responses
+        const newProduct = (response.data as ApiResponse<LoanProduct>).data || response.data;
         
         setLoading(false);
         return newProduct;
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to create loan product';
-        const errorStatus = (error as any)?.response?.status;
+        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
           message: errorMessage,
           status: errorStatus,
@@ -206,42 +208,19 @@ export const useLoanProductStore = create<LoanProductStore>()(
         setActiveAction('update');
         setLoading(true);
         
-        // For now, we'll use mock data
-        // In a real implementation, this would be an API call
-        // const response = await apiClient.put<ApiResponse<LoanProduct>>(`/loans/products/${id}`, data, headers);
+        const response = await apiClient.put<LoanProduct>(`/loans/products/${id}`, data, headers);
+        // Handle both direct and wrapped responses
+        const updatedProduct = (response.data as ApiResponse<LoanProduct>).data || response.data;
         
-        // Mock implementation
-        const mockProducts = [...products];
-        const productIndex = mockProducts.findIndex(p => p.product_id === id);
-        
-        if (productIndex === -1) {
-          throw new Error('Loan product not found');
-        }
-        
-        // Convert string values to numbers for numeric fields
-        const processedData = {
-          ...data,
-          interest_rate: data.interest_rate !== undefined ? parseFloat(data.interest_rate) : undefined,
-          min_amount: data.min_amount !== undefined ? parseFloat(data.min_amount) : undefined,
-          max_amount: data.max_amount !== undefined ? parseFloat(data.max_amount) : undefined,
-          processing_fee: data.processing_fee !== undefined ? parseFloat(data.processing_fee) : undefined
-        };
-        
-        const updatedProduct = {
-          ...mockProducts[productIndex],
-          ...processedData,
-          updated_at: new Date().toISOString()
-        };
-        
-        mockProducts[productIndex] = updatedProduct as LoanProduct;
-        setProducts(mockProducts);
-        setProduct(updatedProduct as LoanProduct);
+        const updatedProducts = products.map(p => p.product_id === id ? updatedProduct : p);
+        setProducts(updatedProducts);
+        setProduct(updatedProduct);
         
         setLoading(false);
-        return updatedProduct as LoanProduct;
+        return updatedProduct;
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to update loan product';
-        const errorStatus = (error as any)?.response?.status;
+        const errorStatus = (error as { response?: { status?: number } })?.response?.status;
         setStoreError({
           message: errorMessage,
           status: errorStatus,
@@ -258,33 +237,20 @@ export const useLoanProductStore = create<LoanProductStore>()(
       try {
         setActiveAction('updateStatus');
         setLoading(true);
-        
-        // For now, we'll use mock data
-        // In a real implementation, this would be an API call
-        // const response = await apiClient.patch<ApiResponse<void>>(`/loans/products/${id}/status`, { is_active: isActive }, headers);
-        
-        // Mock implementation
-        const mockProducts = [...products];
-        const productIndex = mockProducts.findIndex(p => p.product_id === id);
-        
-        if (productIndex === -1) {
-          throw new Error('Loan product not found');
-        }
-        
-        mockProducts[productIndex] = {
-          ...mockProducts[productIndex],
-          is_active: isActive,
-          updated_at: new Date().toISOString()
-        };
-        
-        setProducts(mockProducts);
+
+        await apiClient.patch<void>(`/loans/products/${id}/status`, { is_active: isActive }, headers);
+
+        // Update local state
+        const updatedProducts = products?.items?.map(p =>
+          p.product_id === id ? { ...p, is_active: isActive } : p
+        ) || [];
+        setProducts({ ...products!, items: updatedProducts });
+
         setLoading(false);
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to update loan product status';
-        const errorStatus = (error as any)?.response?.status;
         setStoreError({
-          message: errorMessage,
-          status: errorStatus,
+          message: error instanceof Error ? error.message : 'Failed to update loan product status',
+          status: (error as { response?: { status?: number } })?.response?.status
         });
         setLoading(false);
         throw error;

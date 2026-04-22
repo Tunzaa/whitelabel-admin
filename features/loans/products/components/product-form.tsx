@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,25 +29,19 @@ import { LoanProduct, LoanProductFormValues } from '../types';
 import { LoanProvider } from '../../providers/types';
 
 const formSchema = z.object({
-  tenant_id: z.string(),
   provider_id: z.string().min(1, 'Provider is required'),
   name: z.string().min(3, 'Name must be at least 3 characters'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
-  interest_rate: z.string().refine(
-    (val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, 
-    { message: 'Interest rate must be a valid number' }
-  ),
-  term_options: z.array(z.number()).min(1, 'At least one term option is required'),
-  payment_frequency: z.enum(['weekly', 'semi-monthly', 'monthly', 'quarterly', 'semi-annually', 'annually']),
-  min_amount: z.string().refine(
-    (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
-    { message: 'Minimum amount must be a positive number' }
-  ),
-  max_amount: z.string().refine(
-    (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
-    { message: 'Maximum amount must be a positive number' }
-  ),
-  is_active: z.boolean().default(true),
+  interest_rate: z.preprocess((val) => typeof val === 'string' ? parseFloat(val) : val, z.number().min(0, 'Interest rate must be a non-negative number')),
+  interest_period: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
+  interest_rate_type: z.enum(['FLAT', 'REDUCING', 'REDUCING_BALANCE']),
+  term_duration: z.number().min(1, 'Term duration is required'),
+  term_unit: z.enum(['DAYS', 'WEEKS', 'MONTHS', 'YEARS']),
+  repayment_frequency: z.enum(['DAILY', 'WEEKLY', 'BI_WEEKLY', 'MONTHLY']),
+  charges_array: z.array(z.object({
+    name: z.string().min(1, 'Charge name is required'),
+    value: z.preprocess((val) => typeof val === 'string' ? parseFloat(val) : val, z.number().min(0, 'Value must be positive'))
+  })).default([]),
+  charges: z.record(z.any()).default({}),
 });
 
 interface ProductFormProps {
@@ -58,6 +53,10 @@ interface ProductFormProps {
   defaultProviderId?: string;
 }
 
+type ExtendedFormValues = LoanProductFormValues & {
+  charges_array: { name: string; value: number }[];
+};
+
 export function ProductForm({
   initialValues,
   onSubmit,
@@ -66,11 +65,19 @@ export function ProductForm({
   providers,
   defaultProviderId
 }: ProductFormProps) {
-  const [termOptions, setTermOptions] = useState<number[]>(initialValues.term_options || [3, 6, 12]);
-
-  const form = useForm<LoanProductFormValues>({
+  const form = useForm<ExtendedFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialValues,
+    defaultValues: {
+      ...initialValues,
+      charges_array: initialValues.charges 
+        ? Object.entries(initialValues.charges).map(([name, value]) => ({ name, value: Number(value) }))
+        : []
+    } as any
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "charges_array"
   });
 
   // Update the form when initialValues change
@@ -79,10 +86,6 @@ export function ProductForm({
       Object.keys(initialValues).forEach((key) => {
         form.setValue(key as keyof LoanProductFormValues, initialValues[key as keyof LoanProductFormValues]);
       });
-      
-      if (initialValues.term_options) {
-        setTermOptions(initialValues.term_options);
-      }
     }
   }, [form, initialValues]);
 
@@ -93,67 +96,57 @@ export function ProductForm({
     }
   }, [defaultProviderId, form]);
 
-  const handleFormSubmit = async (values: LoanProductFormValues) => {
-    // Ensure term options are included
-    const updatedValues = {
-      ...values,
-      term_options: termOptions,
-    };
-    
-    await onSubmit(updatedValues);
-  };
+  const handleFormSubmit = async (values: any) => {
+    // Transform charges_array back to Record<string, any>
+    const finalCharges: Record<string, any> = {};
+    if (values.charges_array && Array.isArray(values.charges_array)) {
+      values.charges_array.forEach((charge: { name: string, value: number }) => {
+        if (charge.name) {
+          finalCharges[charge.name] = charge.value;
+        }
+      });
+    }
 
-  const toggleTermOption = (term: number) => {
-    setTermOptions((current) => {
-      if (current.includes(term)) {
-        return current.filter((t) => t !== term);
-      } else {
-        return [...current, term].sort((a, b) => a - b);
-      }
-    });
-
-    // Update form values as well
-    form.setValue('term_options', termOptions.includes(term) 
-      ? termOptions.filter((t) => t !== term)
-      : [...termOptions, term].sort((a, b) => a - b)
-    );
-  };
-
-  const isTermSelected = (term: number) => {
-    return termOptions.includes(term);
+    const { charges_array, ...finalValues } = values;
+    await onSubmit({ 
+      ...finalValues, 
+      charges: finalCharges 
+    } as LoanProductFormValues);
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="provider_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Provider</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-                value={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a provider" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {providers.map((provider) => (
-                    <SelectItem key={provider.provider_id} value={provider.provider_id}>
-                      {provider.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!defaultProviderId && (
+          <FormField
+            control={form.control}
+            name="provider_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Provider</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a provider" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {providers.map((provider) => (
+                      <SelectItem key={provider.provider_id} value={provider.provider_id}>
+                        {provider.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
@@ -169,25 +162,9 @@ export function ProductForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter product description"
-                  className="min-h-[100px]"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="interest_rate"
@@ -210,10 +187,115 @@ export function ProductForm({
 
           <FormField
             control={form.control}
-            name="payment_frequency"
+            name="interest_period"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Payment Frequency</FormLabel>
+                <FormLabel>Interest Period</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select period" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="DAILY">Daily</SelectItem>
+                    <SelectItem value="WEEKLY">Weekly</SelectItem>
+                    <SelectItem value="MONTHLY">Monthly</SelectItem>
+                    <SelectItem value="YEARLY">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="interest_rate_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Interest Rate Type</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="FLAT">Flat Rate</SelectItem>
+                    <SelectItem value="REDUCING">Reducing Balance</SelectItem>
+                    <SelectItem value="REDUCING_BALANCE">Reducing Balance (Standard)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <FormField
+            control={form.control}
+            name="term_duration"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Term Duration</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 3"
+                    min="1"
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="term_unit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Term Unit</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select unit" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="DAYS">Days</SelectItem>
+                    <SelectItem value="WEEKS">Weeks</SelectItem>
+                    <SelectItem value="MONTHS">Months</SelectItem>
+                    <SelectItem value="YEARS">Years</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="repayment_frequency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Repayment Frequency</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
@@ -225,12 +307,10 @@ export function ProductForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="semi-monthly">Semi-Monthly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="semi-annually">Semi-Annually</SelectItem>
-                    <SelectItem value="annually">Annually</SelectItem>
+                    <SelectItem value="DAILY">Daily</SelectItem>
+                    <SelectItem value="WEEKLY">Weekly</SelectItem>
+                    <SelectItem value="BI_WEEKLY">Bi-Weekly</SelectItem>
+                    <SelectItem value="MONTHLY">Monthly</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -239,148 +319,81 @@ export function ProductForm({
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="min_amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Minimum Loan Amount</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="e.g. 1000"
-                    step="100"
-                    min="0"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
-          <FormField
-            control={form.control}
-            name="max_amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Maximum Loan Amount</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="e.g. 10000"
-                    step="100"
-                    min="0"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="term_options"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Term Options (Months)</FormLabel>
-              <div className="space-y-4">
-                {/* Selected terms display */}
-                <div className="flex flex-wrap gap-2">
-                  {termOptions.length > 0 ? (
-                    termOptions.map((term) => (
-                      <div 
-                        key={term} 
-                        className="flex items-center px-3 py-1.5 bg-primary/10 text-primary rounded-full"
-                      >
-                        <span className="text-sm font-medium">{term} {term === 1 ? 'month' : 'months'}</span>
-                        <button 
-                          type="button"
-                          className="ml-2 text-primary/70 hover:text-primary focus:outline-none"
-                          onClick={() => toggleTermOption(term)}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-muted-foreground">No term options selected</div>
-                  )}
-                </div>
-
-                {/* Custom term option */}
-                <div>
-                  <button
-                    type="button"
-                    className="flex items-center px-3 py-1.5 border border-dashed border-primary/40 text-primary/70 rounded-full hover:bg-primary/5 transition-colors"
-                    onClick={() => {
-                      const newTerm = window.prompt('Enter a term length in months (1-120)');
-                      if (newTerm) {
-                        const termValue = parseInt(newTerm, 10);
-                        if (!isNaN(termValue) && termValue > 0 && termValue <= 120 && !termOptions.includes(termValue)) {
-                          toggleTermOption(termValue);
-                        }
-                      }
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    <span className="text-sm">Add custom term</span>
-                  </button>
-                </div>
-
-                {/* Suggested term options */}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">Suggested terms (click to add):</p>
-                  <div className="flex flex-wrap gap-2">
-                    {[1, 2, 3, 4, 6, 8, 9, 12, 15, 18, 24, 30, 36, 48, 60].map((term) => (
-                      !termOptions.includes(term) && (
-                        <button
-                          key={term}
-                          type="button"
-                          className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded hover:bg-muted/80 transition-colors"
-                          onClick={() => toggleTermOption(term)}
-                        >
-                          {term} {term === 1 ? 'month' : 'months'}
-                        </button>
-                      )
-                    ))}
-                  </div>
-                </div>
-              </div>
-              {form.formState.errors.term_options && (
-                <FormMessage>{form.formState.errors.term_options.message}</FormMessage>
-              )}
-            </FormItem>
-          )}
-        />
 
         <div className="w-full border rounded-md p-4 mt-4">
-          <div className="mb-4">
-            <h3 className="text-lg font-medium">Status Settings</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-medium">Product Charges</h3>
+              <p className="text-sm text-muted-foreground">Manage additional fees for this loan product</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append({ name: '', value: 0 })}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" /> Add Charge
+            </Button>
           </div>
-          <FormField
-            control={form.control}
-            name="is_active"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
+
+          <div className="space-y-4">
+            {fields.map((field, index) => (
+              <div key={field.id} className="flex items-end gap-4 p-3 border rounded-lg bg-muted/30">
+                <div className="flex-1">
+                  <FormField
+                    control={form.control}
+                    name={`charges_array.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Charge Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Processing Fee" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel>Active</FormLabel>
-                  <p className="text-sm text-muted-foreground">
-                    Make this product available to vendors
-                  </p>
                 </div>
-              </FormItem>
+                <div className="w-32">
+                  <FormField
+                    control={form.control}
+                    name={`charges_array.${index}.value`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Amount</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="0" 
+                            {...field} 
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => remove(index)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+
+            {fields.length === 0 && (
+              <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground">
+                No charges added. Click "Add Charge" to include fees.
+              </div>
             )}
-          />
+          </div>
         </div>
 
         <div className="flex justify-end">

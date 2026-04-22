@@ -1,7 +1,8 @@
 // Types for loan providers
 export type LoanProviderFormValues = {
   tenant_id: string;
-  name: string;
+  user_id?: string;
+  business_name: string;
   description: string;
   contact_email: string;
   contact_phone: string;
@@ -43,30 +44,31 @@ export type VerificationDocument = {
 
 // Loan Provider entity type
 export type LoanProvider = {
-  _id?: string;
-  id?: string;
   provider_id: string;
   tenant_id: string;
-  name: string;
-  description: string;
+  user_id: string;
+  business_name: string;
   contact_email: string;
   contact_phone: string;
+  is_active: boolean;
+  status?: string;
+  name?: string;
+  description?: string;
   website?: string;
   address?: string;
-  is_active: boolean;
+  logo_url?: string;
   integration_key?: string;
   integration_secret?: string;
   api_endpoint?: string;
-  logo_url?: string;
   verification_documents?: VerificationDocument[];
-  created_at?: string;
-  updated_at?: string;
   statistics?: {
     total_loans?: number;
     loan_growth?: number;
     avg_loan_value?: string;
     repayment_rate?: number;
   };
+  created_at?: string;
+  updated_at?: string;
 };
 
 // Error Type

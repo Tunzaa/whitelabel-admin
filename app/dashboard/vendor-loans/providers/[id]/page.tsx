@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, use, useRef, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
-import {
-  ArrowLeft, Edit, Link, Mail, Phone, Globe, MapPin, Key, LucideIcon,
+import { ArrowLeft, Edit, Link, Mail, Phone, Globe, MapPin, Key, LucideIcon,
   ExternalLink, Settings, Calendar, CreditCard, Building, Clock, PieChart, Briefcase,
   Banknote, Shield, FileText, Check, X, Upload, AlertCircle, ImageIcon, FileSymlink
 } from "lucide-react";
@@ -24,9 +23,13 @@ import { VerificationDocumentManager } from "@/components/ui/verification-docume
 
 import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { useLoanProductStore } from "@/features/loans/products/store";
+import { useLoanRequestStore } from "@/features/loans/requests/store";
 import { ProductTable } from "@/features/loans/products/components/product-table";
+import { RequestTable } from "@/features/loans/requests/components/request-table";
 import { VerificationDocument } from "@/features/loans/providers/types";
 import { isImageFile, isPdfFile } from "@/lib/services/file-upload.service";
+import { withAuthorization } from "@/components/auth/with-authorization";
+import { withModuleAuthorization } from "@/components/auth/with-module-authorization";
 
 interface DetailItemProps {
   icon: LucideIcon;
@@ -59,50 +62,82 @@ const DetailItem = ({ icon: Icon, label, value, isLink = false, href }: DetailIt
 };
 
 interface LoanProviderDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function LoanProviderDetailPage({ params }: LoanProviderDetailPageProps) {
-  const providerId = params.id;
+function LoanProviderDetailPage(props: LoanProviderDetailPageProps) {
+  const unwrappedParams = use(props.params);
+  const providerId = unwrappedParams.id;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const session = useSession();
-  const tenantId = session?.data?.user?.tenantId || '';
+  const tenantId = (session?.data?.user as any)?.tenant_id || '';
 
   const loanProviderStore = useLoanProviderStore();
   const loanProductStore = useLoanProductStore();
+  const loanRequestStore = useLoanRequestStore();
 
   const { provider, loading: providerLoading, storeError: providerError } = loanProviderStore;
   const { products, loading: productsLoading } = loanProductStore;
+  const { requests, loading: requestsLoading } = loanRequestStore;
 
-  const [activeTab, setActiveTab] = useState("details");
-  const [fetchAttempted, setFetchAttempted] = useState(false);
+  const initialTab = searchParams.get("tab") || "overview";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  console.log('[Provider Details] Current state:', {
+    providerId,
+    products,
+    productsLoading,
+    requests,
+    requestsLoading,
+    activeTab,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // UI States
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fetchInitiated = useRef(false);
+
+  // Sync activeTab with URL
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    router.push(`/dashboard/vendor-loans/providers/${providerId}?tab=${value}`, { scroll: false });
+  };
 
   // Define tenant headers
   const tenantHeaders = {
     'X-Tenant-ID': tenantId
   };
-
+  
   useEffect(() => {
     // Fetch provider data if not already loaded
-    if (!fetchAttempted && providerId) {
-      setFetchAttempted(true);
-      loanProviderStore.fetchProvider(providerId, tenantHeaders).catch((error) => {
-      });
+    if (!fetchInitiated.current && providerId) {
+      fetchInitiated.current = true;
+      
+      const loadData = async () => {
+        try {
+          const fetchedProvider = await loanProviderStore.fetchProvider(providerId, tenantHeaders);
+          if (fetchedProvider) {
+            await Promise.all([
+              loanProductStore.fetchProducts({ provider_id: providerId }, tenantHeaders),
+              loanRequestStore.fetchRequests({ provider_id: providerId }, tenantHeaders)
+            ]);
+          }
+        } catch (error) {
+          // Errors are handled in the store
+        }
+      };
+      
+      loadData();
     }
-  }, [providerId, loanProviderStore, fetchAttempted, tenantHeaders]);
-
-  useEffect(() => {
-    if (activeTab === "products" && provider) {
-      loanProductStore.fetchProducts({ provider_id: providerId }, tenantHeaders).catch((error) => {
-      });
-    }
-  }, [activeTab, loanProductStore, providerId, provider, tenantHeaders]);
+  }, [providerId, loanProviderStore, loanProductStore, tenantHeaders]);
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "Not set";
@@ -118,39 +153,18 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
     }
   };
 
-  // Handle document approve
-  const handleDocumentApprove = async (documentId: string) => {
+  // Handle document verification
+  const handleDocumentVerification = async (payload: { document_id: string, verification_status: "verified" | "rejected", rejection_reason?: string }) => {
     try {
-      toast.success("Document approved successfully");
-      // Simulate an API call for demo purposes
-      await new Promise(resolve => setTimeout(resolve, 500));
+      toast.success(`Document ${payload.verification_status}`);
       // In a real app, you would make an API call here
-      // await approveDocument(documentId);
+      // await updateDocumentStatus(payload);
 
       // Refresh provider data
-      loanProviderStore.fetchProvider(providerId, tenantHeaders);
-      return Promise.resolve();
+      await loanProviderStore.fetchProvider(providerId, tenantHeaders);
     } catch (error) {
-      toast.error("Failed to approve document");
-      return Promise.reject(error);
-    }
-  };
-
-  // Handle document reject
-  const handleDocumentReject = async (documentId: string, reason: string) => {
-    try {
-      toast.success("Document rejected");
-      // Simulate an API call for demo purposes
-      await new Promise(resolve => setTimeout(resolve, 500));
-      // In a real app, you would make an API call here
-      // await rejectDocument(documentId, reason);
-
-      // Refresh provider data
-      loanProviderStore.fetchProvider(providerId, tenantHeaders);
-      return Promise.resolve();
-    } catch (error) {
-      toast.error("Failed to reject document");
-      return Promise.reject(error);
+      toast.error("Failed to update document status");
+      throw error;
     }
   };
 
@@ -221,14 +235,14 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
 
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={provider.logo_url} alt={provider.name} />
+              <AvatarImage src={provider.logo_url} alt={provider.business_name} />
               <AvatarFallback style={{ backgroundColor: "#4f46e5" }}>
-                {provider.name.substring(0, 2).toUpperCase()}
+                {provider.business_name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
 
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{provider.name}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{provider.business_name}</h1>
               {provider.website && (
                 <p className="text-muted-foreground text-sm flex items-center gap-1">
                   <Globe className="h-3 w-3" />
@@ -266,295 +280,350 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content Area */}
       <div className="p-4 overflow-auto space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
-          {/* Main Content - 5 columns */}
-          <div className="md:col-span-5 space-y-6">
-            {/* Overview Card */}
-            <Card className="overflow-hidden border-2 border-primary/10">
-              <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-primary/10">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Building className="h-5 w-5 text-primary" />
-                    <CardTitle>Loan Provider Overview</CardTitle>
-                  </div>
-                  <Badge
-                    variant={provider.is_active ? "default" : "secondary"}
-                    className={provider.is_active ? "bg-green-500 hover:bg-green-600" : ""}
-                  >
-                    {provider.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-                <CardDescription>
-                  Key details and information about this loan provider
-                </CardDescription>
-              </CardHeader>
+          {/* Tabs Content Area - 5 columns */}
+          <div className="md:col-span-5">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+              <TabsList className="grid w-full grid-cols-4 mb-6">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="products">Loan Products</TabsTrigger>
+                <TabsTrigger value="requests">Recent Requests</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+              </TabsList>
 
-              <CardContent className="p-6">
-                <div className="space-y-6">
-                  {/* Company Details Section */}
-                  <div className="bg-muted/20 p-4 rounded-lg border border-muted shadow-sm">
-                    <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary" />
-                      Company Description
-                    </h3>
-                    <p className="text-sm leading-relaxed">{provider.description || "No description provided"}</p>
-                  </div>
-
-                  {/* Contact & Details Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Contact Information */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium flex items-center gap-2 text-primary">
-                        <Phone className="h-4 w-4" />
-                        Contact Information
-                      </h3>
-
-                      <div className="bg-gradient-to-br from-white to-primary/5 rounded-lg border border-primary/20 p-4 space-y-3 shadow-sm">
-                        {provider.contact_email && (
-                          <div className="flex items-start gap-3">
-                            <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
-                              <Mail className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Email</p>
-                              <a
-                                href={`mailto:${provider.contact_email}`}
-                                className="text-sm font-medium hover:underline flex items-center gap-1"
-                              >
-                                {provider.contact_email}
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </div>
-                          </div>
-                        )}
-
-                        {provider.contact_phone && (
-                          <div className="flex items-start gap-3">
-                            <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
-                              <Phone className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Phone</p>
-                              <a
-                                href={`tel:${provider.contact_phone}`}
-                                className="text-sm font-medium hover:underline flex items-center gap-1"
-                              >
-                                {provider.contact_phone}
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </div>
-                          </div>
-                        )}
-
-                        {provider.website && (
-                          <div className="flex items-start gap-3">
-                            <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
-                              <Globe className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Website</p>
-                              <a
-                                href={provider.website.startsWith('http') ? provider.website : `https://${provider.website}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm font-medium hover:underline flex items-center gap-1"
-                              >
-                                {provider.website.replace(/^https?:\/\//, '')}
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </div>
-                          </div>
-                        )}
-
-                        {provider.address && (
-                          <div className="flex items-start gap-3">
-                            <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
-                              <MapPin className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Address</p>
-                              <p className="text-sm font-medium">{provider.address}</p>
-                            </div>
-                          </div>
-                        )}
+              <TabsContent value="overview" className="space-y-6 mt-0">
+                {/* Overview Card */}
+                <Card className="overflow-hidden border-2 border-primary/10">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-primary/10">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Building className="h-5 w-5 text-primary" />
+                        <CardTitle>Loan Provider Overview</CardTitle>
                       </div>
                     </div>
+                    <CardDescription>
+                      Key details and information about this loan provider
+                    </CardDescription>
+                  </CardHeader>
 
-                    {/* Status Information */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium flex items-center gap-2 text-primary">
-                        <Clock className="h-4 w-4" />
-                        Status & Timeline
-                      </h3>
+                  <CardContent className="p-6">
+                    <div className="space-y-6">
+                      {/* Company Details Section */}
+                      <div className="bg-muted/20 p-4 rounded-lg border border-muted shadow-sm">
+                        <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary" />
+                          Company Description
+                        </h3>
+                        <p className="text-sm leading-relaxed">{provider.description || "No description provided"}</p>
+                      </div>
 
-                      <div className="bg-gradient-to-br from-white to-primary/5 rounded-lg border border-primary/20 p-4 space-y-3 shadow-sm">
-                        <div className="flex items-start gap-3">
-                          <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
-                            <Calendar className="h-4 w-4 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Created On</p>
-                            <p className="text-sm font-medium">{formatDate(provider.created_at)}</p>
-                          </div>
-                        </div>
+                      {/* Contact & Details Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Contact Information */}
+                        <div className="space-y-4">
+                          <h3 className="text-sm font-medium flex items-center gap-2 text-primary">
+                            <Phone className="h-4 w-4" />
+                            Contact Information
+                          </h3>
 
-                        <div className="flex items-start gap-3">
-                          <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
-                            <Clock className="h-4 w-4 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Last Updated</p>
-                            <p className="text-sm font-medium">{formatDate(provider.updated_at)}</p>
-                          </div>
-                        </div>
+                          <div className="bg-gradient-to-br from-white to-primary/5 rounded-lg border border-primary/20 p-4 space-y-3 shadow-sm">
+                            {provider.contact_email && (
+                              <div className="flex items-start gap-3">
+                                <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
+                                  <Mail className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Email</p>
+                                  <a
+                                    href={`mailto:${provider.contact_email}`}
+                                    className="text-sm font-medium hover:underline flex items-center gap-1"
+                                  >
+                                    {provider.contact_email}
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                </div>
+                              </div>
+                            )}
 
-                        <div className="flex items-start gap-3">
-                          <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
-                            {provider.is_active ? (
-                              <Check className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <X className="h-4 w-4 text-red-600" />
+                            {provider.contact_phone && (
+                              <div className="flex items-start gap-3">
+                                <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
+                                  <Phone className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Phone</p>
+                                  <a
+                                    href={`tel:${provider.contact_phone}`}
+                                    className="text-sm font-medium hover:underline flex items-center gap-1"
+                                  >
+                                    {provider.contact_phone}
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                </div>
+                              </div>
+                            )}
+
+                            {provider.website && (
+                              <div className="flex items-start gap-3">
+                                <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
+                                  <Globe className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Website</p>
+                                  <a
+                                    href={provider.website.startsWith('http') ? provider.website : `https://${provider.website}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm font-medium hover:underline flex items-center gap-1"
+                                  >
+                                    {provider.website.replace(/^https?:\/\//, '')}
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                </div>
+                              </div>
+                            )}
+
+                            {provider.address && (
+                              <div className="flex items-start gap-3">
+                                <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
+                                  <MapPin className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Address</p>
+                                  <p className="text-sm font-medium">{provider.address}</p>
+                                </div>
+                              </div>
                             )}
                           </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Current Status</p>
-                            <Badge
-                              variant="outline"
-                              className={`px-2 ${provider.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}
-                            >
-                              {provider.is_active ? "Active Provider" : "Inactive Provider"}
-                            </Badge>
-                          </div>
                         </div>
 
-                        <div className="flex items-start gap-3">
-                          <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
-                            <Banknote className="h-4 w-4 text-primary" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Products Offered</p>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="px-2 py-0 h-5">
-                                {products?.length || 0}
-                              </Badge>
-                              <Button
-                                variant="link"
-                                className="p-0 h-auto text-xs text-primary"
-                                onClick={() => setActiveTab("products")}
-                              >
-                                View products
-                              </Button>
+                        {/* Status Information */}
+                        <div className="space-y-4">
+                          <h3 className="text-sm font-medium flex items-center gap-2 text-primary">
+                            <Clock className="h-4 w-4" />
+                            Status & Timeline
+                          </h3>
+
+                          <div className="bg-gradient-to-br from-white to-primary/5 rounded-lg border border-primary/20 p-4 space-y-3 shadow-sm">
+                            <div className="flex items-start gap-3">
+                              <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
+                                <Calendar className="h-4 w-4 text-primary" />
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Created On</p>
+                                <p className="text-sm font-medium">{formatDate(provider.created_at)}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                              <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
+                                <Clock className="h-4 w-4 text-primary" />
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Last Updated</p>
+                                <p className="text-sm font-medium">{formatDate(provider.updated_at)}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                              <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
+                                {provider.is_active ? (
+                                  <Check className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-600" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Current Status</p>
+                                <Badge
+                                  variant="outline"
+                                  className={`px-2 ${provider.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}
+                                >
+                                  {provider.is_active ? "Active Provider" : "Inactive Provider"}
+                                </Badge>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                              <div className="bg-primary/10 p-2 rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">
+                                <Banknote className="h-4 w-4 text-primary" />
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Products Offered</p>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="px-2 py-0 h-5">
+                                    {products?.length || 0}
+                                  </Badge>
+                                  <Button
+                                    variant="link"
+                                    className="p-0 h-auto text-xs text-primary font-semibold"
+                                    onClick={() => handleTabChange("products")}
+                                  >
+                                    View full list
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
-            {/* Performance Summary */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div>
-                  <CardTitle>Performance Summary</CardTitle>
-                  <CardDescription>
-                    Overview of loan performance metrics
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  This Month
-                </Button>
-              </CardHeader>
+                {/* Performance Summary (Only in Overview) */}
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle>Performance Summary</CardTitle>
+                      <CardDescription>
+                        Key metrics and historical performance
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <Card className="border shadow-none bg-muted/10">
+                        <CardContent className="p-4">
+                          <div className="flex flex-col gap-1">
+                            <p className="text-sm text-muted-foreground">Total Loans</p>
+                            <p className="text-2xl font-bold">{provider?.statistics?.total_loans || "0"}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className="border shadow-none bg-muted/10">
+                        <CardContent className="p-4">
+                          <div className="flex flex-col gap-1">
+                            <p className="text-sm text-muted-foreground">Avg. Loan Value</p>
+                            <p className="text-2xl font-bold">{provider?.statistics?.avg_loan_value || "0.00"}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className="border shadow-none bg-muted/10">
+                        <CardContent className="p-4">
+                          <div className="flex flex-col gap-1">
+                            <p className="text-sm text-muted-foreground">Repayment Rate</p>
+                            <p className="text-2xl font-bold font-mono text-green-600">{provider?.statistics?.repayment_rate || "0"}%</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex flex-col gap-1">
-                        <p className="text-sm text-muted-foreground">Total Loans</p>
-                        <p className="text-2xl font-bold">{provider?.statistics?.total_loans || "0"}</p>
-                        <div className="flex items-center text-xs text-green-500">
-                          <span>+{provider?.statistics?.loan_growth || "0"}%</span>
-                          <span className="text-muted-foreground ml-1">vs last month</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex flex-col gap-1">
-                        <p className="text-sm text-muted-foreground">Avg. Loan Value</p>
-                        <p className="text-2xl font-bold">{provider?.statistics?.avg_loan_value || "0.00"}</p>
-                        <p className="text-xs text-muted-foreground">Across all products</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex flex-col gap-1">
-                        <p className="text-sm text-muted-foreground">Repayment Rate</p>
-                        <p className="text-2xl font-bold">{provider?.statistics?.repayment_rate || "0"}%</p>
-                        <p className="text-xs text-muted-foreground">Last 30 days</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Loan Products Card */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div>
-                  <CardTitle>Loan Products</CardTitle>
-                  <CardDescription>
-                    Products offered by this provider
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push(`/dashboard/vendor-loans/products/add?provider=${providerId}`)}
-                >
-                  <Banknote className="h-4 w-4 mr-2" />
-                  Add Product
-                </Button>
-              </CardHeader>
-
-              <CardContent>
-                {productsLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Spinner />
-                  </div>
-                ) : products && products.length > 0 ? (
-                  <ProductTable
-                    products={products}
-                    onView={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}`)}
-                    onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
-                    onStatusChange={(productId, isActive) => {
-                      // This would be implemented in the product store
-                    }}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Banknote className="h-12 w-12 text-muted-foreground mb-2 opacity-20" />
-                    <p className="text-muted-foreground mb-4">No loan products available</p>
+              <TabsContent value="products" className="space-y-6 mt-0">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle>Loan Products</CardTitle>
+                      <CardDescription>View and manage all loan products offered by this provider</CardDescription>
+                    </div>
                     <Button
+                      size="sm"
                       onClick={() => router.push(`/dashboard/vendor-loans/products/add?provider=${providerId}`)}
                     >
-                      Add First Product
+                      <Banknote className="h-4 w-4 mr-2" />
+                      Add Product
                     </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      console.log('[Provider Details] Products tab rendering:', {
+                        productsLoading,
+                        products,
+                        productsItems: products?.items,
+                        productsLength: products?.items?.length || products?.length,
+                      });
+                      return null;
+                    })()}
+                    {productsLoading ? (
+                      <div className="flex justify-center py-8"><Spinner /></div>
+                    ) : products && (products.items?.length > 0 || products.length > 0) ? (
+                      <ProductTable
+                        products={(products.items || products).map((p) => ({ ...p, provider_name: provider.business_name }))}
+                        onView={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}`)}
+                        onEdit={(product) => router.push(`/dashboard/vendor-loans/products/${product.product_id}/edit`)}
+                        onStatusChange={async (productId, isActive) => {
+                          try {
+                            await loanProductStore.updateProductStatus(productId, isActive, tenantHeaders);
+                            toast.success(`Product ${isActive ? 'activated' : 'deactivated'} successfully`);
+                          } catch (error) { toast.error("Failed to update product status"); }
+                        }}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground grayscale">
+                        <Banknote className="h-12 w-12 mb-4 opacity-20" />
+                        <p>No products found for this provider</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="requests" className="space-y-6 mt-0">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle>Recent Loan Requests</CardTitle>
+                      <CardDescription>Comprehensive list of loan applications submitted to this provider</CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/dashboard/vendor-loans/requests?provider_id=${providerId}`)}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Export Requests
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      console.log('[Provider Details] Requests tab rendering:', { requestsLoading, requests, requestsItems: requests?.items });
+                      return null;
+                    })()}
+                    {requestsLoading ? (
+                      <div className="flex justify-center py-8"><Spinner /></div>
+                    ) : requests && (requests.items?.length > 0 || requests.length > 0) ? (
+                      <RequestTable
+                        requests={requests.items || requests}
+                        onView={(request) => router.push(`/dashboard/vendor-loans/requests/${request.request_id}`)}
+                        onStatusChange={async (requestId, status) => {
+                          try {
+                            await loanRequestStore.updateRequestStatus(requestId, status, tenantHeaders);
+                            toast.success(`Status updated to ${status}`);
+                            await loanRequestStore.fetchRequests({ provider_id: providerId }, tenantHeaders);
+                          } catch (error) { toast.error("Failed to update status"); }
+                        }}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground grayscale">
+                        <FileText className="h-12 w-12 mb-4 opacity-20" />
+                        <p>No loan requests found for this provider</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="documents" className="space-y-6 mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Verification Documents</CardTitle>
+                    <CardDescription>Documents submitted for business verification and compliance</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <VerificationDocumentManager
+                      documents={(provider?.verification_documents || []) as any}
+                      onDocumentVerification={handleDocumentVerification}
+                      showActions={true}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Sidebar - 2 columns */}
@@ -609,9 +678,8 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
               </CardHeader>
               <CardContent>
                 <VerificationDocumentManager
-                  documents={provider?.verification_documents || []}
-                  onApprove={handleDocumentApprove}
-                  onReject={handleDocumentReject}
+                  documents={(provider?.verification_documents || []) as any}
+                  onDocumentVerification={handleDocumentVerification}
                   showActions={true}
                 />
               </CardContent>
@@ -661,3 +729,8 @@ export default function LoanProviderDetailPage({ params }: LoanProviderDetailPag
     </div>
   );
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default withModuleAuthorization(withAuthorization(LoanProviderDetailPage as any, {
+  permission: "vendor-loans:read",
+}), "vendor_loans");

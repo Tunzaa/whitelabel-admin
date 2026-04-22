@@ -16,7 +16,7 @@ import { LoanProviderFormValues } from "@/features/loans/providers/types";
 export default function AddLoanProviderPage() {
   const router = useRouter();
   const session = useSession();
-  const tenantId = session?.data?.user?.tenant_id;
+  const tenantId = (session?.data?.user as any)?.tenant_id;
   const { createProvider, loading } = useLoanProviderStore();
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,19 +29,11 @@ export default function AddLoanProviderPage() {
 
       await createProvider(values, headers);
 
-      toast({
-        title: "Success",
-        description: "Loan provider created successfully",
-        variant: "success",
-      });
+      toast.success("Loan provider created successfully");
 
       router.push("/dashboard/vendor-loans/providers");
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to create loan provider",
-        variant: "destructive",
-      });
+      toast.error(error?.message || "Failed to create loan provider");
     } finally {
       setSubmitting(false);
     }
@@ -49,7 +41,7 @@ export default function AddLoanProviderPage() {
 
   const initialValues: LoanProviderFormValues = {
     tenant_id: tenantId || '',
-    name: '',
+    business_name: '',
     description: '',
     contact_email: '',
     contact_phone: '',
@@ -85,10 +77,9 @@ export default function AddLoanProviderPage() {
           </CardHeader>
           <CardContent>
             <ProviderForm
-              initialValues={initialValues}
+              initialData={initialValues}
               onSubmit={handleSubmit}
               isSubmitting={submitting || loading}
-              submitLabel="Create Provider"
             />
           </CardContent>
         </Card>

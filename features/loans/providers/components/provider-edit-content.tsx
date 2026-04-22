@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +17,13 @@ interface ProviderEditContentProps {
 
 export function ProviderEditContent({ providerId }: ProviderEditContentProps) {
   const router = useRouter();
+  const session = useSession();
+  const tenantId = (session?.data?.user as any)?.tenant_id || '';
   const [isLoaded, setIsLoaded] = useState(false);
+  
+  const tenantHeaders = {
+    'X-Tenant-ID': tenantId
+  };
 
   const {
     provider,
@@ -28,15 +35,17 @@ export function ProviderEditContent({ providerId }: ProviderEditContentProps) {
 
   useEffect(() => {
     const loadProvider = async () => {
-      await fetchProvider(providerId);
-      setIsLoaded(true);
+      if (tenantId) {
+        await fetchProvider(providerId, tenantHeaders);
+        setIsLoaded(true);
+      }
     };
 
     loadProvider();
-  }, [providerId, fetchProvider]);
+  }, [providerId, fetchProvider, tenantId]);
 
   const handleUpdateProvider = async (values: any) => {
-    await updateProvider(providerId, values);
+    await updateProvider(providerId, values, tenantHeaders);
     router.push('/dashboard/vendor-loans/providers');
   };
 
@@ -55,7 +64,7 @@ export function ProviderEditContent({ providerId }: ProviderEditContentProps) {
           <CardTitle className="text-destructive">Error</CardTitle>
         </CardHeader>
         <CardContent>
-          <p>{storeError}</p>
+          <p>{storeError.message}</p>
           <Button
             onClick={handleCancel}
             variant="outline"
@@ -101,14 +110,13 @@ export function ProviderEditContent({ providerId }: ProviderEditContentProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Edit Provider: {provider.name}</CardTitle>
+          <CardTitle>Edit Provider: {provider.business_name}</CardTitle>
         </CardHeader>
         <CardContent>
           <ProviderForm
-            initialValues={provider}
+            initialData={provider}
             onSubmit={handleUpdateProvider}
             isSubmitting={loading}
-            submitLabel="Update Provider"
           />
         </CardContent>
       </Card>

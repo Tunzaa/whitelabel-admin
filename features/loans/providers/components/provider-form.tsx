@@ -37,11 +37,13 @@ import {
 
 import { LoanProviderFormValues } from "../types";
 import { useLoanProviderStore } from "../store";
+import { useSelectedTenantStore } from "@/features/tenants/store";
 
 // Form validation schema
 const providerFormSchema = z.object({
   tenant_id: z.string().min(1, "Tenant ID is required"),
-  name: z.string().min(1, "Provider name is required"),
+  user_id: z.string().min(1, "User ID is required"),
+  business_name: z.string().min(1, "Business name is required"),
   description: z.string().min(1, "Description is required"),
   contact_email: z.string().email("Invalid email address"),
   contact_phone: z.string().min(1, "Contact phone is required"),
@@ -68,7 +70,9 @@ export function ProviderForm({
   isSubmitting: externalIsSubmitting,
 }: ProviderFormProps) {
   const { data: session } = useSession();
-  const tenantId = (session?.user as any)?.tenant_id || "";
+  const { selectedTenantId } = useSelectedTenantStore();
+  const tenantId = selectedTenantId || (session?.user as any)?.tenant_id || "";
+  const userId = (session?.user as any)?.id || (session?.user as any)?.user_id || "";
   const [activeTab, setActiveTab] = useState("basic");
   const [internalIsSubmitting, setInternalIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -83,7 +87,8 @@ export function ProviderForm({
     mode: "onSubmit",
     defaultValues: initialData || {
       tenant_id: tenantId,
-      name: "",
+      user_id: userId,
+      business_name: "",
       description: "",
       contact_email: "",
       contact_phone: "",
@@ -140,14 +145,14 @@ export function ProviderForm({
               <CardContent className="pt-6">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="business_name"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Provider Name <RequiredField />
+                        Business Name <RequiredField />
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter provider name" {...field} />
+                        <Input placeholder="Enter business name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -182,11 +187,10 @@ export function ProviderForm({
                         <FormControl>
                           <div className="flex">
                             <Select
-                              value="+255"
+                              value={field.value ? (field.value.match(/^(255|254|256|250|257)/)?.[0] || "255") : "255"}
                               onValueChange={(code: string) => {
-                                // Safely handle null or undefined values
                                 const phoneValue = field.value || "";
-                                const phoneNumber = phoneValue.replace(/^\+\d+/, "");
+                                const phoneNumber = phoneValue.replace(/^(255|254|256|250|257)/, "");
                                 field.onChange(code + phoneNumber);
                               }}
                             >
@@ -194,22 +198,24 @@ export function ProviderForm({
                                 <SelectValue placeholder="Code" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="+255">🇹🇿 +255</SelectItem>
-                                <SelectItem value="+254">🇰🇪 +254</SelectItem>
-                                <SelectItem value="+256">🇺🇬 +256</SelectItem>
-                                <SelectItem value="+250">🇷🇼 +250</SelectItem>
-                                <SelectItem value="+257">🇧🇮 +257</SelectItem>
+                                <SelectItem value="255">🇹🇿 +255</SelectItem>
+                                <SelectItem value="254">🇰🇪 +254</SelectItem>
+                                <SelectItem value="256">🇺🇬 +256</SelectItem>
+                                <SelectItem value="250">🇷🇼 +250</SelectItem>
+                                <SelectItem value="257">🇧🇮 +257</SelectItem>
                               </SelectContent>
                             </Select>
                             <Input
                               className="rounded-l-none flex-1"
                               placeholder="712XXXXXX"
-                              value={(field.value || "").replace(/^\+\d+/, "")}
+                              value={(field.value || "").replace(/^(255|254|256|250|257)/, "")}
                               onChange={(e) => {
                                 const phoneValue = field.value || "";
-                                const countryCodeMatch = phoneValue.match(/^\+\d+/);
-                                const countryCode = countryCodeMatch && countryCodeMatch[0] ? countryCodeMatch[0] : "+255";
-                                field.onChange(countryCode + e.target.value);
+                                const countryCodeMatch = phoneValue.match(/^(255|254|256|250|257)/);
+                                const countryCode = countryCodeMatch && countryCodeMatch[0] ? countryCodeMatch[0] : "255";
+                                // Strip any non-numeric characters
+                                const numericValue = e.target.value.replace(/\D/g, '');
+                                field.onChange(countryCode + numericValue);
                               }}
                             />
                           </div>
