@@ -8,22 +8,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
 } from '@/components/ui/form';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
-// Using a simple div instead of Accordion which isn't available
+import { FileUpload } from '@/components/ui/file-upload';
 
 import { LoanProduct, LoanProductFormValues } from '../types';
 import { LoanProvider } from '../../providers/types';
@@ -31,6 +31,8 @@ import { LoanProvider } from '../../providers/types';
 const formSchema = z.object({
   provider_id: z.string().min(1, 'Provider is required'),
   name: z.string().min(3, 'Name must be at least 3 characters'),
+  min_amount: z.preprocess((val) => typeof val === 'string' ? parseFloat(val) : val, z.number().min(0, 'Minimum amount must be a non-negative number')),
+  max_amount: z.preprocess((val) => typeof val === 'string' ? parseFloat(val) : val, z.number().min(0, 'Maximum amount must be a non-negative number')),
   interest_rate: z.preprocess((val) => typeof val === 'string' ? parseFloat(val) : val, z.number().min(0, 'Interest rate must be a non-negative number')),
   interest_period: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
   interest_rate_type: z.enum(['FLAT', 'REDUCING', 'REDUCING_BALANCE']),
@@ -42,6 +44,10 @@ const formSchema = z.object({
     value: z.preprocess((val) => typeof val === 'string' ? parseFloat(val) : val, z.number().min(0, 'Value must be positive'))
   })).default([]),
   charges: z.record(z.any()).default({}),
+  terms_conditions: z.string().optional(),
+}).refine((data) => data.max_amount >= data.min_amount, {
+  message: 'Maximum amount must be greater than or equal to minimum amount',
+  path: ['max_amount'],
 });
 
 interface ProductFormProps {
@@ -69,7 +75,7 @@ export function ProductForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...initialValues,
-      charges_array: initialValues.charges 
+      charges_array: initialValues.charges
         ? Object.entries(initialValues.charges).map(([name, value]) => ({ name, value: Number(value) }))
         : []
     } as any
@@ -108,9 +114,9 @@ export function ProductForm({
     }
 
     const { charges_array, ...finalValues } = values;
-    await onSubmit({ 
-      ...finalValues, 
-      charges: finalCharges 
+    await onSubmit({
+      ...finalValues,
+      charges: finalCharges
     } as LoanProductFormValues);
   };
 
@@ -137,7 +143,7 @@ export function ProductForm({
                   <SelectContent>
                     {providers.map((provider) => (
                       <SelectItem key={provider.provider_id} value={provider.provider_id}>
-                        {provider.name}
+                        {provider.business_name || provider.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -161,6 +167,50 @@ export function ProductForm({
             </FormItem>
           )}
         />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="min_amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Minimum Amount</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 1000"
+                    step="0.01"
+                    min="0"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="max_amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Maximum Amount</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 100000"
+                    step="0.01"
+                    min="0"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
 
 
@@ -395,6 +445,28 @@ export function ProductForm({
             )}
           </div>
         </div>
+
+        <FormField
+          control={form.control}
+          name="terms_conditions"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Terms and Conditions</FormLabel>
+              <FormControl>
+                <FileUpload
+                  label="Terms and Conditions Document"
+                  description="Upload the loan agreement terms and conditions document"
+                  value={field.value || ''}
+                  onChange={(fileUrl) => field.onChange(fileUrl)}
+                  onRemove={() => field.onChange('')}
+                  accept=".pdf"
+                  maxSizeMB={10}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
