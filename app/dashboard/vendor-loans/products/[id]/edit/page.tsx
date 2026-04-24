@@ -190,7 +190,7 @@ export default function EditLoanProductPage(props: EditLoanProductPageProps) {
                 onSubmit={handleSubmit}
                 isSubmitting={submitting || productLoading}
                 submitLabel="Update Product"
-                providers={providers}
+                providers={providers?.items || []}
                 defaultProviderId={initialValues.provider_id}
               />
             </CardContent>

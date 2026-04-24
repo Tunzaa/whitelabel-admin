@@ -759,132 +759,133 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
 
                   <CardContent className="p-6">
                     <div className="space-y-6">
-                      {/* Loan Summary Stats */}
-                      <div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
-                            <CardContent className="p-4">
-                              <div className="flex flex-col gap-2">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className="bg-primary/10 p-2 rounded-full">
-                                      <CreditCard className="h-4 w-4 text-primary" />
+                      {request?.status?.toLowerCase() === 'approved' && (
+                        <>
+                          {/* Loan Summary Stats */}
+                          <div>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                              <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
+                                <CardContent className="p-4">
+                                  <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <div className="bg-primary/10 p-2 rounded-full">
+                                          <CreditCard className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <p className="text-sm font-medium">Principal</p>
+                                      </div>
+                                      <Badge variant="outline" className="bg-primary/5">Requested</Badge>
                                     </div>
-                                    <p className="text-sm font-medium">Principal</p>
+                                    <p className="text-3xl font-bold text-primary">{compactCurrency(detailedLoan?.principal_amount || request?.loan_amount || 0)}</p>
+                                    <p className="text-xs text-muted-foreground">Total loan amount requested</p>
                                   </div>
-                                  <Badge variant="outline" className="bg-primary/5">Requested</Badge>
-                                </div>
-                                <p className="text-3xl font-bold text-primary">{compactCurrency(detailedLoan?.principal_amount || request?.loan_amount || 0)}</p>
-                                <p className="text-xs text-muted-foreground">Total loan amount requested</p>
-                              </div>
-                            </CardContent>
-                          </Card>
+                                </CardContent>
+                              </Card>
 
-                          <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
-                            <CardContent className="p-4">
-                              <div className="flex flex-col gap-2">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className="bg-primary/10 p-2 rounded-full">
-                                      <Wallet className="h-4 w-4 text-primary" />
+                              <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
+                                <CardContent className="p-4">
+                                  <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <div className="bg-primary/10 p-2 rounded-full">
+                                          <Wallet className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <p className="text-sm font-medium">Outstanding Balance</p>
+                                      </div>
                                     </div>
-                                    <p className="text-sm font-medium">Outstanding Balance</p>
+                                    <p className="text-3xl font-bold text-primary">
+                                      {detailedLoan ? compactCurrency(detailedLoan.outstanding_balance) : (request?.loan_amount ? compactCurrency(request.loan_amount) : '0')}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">Remaining loan balance</p>
                                   </div>
-                                </div>
-                                <p className="text-3xl font-bold text-primary">
-                                  {detailedLoan ? compactCurrency(detailedLoan.outstanding_balance) : (request?.loan_amount ? compactCurrency(request.loan_amount) : '0')}
-                                </p>
-                                <p className="text-xs text-muted-foreground">Remaining loan balance</p>
-                              </div>
-                            </CardContent>
-                          </Card>
+                                </CardContent>
+                              </Card>
 
-                          <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
-                            <CardContent className="p-4">
-                              <div className="flex flex-col gap-2">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className="bg-primary/10 p-2 rounded-full">
-                                      <Percent className="h-4 w-4 text-primary" />
+                              <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
+                                <CardContent className="p-4">
+                                  <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <div className="bg-primary/10 p-2 rounded-full">
+                                          <Percent className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <p className="text-sm font-medium">Interest Amount</p>
+                                      </div>
                                     </div>
-                                    <p className="text-sm font-medium">Interest Amount</p>
+                                    <p className="text-3xl font-bold text-primary">
+                                      {detailedLoan ?
+                                        compactCurrency(detailedLoan.total_expected_interest) :
+                                        (product && request ?
+                                          compactCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length) - request.loan_amount) :
+                                          'N/A')
+                                      }
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">Total interest on this loan</p>
                                   </div>
-                                </div>
-                                <p className="text-3xl font-bold text-primary">
-                                  {detailedLoan ?
-                                    compactCurrency(detailedLoan.total_expected_interest) :
-                                    (product && request ?
-                                      compactCurrency((calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length) * request.term_length) - request.loan_amount) :
-                                      'N/A')
-                                  }
-                                </p>
-                                <p className="text-xs text-muted-foreground">Total interest on this loan</p>
-                              </div>
-                            </CardContent>
-                          </Card>
+                                </CardContent>
+                              </Card>
 
-                          <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
-                            <CardContent className="p-4">
-                              <div className="flex flex-col gap-2">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className="bg-primary/10 p-2 rounded-full">
-                                      <Banknote className="h-4 w-4 text-primary" />
+                              <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
+                                <CardContent className="p-4">
+                                  <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <div className="bg-primary/10 p-2 rounded-full">
+                                          <Banknote className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <p className="text-sm font-medium">Total Fees</p>
+                                      </div>
                                     </div>
-                                    <p className="text-sm font-medium">Total Fees</p>
+                                    <p className="text-3xl font-bold text-primary">
+                                      {detailedLoan ? compactCurrency(detailedLoan.total_fees || 0) : 0}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">Total fees for this loan</p>
                                   </div>
-                                </div>
-                                <p className="text-3xl font-bold text-primary">
-                                  {detailedLoan ? compactCurrency(detailedLoan.total_fees || 0) : 0}
-                                </p>
-                                <p className="text-xs text-muted-foreground">Total fees for this loan</p>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </div>
-
-                      {/* Payment Schedule - Simplified */}
-                      <div>
-                        <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
-                          <CardContent className="p-4">
-                            <div className="flex flex-row justify-between items-center">
-                              {/* Left Side - Payment */}
-                              <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 p-2 rounded-full">
-                                  <Calendar className="h-4 w-4 text-primary" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Monthly Payment</p>
-                                  <p className="text-2xl font-bold text-primary">
-                                    {detailedLoan?.schedules?.[0]?.amount_due ?
-                                      compactCurrency(detailedLoan.schedules[0].amount_due) :
-                                      (product && request ?
-                                        compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
-                                        'N/A')}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Divider */}
-                              <div className="h-12 w-px bg-muted mx-4 hidden md:block"></div>
-
-                              {/* Right Side - Term */}
-                              <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 p-2 rounded-full">
-                                  <Clock className="h-4 w-4 text-primary" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Term Length</p>
-                                  <p className="text-2xl font-bold text-primary">
-                                    {detailedLoan?.schedules ? detailedLoan.schedules.length : (request?.term_length || 0)} <span className="text-lg font-medium text-primary/70">{(detailedLoan?.schedules?.length || request?.term_length || 0) === 1 ? 'month' : 'months'}</span>
-                                  </p>
-                                </div>
-                              </div>
+                                </CardContent>
+                              </Card>
                             </div>
-                          </CardContent>
-                        </Card>
-                      </div>
+                          </div>
+
+                          {/* Payment Schedule - Simplified */}
+                          <div>
+                            <Card className="border border-primary/20 shadow-sm hover:shadow-md transition-shadow duration-200 bg-gradient-to-br from-white to-primary/5">
+                              <CardContent className="p-4">
+                                <div className="flex flex-row justify-between items-center">
+                                  {/* Left Side - Payment */}
+                                  <div className="flex items-center gap-3">
+                                    <div className="bg-primary/10 p-2 rounded-full">
+                                      <Calendar className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-muted-foreground">Monthly Payment</p>
+                                      <p className="text-2xl font-bold text-primary">
+                                        {detailedLoan?.schedules?.[0]?.amount_due ?
+                                          compactCurrency(detailedLoan.schedules[0].amount_due) :
+                                          (product && request ?
+                                            compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
+                                            'N/A')}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Right Side - Term */}
+                                  <div className="flex items-center gap-3">
+                                    <div className="bg-primary/10 p-2 rounded-full">
+                                      <Clock className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-muted-foreground">Loan Term</p>
+                                      <p className="text-2xl font-bold text-primary">
+                                        {detailedLoan?.schedules ? `${detailedLoan.schedules.length} months` : `${request?.term_length || 0} months`}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </>
+                      )}
 
                       {/* Status Timeline */}
                       {request && (
@@ -1476,23 +1477,19 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
               </CardHeader>
 
               <CardContent>
-                {vendorLoading ? (
-                  <div className="flex justify-center py-4">
-                    <Spinner />
-                  </div>
-                ) : vendor ? (
+                {request?.vendor_details ? (
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback style={{ backgroundColor: "#10b981" }}>
-                          {vendor.business_name ? vendor.business_name.substring(0, 2).toUpperCase() : 'VE'}
+                          {request.vendor_details.business_name ? request.vendor_details.business_name.substring(0, 2).toUpperCase() : 'VE'}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="font-medium">{vendor.business_name || vendor.display_name || request?.vendor_name}</h3>
+                        <h3 className="font-medium">{request.vendor_details.business_name || request.vendor_details.display_name || request?.vendor_name}</h3>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <Badge variant="outline" className={vendor.is_active ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-100 text-gray-600"}>
-                            {vendor.is_active ? "Active" : "Inactive"}
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            {request.vendor_details.verification_status || 'Active'}
                           </Badge>
                         </div>
                       </div>
@@ -1501,32 +1498,17 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                     <Separator />
 
                     <div className="space-y-3">
-                      {vendor.contact_email && (
+                      {request.vendor_details.contact_email && (
                         <div className="flex items-center gap-2 text-sm">
                           <Mail className="h-4 w-4 text-muted-foreground" />
-                          <a href={`mailto:${vendor.contact_email}`} className="hover:underline">{vendor.contact_email}</a>
+                          <a href={`mailto:${request.vendor_details.contact_email}`} className="hover:underline">{request.vendor_details.contact_email}</a>
                         </div>
                       )}
 
-                      {vendor.contact_phone && (
+                      {request.vendor_details.contact_phone && (
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-4 w-4 text-muted-foreground" />
-                          <a href={`tel:${vendor.contact_phone}`} className="hover:underline">{vendor.contact_phone}</a>
-                        </div>
-                      )}
-
-                      {vendor.website && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Globe className="h-4 w-4 text-muted-foreground" />
-                          <a
-                            href={vendor.website.startsWith('http') ? vendor.website : `https://${vendor.website}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:underline flex items-center gap-1"
-                          >
-                            {vendor.website.replace(/^https?:\/\//, '')}
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
+                          <a href={`tel:${request.vendor_details.contact_phone}`} className="hover:underline">{request.vendor_details.contact_phone}</a>
                         </div>
                       )}
                     </div>
@@ -1542,17 +1524,6 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                   </div>
                 )}
               </CardContent>
-
-              <CardFooter>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => router.push(`/dashboard/vendors/${request?.vendor_id || vendor?.id}`)}
-                >
-                  <Store className="h-4 w-4 mr-2" />
-                  View Vendor Profile
-                </Button>
-              </CardFooter>
             </Card>
 
             {/* Loan Product */}

@@ -34,13 +34,16 @@ export default function AddLoanProductPage() {
     'X-Tenant-ID': tenantId || ''
   };
 
-  const activeProvider = providers?.find(p => p.provider_id === providerId || (p as any).id === providerId);
+  const activeProvider = providers?.items?.find(p => p.provider_id === providerId || (p as any).id === providerId);
 
   useEffect(() => {
     const loadProviders = async () => {
       try {
-        await fetchProviders({ is_active: true }, tenantHeaders);
+        console.log('[AddLoanProductPage] Fetching providers with tenantId:', tenantId);
+        const result = await fetchProviders({ is_active: true }, tenantHeaders);
+        console.log('[AddLoanProductPage] Providers fetched:', result);
       } catch (error) {
+        console.error('[AddLoanProductPage] Failed to load providers:', error);
         // Only show error if we're not still waiting for session/tenant
         if (tenantId) {
           toast.error("Failed to load loan providers");
@@ -127,7 +130,7 @@ export default function AddLoanProductPage() {
                 onSubmit={handleSubmit}
                 isSubmitting={submitting || productLoading}
                 submitLabel="Create Product"
-                providers={providers || []}
+                providers={providers?.items || []}
                 defaultProviderId={providerId || ''}
               />
             </CardContent>

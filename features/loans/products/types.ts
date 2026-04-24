@@ -13,6 +13,7 @@ export type LoanProductFormValues = {
   max_amount?: number;
   processing_fee?: number;
   description?: string;
+  terms_conditions?: string;
   is_active?: boolean;
   tenant_id?: string;
   // For responses/edit forms when we have a product ID
@@ -49,6 +50,7 @@ export type LoanProduct = {
   status?: string;
   processing_fee?: number;
   charges: Record<string, any>;
+  terms_conditions?: string;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
