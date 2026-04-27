@@ -82,34 +82,90 @@ The application will be available at [http://localhost:3000](http://localhost:30
 
 ```
 whitelabel-admin/
-├── app/                    # Next.js App Router pages
-│   ├── (auth)/            # Authentication routes
-│   ├── dashboard/         # Protected dashboard routes
-│   │   ├── affiliates/    # Affiliate management
-│   │   ├── auth/          # User management
-│   │   ├── categories/    # Category management
-│   │   └── loans/         # Loan management
-│   └── api/               # API routes
-├── components/            # Reusable components
-│   ├── ui/               # shadcn/ui components
-│   ├── auth/             # Authentication components
-│   └── ThemeToggle/      # Theme switching
-├── features/             # Feature-specific modules
-│   ├── affiliates/
-│   ├── auth/
-│   ├── categories/
-│   ├── configurations/
-│   └── loans/
-├── hooks/                # Custom React hooks
-├── lib/                  # Utility libraries
-│   ├── api/             # API client configuration
-│   ├── core/            # Core utilities (auth, types)
-│   ├── services/        # External services
-│   └── stores/          # State stores
-├── src/i18n/            # Internationalization
-│   ├── locales/         # Translation files (en, sw)
-│   └── hooks/           # i18n hooks
-└── public/              # Static assets
+├── app/                            # Next.js App Router (pages & layouts)
+│   ├── (auth)/                     # Authentication route group (sign-in, password reset)
+│   ├── dashboard/                  # Protected dashboard routes (requires authentication)
+│   │   ├── layout.tsx              # Dashboard layout (sidebar, header, tenant context)
+│   │   ├── affiliates/             # Affiliate management
+│   │   ├── auth/                   # User & role management
+│   │   ├── categories/             # Category management
+│   │   ├── delivery-partners/      # Delivery partner management
+│   │   ├── orders/                 # Order management
+│   │   ├── products/               # Product catalog management
+│   │   ├── profile/                # User profile settings
+│   │   ├── rewards/                # Rewards program management
+│   │   ├── tenants/                # Tenant/organization management
+│   │   ├── vendor-loans/           # Vendor loan management
+│   │   └── vendors/                # Vendor management
+│   ├── api/                        # API route handlers
+│   │   ├── auth/                   # NextAuth endpoints
+│   │   └── health/                 # Health check endpoint
+│   ├── types/                      # Global TypeScript type definitions
+│   ├── layout.tsx                  # Root layout component
+│   ├── client-layout.tsx           # Client-side layout wrapper
+│   └── globals.css                 # Global styles & Tailwind imports
+├── components/                     # Shared/reusable UI components
+│   ├── ui/                         # shadcn/ui component library
+│   ├── auth/                       # Authentication components (can, forbidden, with-authorization)
+│   ├── ThemeToggle/                # Theme switching (provider & toggle)
+│   ├── app-sidebar.tsx             # Main sidebar navigation
+│   ├── auth-header.tsx             # Authentication header
+│   └── [other shared components]   # Badge, charts, etc.
+├── features/                       # Feature modules (domain-driven architecture)
+│   ├── affiliates/                 # Affiliate management
+│   ├── auth/                       # Authentication feature
+│   ├── categories/                 # Category management
+│   ├── configurations/             # System configurations
+│   ├── dashboard/                  # Dashboard overview
+│   ├── delivery-partners/          # Delivery partner management
+│   ├── loans/                      # Loan management
+│   ├── orders/                     # Order management
+│   ├── products/                   # Product management
+│   ├── rewards/                    # Rewards program
+│   ├── settings/                   # Settings management
+│   ├── tenants/                    # Tenant management
+│   └── vendors/                    # Vendor management
+│   [Each feature typically contains:]
+│   ├── components/                 # Feature-specific UI components
+│   ├── data/                       # API calls & data fetching logic
+│   ├── schema.ts                   # Zod validation schemas
+│   ├── store.ts                    # Zustand state management
+│   └── types.ts                    # TypeScript type definitions
+├── hooks/                          # Custom React hooks
+│   ├── use-debounce.ts             # Debounce utility
+│   └── use-mobile.ts               # Mobile/responsive detection
+├── lib/                            # Core utilities & configurations
+│   ├── api/                        # API client setup (Axios)
+│   ├── core/                       # Core utilities (auth, types)
+│   ├── services/                   # External service integrations
+│   ├── stores/                     # Global state stores
+│   ├── auth.config.ts              # NextAuth configuration
+│   ├── auth.ts                     # Auth utilities
+│   ├── cache.ts                    # Caching utilities
+│   ├── colors.ts                   # Color utilities
+│   └── utils.ts                    # General utility functions
+├── src/                            # Source directory
+│   └── i18n/                       # Internationalization setup
+│       ├── locales/                # Translation files (en, sw)
+│       ├── hooks/                  # i18n hooks
+│       ├── client-init.tsx         # Client-side initialization
+│       ├── core.ts                 # i18n core configuration
+│       └── index.ts                # i18n exports
+├── public/                         # Static assets (images, icons, etc.)
+├── .env.example                    # Environment variables template
+├── .eslintrc.json                  # ESLint configuration
+├── .gitignore                      # Git ignore rules
+├── components.json                 # shadcn/ui configuration
+├── ecosystem.config.js             # PM2 process manager config
+├── middleware.ts                   # Next.js middleware (route protection)
+├── next.config.ts                  # Next.js configuration
+├── nixpacks.toml                   # Nixpacks deployment config
+├── package.json                    # Dependencies & scripts
+├── pnpm-lock.yaml                  # pnpm lock file
+├── pnpm-workspace.yaml             # pnpm workspace config
+├── postman_collection.json         # API testing collection
+├── tailwind.config.js              # Tailwind CSS configuration
+└── tsconfig.json                   # TypeScript configuration
 ```
 
 ## Key Features
