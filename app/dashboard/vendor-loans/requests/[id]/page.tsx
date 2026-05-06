@@ -289,7 +289,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
       // Fetch both request and detailed loan in parallel
       // We use settled to ensure one failure doesn't block the other
       await Promise.allSettled([
-        fetchRequest(id, tenantHeaders),
+        fetchRequest(id, tenantHeaders, true),
         fetchDetailedLoan(id, tenantHeaders)
       ]);
     } catch (error) {
@@ -343,7 +343,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
       if (!vendorId) return;
       try {
         setVendorHistoryLoading(true);
-        const response = await apiClient.get<LoanRequest[]>(`/loans/vendors/${vendorId}/requests`, undefined, tenantHeaders);
+        const response = await apiClient.get<LoanRequest[]>(`/loans/vendors/${vendorId}/requests`, { include_vendor_details: true }, tenantHeaders);
         const rawData = response.data as unknown as (ApiResponse<LoanRequest[]> | LoanRequest[]);
         const historyList = Array.isArray(rawData) ? rawData : ((rawData as any).data || []);
         setVendorLoanHistory(historyList);
@@ -380,7 +380,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
     try {
       setUpdating(true);
       await updateRequestStatus(id, status, tenantHeaders);
-      await fetchRequest(id, tenantHeaders);
+      await fetchRequest(id, tenantHeaders, true);
 
       toast.success(`Loan request status updated to ${status}`);
     } catch (error) {
@@ -406,7 +406,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
       await disburseLoan(detailedLoan.loan_id, tenantHeaders);
 
       // The store refreshes the request automatically, but let's be sure to use the request ID if they differ
-      await fetchRequest(id, tenantHeaders);
+      await fetchRequest(id, tenantHeaders, true);
       await fetchDetailedLoan(id, tenantHeaders);
 
       toast.success("Loan disbursed successfully");
@@ -561,7 +561,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/dashboard/vendor-loans/providers")}
+            onClick={() => router.push("/dashboard/vendor-loans/requests")}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -577,7 +577,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
 
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
-                {compactCurrency(detailedLoan?.principal_amount || request?.loan_amount || 0)} Loan Request
+                {compactCurrency(detailedLoan?.principal_amount || request?.amount_requested || 0)} Loan Request
               </h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 {getStatusBadge(request?.status || 'Unknown')}
@@ -643,7 +643,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                           <p className="text-sm font-medium flex items-center gap-1 text-muted-foreground">
                             <Banknote className="h-4 w-4" /> Loan Amount
                           </p>
-                          <p className="text-xl font-bold">{compactCurrency(detailedLoan?.principal_amount || request?.loan_amount || 0)}</p>
+                          <p className="text-xl font-bold">{compactCurrency(detailedLoan?.principal_amount || request?.amount_requested || 0)}</p>
                         </div>
 
                         <div className="space-y-1">
@@ -651,7 +651,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                             <Clock className="h-4 w-4" /> Term Length
                           </p>
                           <p className="text-sm">
-                            {detailedLoan?.schedules ? detailedLoan.schedules.length : (request?.term_length || 0)} {(detailedLoan?.schedules?.length || request?.term_length) === 1 ? 'month' : 'months'}
+                            {detailedLoan?.schedules ? detailedLoan.schedules.length : (product?.term_duration || 0)} {(detailedLoan?.schedules?.length || product?.term_duration) === 1 ? 'month' : 'months'}
                           </p>
                         </div>
 
@@ -690,7 +690,7 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                             {detailedLoan?.schedules?.[0]?.amount_due ?
                               compactCurrency(detailedLoan.schedules[0].amount_due) :
                               (product && request ?
-                                compactCurrency(calculateMonthlyPayment(request.loan_amount, product.interest_rate, request.term_length)) :
+                                compactCurrency(calculateMonthlyPayment(request.amount_requested, product.interest_rate, product.term_duration)) :
                                 'N/A')}
                           </p>
                         </div>
@@ -947,10 +947,6 @@ function LoanRequestDetailPage({ params }: LoanRequestDetailPageProps) {
                               <Badge variant={request.vendor_details.verification_status === 'verified' ? 'default' : 'secondary'}>
                                 {request.vendor_details.verification_status}
                               </Badge>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Source</p>
-                              <p className="text-sm">{request.vendor_details.source}</p>
                             </div>
                             {request.vendor_details.business_details && (
                               <>

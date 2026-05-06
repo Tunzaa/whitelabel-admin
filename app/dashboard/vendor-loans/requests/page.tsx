@@ -77,6 +77,7 @@ function LoanRequestsPage() {
         {
           ...filter,
           search: searchTerm,
+          include_vendor_details: true,
         },
         tenantHeaders,
       );

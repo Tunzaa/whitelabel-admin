@@ -35,8 +35,8 @@ interface LoanRequestStore {
   detailedLoanError: LoanRequestError | null;
   fetchDetailedLoan: (id: string, headers: Record<string, string>) => Promise<void>;
   createRequest: (values: LoanRequestFormValues, headers: Record<string, string>) => Promise<LoanRequest>;
-  fetchRequest: (id: string, headers?: Record<string, string>) => Promise<LoanRequest>;
-  fetchRequestsByVendor: (vendorId: string, headers?: Record<string, string>) => Promise<LoanRequestListResponse>;
+  fetchRequest: (id: string, headers?: Record<string, string>, includeVendorDetails?: boolean) => Promise<LoanRequest>;
+  fetchRequestsByVendor: (vendorId: string, headers?: Record<string, string>, includeVendorDetails?: boolean) => Promise<LoanRequestListResponse>;
   fetchRequests: (filter?: LoanRequestFilter, headers?: Record<string, string>) => Promise<LoanRequestListResponse>;
   updateRequestStatus: (id: string, status: string, headers?: Record<string, string>, rejectionReason?: string) => Promise<void>;
 
@@ -99,13 +99,14 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
       return responseData as unknown as LoanRequest;
     },
 
-    fetchRequest: async (id: string, headers?: Record<string, string>) => {
+    fetchRequest: async (id: string, headers?: Record<string, string>, includeVendorDetails: boolean = false) => {
       const { setActiveAction, setLoading, setStoreError, setRequest } = get();
       try {
         setActiveAction('fetchOne');
         setLoading(true);
 
-        const response = await apiClient.get<LoanRequest>(`/loans/requests/${id}`, undefined, headers);
+        const params = includeVendorDetails ? { include_vendor_details: true } : undefined;
+        const response = await apiClient.get<LoanRequest>(`/loans/requests/${id}`, params, headers);
         // Handle both direct and wrapped responses
         
         const rawRequest = (response.data as ApiResponse<LoanRequest>).data || response.data;
@@ -135,13 +136,14 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
       }
     },
 
-    fetchRequestsByVendor: async (vendorId: string, headers?: Record<string, string>) => {
+    fetchRequestsByVendor: async (vendorId: string, headers?: Record<string, string>, includeVendorDetails: boolean = false) => {
       const { setActiveAction, setLoading, setStoreError, setRequests } = get();
       try {
         setActiveAction('fetchByVendor');
         setLoading(true);
 
-        const response = await apiClient.get<LoanRequest[]>(`/loans/vendors/${vendorId}/requests`, undefined, headers);
+        const params = includeVendorDetails ? { include_vendor_details: true } : undefined;
+        const response = await apiClient.get<LoanRequest[]>(`/loans/vendors/${vendorId}/requests`, params, headers);
 
         // Handle both direct array and wrapped response formats
         const rawData = response.data as unknown as (ApiResponse<LoanRequest[]> | LoanRequest[]);
@@ -194,7 +196,11 @@ export const useLoanRequestStore = create<LoanRequestStore>()(
           url = '/loans/requests';
         }
 
-        const response = await apiClient.get<LoanRequest[]>(url, filter, headers);
+        const params = { ...filter };
+        if (filter.include_vendor_details) {
+          params.include_vendor_details = true;
+        }
+        const response = await apiClient.get<LoanRequest[]>(url, params, headers);
 
         console.log('[Loan Requests Store] Raw API response:', response.data);
 

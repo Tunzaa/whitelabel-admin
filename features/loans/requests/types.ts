@@ -184,6 +184,7 @@ export interface LoanRequestFilter {
   max_amount?: number;
   start_date?: string;
   end_date?: string;
+  include_vendor_details?: boolean;
 }
 
 // Action Types
