@@ -188,7 +188,7 @@ export function ProductTable({
                           </DropdownMenuItem>
                         )}
                         {onEdit && (
-                          <Can permission="vendor-loans:update">
+                          <Can permission="loan-products:update">
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -201,7 +201,7 @@ export function ProductTable({
                           </Can>
                         )}
                         {onStatusChange && (
-                          <Can permission="vendor-loans:update">
+                          <Can permission="loan-products:update">
                             <DropdownMenuSeparator />
                             {(product.is_active || product.status === 'ACTIVE') ? (
                               <DropdownMenuItem

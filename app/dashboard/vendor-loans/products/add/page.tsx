@@ -15,8 +15,9 @@ import { useLoanProductStore } from "@/features/loans/products/store";
 import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { useSelectedTenantStore } from "@/features/tenants/store";
 import { LoanProductFormValues } from "@/features/loans/products/types";
+import { withAuthorization } from "@/components/auth/with-authorization";
 
-export default function AddLoanProductPage() {
+function AddLoanProductPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const session = useSession();
@@ -140,3 +141,5 @@ export default function AddLoanProductPage() {
     </div>
   );
 }
+
+export default withAuthorization(AddLoanProductPage, { permission: "loan-products:create" });

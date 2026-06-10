@@ -285,7 +285,7 @@ export function RequestTable({
 
                         {onStatusChange &&
                           getActionItems(request).length > 0 && (
-                            <Can permission="vendor-loans:update">
+                            <Can permission="loan-requests:update">
                               <DropdownMenuSeparator />
                               {getActionItems(request)}
                             </Can>

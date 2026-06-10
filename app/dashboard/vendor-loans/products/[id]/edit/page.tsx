@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { withAuthorization } from "@/components/auth/with-authorization";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft } from "lucide-react";
@@ -22,7 +23,7 @@ interface EditLoanProductPageProps {
   }>;
 }
 
-export default function EditLoanProductPage(props: EditLoanProductPageProps) {
+function EditLoanProductPage(props: EditLoanProductPageProps) {
   const params = use(props.params) as { id: string };
   const { id } = params;
   const router = useRouter();
@@ -204,3 +205,6 @@ export default function EditLoanProductPage(props: EditLoanProductPageProps) {
     </div>
   );
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default withAuthorization(EditLoanProductPage as any, { permission: "loan-products:update" });

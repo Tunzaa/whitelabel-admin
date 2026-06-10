@@ -247,7 +247,7 @@ function LoanProductsPage() {
               Manage loan products offered to vendors
             </p>
           </div>
-          <Can permission="vendor-loans:create">
+          <Can permission="loan-products:create">
             <Button
               onClick={() =>
                 router.push("/dashboard/vendor-loans/products/add")
@@ -276,7 +276,7 @@ function LoanProductsPage() {
               Manage loan products offered to vendors
             </p>
           </div>
-          <Can permission="vendor-loans:create">
+          <Can permission="loan-products:create">
             <Button
               onClick={() =>
                 router.push("/dashboard/vendor-loans/products/add")
@@ -313,7 +313,7 @@ function LoanProductsPage() {
             Manage loan products offered to vendors
           </p>
         </div>
-        <Can permission="vendor-loans:create">
+        <Can permission="loan-products:create">
           <Button
             onClick={() => router.push("/dashboard/vendor-loans/products/add")}
           >
@@ -391,5 +391,5 @@ function LoanProductsPage() {
 }
 
 export default withAuthorization(LoanProductsPage, {
-  permission: "vendor-loans:read",
+  permission: "loan-products:read",
 });

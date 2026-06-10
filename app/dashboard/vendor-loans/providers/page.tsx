@@ -17,4 +17,4 @@ function LoanProvidersPage() {
   );
 }
 
-export default withAuthorization(LoanProvidersPage, { permission: "vendor-loans:read" });
+export default withAuthorization(LoanProvidersPage, { permission: "loan-providers:read" });

@@ -293,7 +293,7 @@ export function LoanProvidersContent() {
             Manage loan providers for your organization
           </p>
         </div>
-        <Can permission="vendor-loans:create">
+        <Can permission="loan-providers:create">
           <Button
             onClick={() => setIsAddDialogOpen(true)}
             className="flex items-center gap-1"

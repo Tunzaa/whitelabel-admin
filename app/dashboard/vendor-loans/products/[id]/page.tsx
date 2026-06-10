@@ -582,5 +582,5 @@ function LoanProductDetailPage(props: LoanProductDetailPageProps) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default withModuleAuthorization(withAuthorization(LoanProductDetailPage as any, {
-  permission: "vendor-loans:read",
+  permission: "loan-products:read",
 }), "vendor_loans");

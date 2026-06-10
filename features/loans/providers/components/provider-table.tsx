@@ -173,7 +173,7 @@ export function ProviderTable({
                           </DropdownMenuItem>
                         )}
                         {onEdit && (
-                          <Can permission="vendor-loans:update">
+                          <Can permission="loan-providers:update">
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -186,7 +186,7 @@ export function ProviderTable({
                           </Can>
                         )}
                         {onStatusChange && (
-                          <Can permission="vendor-loans:update">
+                          <Can permission="loan-providers:update">
                             <DropdownMenuSeparator />
                             {provider.is_active ? (
                               <DropdownMenuItem

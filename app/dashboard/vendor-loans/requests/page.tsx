@@ -323,5 +323,5 @@ function LoanRequestsPage() {
   );
 }
 
-const ExportedLoanRequestsPage = withAuthorization(LoanRequestsPage, "vendor-loans:read");
+const ExportedLoanRequestsPage = withAuthorization(LoanRequestsPage, { permission: "loan-requests:read" });
 export default ExportedLoanRequestsPage;

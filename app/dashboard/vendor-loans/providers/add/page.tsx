@@ -12,8 +12,9 @@ import { toast } from "sonner";
 import { ProviderForm } from "@/features/loans/providers/components/provider-form";
 import { useLoanProviderStore } from "@/features/loans/providers/store";
 import { LoanProviderFormValues } from "@/features/loans/providers/types";
+import { withAuthorization } from "@/components/auth/with-authorization";
 
-export default function AddLoanProviderPage() {
+function AddLoanProviderPage() {
   const router = useRouter();
   const session = useSession();
   const tenantId = (session?.data?.user as any)?.tenant_id;
@@ -87,3 +88,5 @@ export default function AddLoanProviderPage() {
     </div>
   );
 }
+
+export default withAuthorization(AddLoanProviderPage, { permission: "loan-providers:create" });
