@@ -33,7 +33,7 @@ const authConfig = {
       async authorize(credentials: Record<string, unknown> | undefined, req: unknown): Promise<CustomUser | null> {
         try {
           // Narrow down the type for usage
-          const creds = credentials as { email?: string; password?: string } | undefined;
+          const creds = credentials as { email?: string; password?: string; selectedUserId?: string } | undefined;
 
           if (!creds?.email || !creds?.password) {
             return null;
@@ -60,7 +60,24 @@ const authConfig = {
 
           const apiResponse = await response.json();
           // Handle ApiResponse wrapper if present
-          const userData = apiResponse.data || apiResponse;
+          let userData = apiResponse.data || apiResponse;
+
+          // Handle multi-user response - select specific user if selectedUserId is provided
+          if (userData.users && Array.isArray(userData.users) && userData.users.length > 0) {
+            if (creds.selectedUserId) {
+              // Find the selected user
+              const selectedUser = userData.users.find((u: any) => u.user_id === creds.selectedUserId);
+              if (selectedUser) {
+                userData = selectedUser;
+              } else {
+                // Fallback to first user if selected not found
+                userData = userData.users[0];
+              }
+            } else {
+              // No selection made, use first user (single user case)
+              userData = userData.users[0];
+            }
+          }
 
           // Extract roles using the updated function
           const roles = extractUserRoles(userData);
@@ -69,7 +86,7 @@ const authConfig = {
           const user: CustomUser = {
             id: userData.user_id,
             email: userData.email,
-            token: userData.access_token,
+            token: userData.refresh_token || userData.access_token,
             name: `${userData.first_name} ${userData.last_name}`,
             role: (roles[0] || 'support') as AppRole,
             roles: roles, // Store all roles

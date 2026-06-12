@@ -255,6 +255,15 @@ const createApiClient = () => {
         });
 
         const data = response.data as any;
+
+        // Check if multiple users returned (multi-account scenario)
+        if (data.users && Array.isArray(data.users) && data.users.length > 0) {
+          // Return the multi-user response without setting tokens
+          // The caller must handle user selection
+          return data;
+        }
+
+        // Single user login - set tokens as before
         if (data.access_token) {
           setTokens(data.access_token, data.refresh_token);
         }

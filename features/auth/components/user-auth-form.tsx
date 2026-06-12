@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/core";
+import { AccountSelectionModal, UserAccount } from "./account-selection-modal";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Enter a valid email address" }),
@@ -57,6 +58,11 @@ export default function UserAuthForm() {
   // Get the session data to detect changes
   const { data: session } = useSession();
 
+  // Multi-account selection state
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [availableAccounts, setAvailableAccounts] = useState<UserAccount[]>([]);
+  const [pendingCredentials, setPendingCredentials] = useState<{ email: string; password: string } | null>(null);
+
   // Synchronize tokens when session changes
   useEffect(() => {
     // Check for session and attempt to extract tokens
@@ -79,52 +85,137 @@ export default function UserAuthForm() {
     }
   }, [session]);
 
+  // Handle multi-account selection
+  const handleAccountSelect = async (account: UserAccount) => {
+    try {
+      // Set tokens for the selected account
+      localStorage.setItem("token", account.access_token);
+      localStorage.setItem("refresh_token", account.refresh_token);
+
+      // Close the modal
+      setShowAccountModal(false);
+
+      // Now proceed with NextAuth to set up the session for middleware
+      // We use the stored credentials since the authorize function needs them
+      if (pendingCredentials) {
+        const result = await signIn("credentials", {
+          email: pendingCredentials.email,
+          password: pendingCredentials.password,
+          selectedUserId: account.user_id, // Pass selected user ID
+          callbackUrl: callbackUrl ?? "/dashboard",
+          redirect: false,
+        });
+
+        if (result?.ok || !result?.error) {
+          toast.success(`Signed in as ${account.first_name} ${account.last_name}`);
+          window.location.href = callbackUrl ?? "/dashboard";
+        } else {
+          toast.success(`Signed in as ${account.first_name} ${account.last_name}`);
+          window.location.href = callbackUrl ?? "/dashboard";
+        }
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to sign in with selected account";
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
   const onSubmit = async (data: UserFormValue) => {
     startTransition(async () => {
       try {
         // First authenticate directly with our API to get tokens
-        let apiAuthSuccess = false;
+        let apiAuthResult: any;
         try {
-          const apiAuthResult = await api.auth.login(data.email, data.password);
-
-          // Store tokens directly in localStorage
-          if (apiAuthResult.access_token) {
-            localStorage.setItem("token", apiAuthResult.access_token);
-            localStorage.setItem("refresh_token", apiAuthResult.refresh_token);
-            apiAuthSuccess = true;
-          }
+          apiAuthResult = await api.auth.login(data.email, data.password);
         } catch (apiError) {
           setAuthError("Invalid credentials");
           toast.error("Invalid credentials");
           return;
         }
 
-        // If API auth succeeded, still need NextAuth for middleware authentication
-        if (apiAuthSuccess) {
-          // Now proceed with NextAuth to set up the session for middleware
-          const result = await signIn("credentials", {
-            email: data.email,
-            password: data.password,
-            callbackUrl: callbackUrl ?? "/dashboard",
-            redirect: false,
+        // Handle multi-user response
+        if (apiAuthResult.users && Array.isArray(apiAuthResult.users)) {
+          const privilegedRoles = ["admin", "super", "loan_provider"];
+
+          // Filter users that have at least one privileged role
+          const privilegedUsers = apiAuthResult.users.filter((user: any) => {
+            const userRoles: string[] = [];
+            // Add from roles array
+            user.roles?.forEach((r: any) => r?.role && userRoles.push(r.role.toLowerCase()));
+            // Add from profiles
+            user.profiles?.forEach((p: any) => p?.role && userRoles.push(p.role.toLowerCase()));
+            // Add active profile role
+            if (user.active_profile_role) userRoles.push(user.active_profile_role.toLowerCase());
+
+            return userRoles.some(role => privilegedRoles.includes(role));
           });
 
-          if (result?.ok || !result?.error) {
-            toast.success("Signed in successfully");
-
-            const redirectUrl = callbackUrl ?? "/dashboard";
-
-            // Use window.location.href for more reliable redirect
-            window.location.href = redirectUrl;
-          } else {
-            // Still redirect since API auth worked
-            toast.success("Signed in successfully");
-            window.location.href = callbackUrl ?? "/dashboard";
+          // If multiple privileged users, show selection modal
+          if (privilegedUsers.length > 1) {
+            setPendingCredentials({ email: data.email, password: data.password });
+            setAvailableAccounts(privilegedUsers);
+            setShowAccountModal(true);
+            return;
           }
+
+          // If exactly 1 privileged user, auto-select it
+          if (privilegedUsers.length === 1) {
+            const userData = privilegedUsers[0];
+            // Set tokens for the privileged user
+            localStorage.setItem("token", userData.access_token);
+            localStorage.setItem("refresh_token", userData.refresh_token);
+
+            // Proceed with NextAuth for the privileged user
+            const result = await signIn("credentials", {
+              email: data.email,
+              password: data.password,
+              selectedUserId: userData.user_id,
+              callbackUrl: callbackUrl ?? "/dashboard",
+              redirect: false,
+            });
+
+            if (result?.ok || !result?.error) {
+              toast.success("Signed in successfully");
+              window.location.href = callbackUrl ?? "/dashboard";
+            } else {
+              toast.success("Signed in successfully");
+              window.location.href = callbackUrl ?? "/dashboard";
+            }
+            return;
+          }
+
+          // No privileged users found - show error, don't allow login
+          setAuthError("No authorized accounts found. Only admin, super, and loan_provider roles can access this system.");
+          toast.error("No authorized accounts found. Only admin, super, and loan_provider roles can access this system.");
           return;
         }
 
-        // Only try NextAuth if direct API failed
+        // Handle single user case - could be in users array with 1 item or direct response
+        const userData = apiAuthResult.users?.[0] || apiAuthResult;
+
+        // Check if single user has privileged role
+        const privilegedRoles = ["admin", "super", "loan_provider"];
+        const userRoles: string[] = [];
+        userData.roles?.forEach((r: any) => r?.role && userRoles.push(r.role.toLowerCase()));
+        userData.profiles?.forEach((p: any) => p?.role && userRoles.push(p.role.toLowerCase()));
+        if (userData.active_profile_role) userRoles.push(userData.active_profile_role.toLowerCase());
+
+        const hasPrivilegedRole = userRoles.some(role => privilegedRoles.includes(role));
+
+        if (!hasPrivilegedRole) {
+          setAuthError("Access denied. Only admin, super, and loan_provider roles can access this system.");
+          toast.error("Access denied. Only admin, super, and loan_provider roles can access this system.");
+          return;
+        }
+
+        // Store tokens directly in localStorage
+        if (userData.access_token) {
+          localStorage.setItem("token", userData.access_token);
+          localStorage.setItem("refresh_token", userData.refresh_token);
+        }
+
+        // Now proceed with NextAuth to set up the session for middleware
         const result = await signIn("credentials", {
           email: data.email,
           password: data.password,
@@ -132,12 +223,12 @@ export default function UserAuthForm() {
           redirect: false,
         });
 
-        if (result?.error) {
-          setAuthError(result.error);
-          toast.error(result.error);
-        } else if (result?.ok) {
+        if (result?.ok || !result?.error) {
           toast.success("Signed in successfully");
-          router.push(callbackUrl ?? "/dashboard");
+          window.location.href = callbackUrl ?? "/dashboard";
+        } else {
+          toast.success("Signed in successfully");
+          window.location.href = callbackUrl ?? "/dashboard";
         }
       } catch (error: any) {
         const errorMessage = error.message || "Authentication failed";
@@ -240,6 +331,17 @@ export default function UserAuthForm() {
           </Button>
         </form>
       </Form>
+
+      {/* Account Selection Modal for Multi-User Login */}
+      <AccountSelectionModal
+        isOpen={showAccountModal}
+        onClose={() => {
+          setShowAccountModal(false);
+          setPendingCredentials(null);
+        }}
+        accounts={availableAccounts}
+        onSelectAccount={handleAccountSelect}
+      />
       {/* <div className='relative'>
         <div className='absolute inset-0 flex items-center'>
           <span className='w-full border-t' />

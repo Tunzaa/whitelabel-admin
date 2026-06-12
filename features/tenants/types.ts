@@ -36,11 +36,7 @@ export type TenantBranding = {
   theme: TenantTheme;
 };
 
-export type TenantModules = {
-  payments: boolean;
-  promotions: boolean;
-  inventory: boolean;
-};
+export type TenantModules = Record<string, boolean>;
 
 export type TenantMetadata = {
   terms_conditions?: string | null;
