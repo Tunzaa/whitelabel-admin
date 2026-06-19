@@ -129,7 +129,7 @@ export const useOrderStore = create<OrderStore>()((set, get) => ({
       if (filter.status) params.append("status", filter.status);
       if (filter.userId) params.append("user_id", filter.userId);
       if (filter.vendorId) params.append("vendor_id", filter.vendorId);
-      if (filter.dateFrom) params.append("date_from", filter.dateFrom);
+      if (filter.dateFrom) params.append("from_date", filter.dateFrom);
       if (filter.dateTo) params.append("date_to", filter.dateTo);
       if (filter.has_ticket) params.append("has_ticket", "true");
       params.append("include_tickets", "true");

@@ -43,7 +43,7 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       
       if (status) queryParams.append('status', status);
       if (search) queryParams.append('search', search);
-      if (dateFrom) queryParams.append('date_from', dateFrom);
+      if (dateFrom) queryParams.append('from_date', dateFrom);
       if (dateTo) queryParams.append('date_to', dateTo);
       if (limit) queryParams.append('limit', limit.toString());
       if (offset) queryParams.append('offset', offset.toString());

@@ -55,7 +55,7 @@ export interface TransactionError {
 export interface TransactionFilter {
   status?: TransactionStatus;
   search?: string;
-  date_from?: string;
+  from_date?: string;
   date_to?: string;
   limit?: number;
   offset?: number;

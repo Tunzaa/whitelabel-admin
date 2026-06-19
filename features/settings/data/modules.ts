@@ -4,6 +4,7 @@ import {
   Truck,
   DollarSign,
   Gift,
+  Bell,
 } from "lucide-react";
 
 import {IconUserCode} from "@tabler/icons-react";
@@ -46,6 +47,12 @@ export const platformModules: ModuleConfig[] = [
     label: "Rewards & Referrals",
     description: "Enables rewards and referrals program",
     icon: "Gift"
+  },
+  {
+    name: "notifications",
+    label: "Notifications",
+    description: "Enables notifications functionality",
+    icon: "Bell"
   }
 ];
 
@@ -57,6 +64,7 @@ export const getModuleIcon = (iconName: string): React.ComponentType<{ className
     DollarSign,
     IconUserCode,
     Gift,
+    Bell,
   };
   return icons[iconName] || null;
 };
