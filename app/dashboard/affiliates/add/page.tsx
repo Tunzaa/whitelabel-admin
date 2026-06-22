@@ -91,5 +91,5 @@ function AddAffiliatePage() {
 }
 
 export default withModuleAuthorization(withAuthorization(AddAffiliatePage, { 
-  permission: "affiliate:create" 
+  permission: "affiliates:create" 
 }), "affiliates");

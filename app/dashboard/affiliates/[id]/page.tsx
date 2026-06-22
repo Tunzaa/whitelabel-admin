@@ -991,7 +991,7 @@ function AffiliateDetailPage() {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Verification</h4>
                 <div className="flex flex-col gap-2">
-                  <Can permission="affiliate:approve">
+                  <Can permission="affiliates:update">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1002,7 +1002,7 @@ function AffiliateDetailPage() {
                       <Check className="h-4 w-4 mr-2" /> Approve Affiliate
                     </Button>
                   </Can>
-                  <Can permission="affiliate:reject">
+                  <Can permission="affiliates:update">
                     <Button
                       variant="outline"
                       size="sm"
